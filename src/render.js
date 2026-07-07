@@ -1154,32 +1154,10 @@ var BOKDONG_SPRITES = {
   ty_8: "./assets/ty_8.png",
   ty_9: "./assets/ty_9.png",
   ty_10: "./assets/ty_10.png",
-  b1_1: "./assets/b1_1.png",
-  b1_2: "./assets/b1_2.png",
-  b1_3: "./assets/b1_3.png",
-  b1_4: "./assets/b1_4.png",
-  b1_5: "./assets/b1_5.png",
-  b2_1: "./assets/b2_1.png",
-  b2_2: "./assets/b2_2.png",
-  b2_3: "./assets/b2_3.png",
-  b2_4: "./assets/b2_4.png",
-  b2_5: "./assets/b2_5.png",
-  b3_1: "./assets/b3_1.png",
-  b3_2: "./assets/b3_2.png",
-  b3_3: "./assets/b3_3.png",
-  b3_4: "./assets/b3_4.png",
-  b3_5: "./assets/b3_5.png",
-  b4_1: "./assets/b4_1.png",
-  b4_2: "./assets/b4_2.png",
-  b4_3: "./assets/b4_3.png",
-  b4_4: "./assets/b4_4.png",
-  b4_5: "./assets/b4_5.png",
-  b5_1: "./assets/b5_1.png",
-  b5_2: "./assets/b5_2.png",
-  b5_3: "./assets/b5_3.png",
-  b5_4: "./assets/b5_4.png",
-  b5_5: "./assets/b5_5.png",
 };
+// 부스트 스프라이트: 5단계 × 10프레임 (v9.19 재작업 시트 — 프레임 간 크기·위치 일관)
+for (let _t = 1; _t <= 5; _t++) for (let _f = 1; _f <= 10; _f++)
+  BOKDONG_SPRITES['b' + _t + '_' + _f] = './assets/b' + _t + '_' + _f + '.png';
 // 이미지 객체로 미리 로드
 var BOKDONG_IMG = {};
 var BOKDONG_LOADED = false;
@@ -1211,13 +1189,14 @@ function getBoostTier(){
 }
 function drawBokdongSprite(ctx2, cx, cy, scale, isRiding){
   const isBoost = (S.dopT||0) > 0;
-  // 5프레임 사이클 (일반/부스터 각각). 머리·몸통 고정, 다리만 회전
+  // 일반 5프레임 / 부스트 10프레임 사이클 (v9.19 재작업 시트)
   let frameNum;
   if(!isRiding){
     frameNum = 1;
   } else {
     const speed = isBoost ? 4 : 7;   // 부스터는 더 빠른 페달링
-    frameNum = (Math.floor(frame / speed) % 5) + 1;
+    const cycleLen = isBoost ? 10 : 5;
+    frameNum = (Math.floor(frame / speed) % cycleLen) + 1;
   }
   // 부스터 시: 자전거 단계에 맞는 부스트 오라 (b{tier}_{frame}), 일반: cyc_{frame}
   let key;
