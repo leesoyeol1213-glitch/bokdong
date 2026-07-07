@@ -596,6 +596,7 @@ let S={
   xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,
   end:5,speed:6,sp:3,vId:'v1',
   ap:3,jc:2,dopT:0,dopSp:5,
+  autoApple:false,
   riding:false,restT:0,ecool:0,
   prevBaseMhp:100,
   mhpSpBonus:0,

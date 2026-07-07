@@ -132,6 +132,8 @@ function tick(){
   const regenAmount = (eqBonus.hpRegen || 0) * 0.25;
   const hpDrain = Math.max(0.05, totalDrain - regenAmount);
   S.hp=Math.max(0, Math.min(S.mhp, S.hp - hpDrain));
+  // #2 자동 사과: 체력 30% 이하 + 사과 보유 시 자동 섭취(방치 지원). 조용히(로그 스팸 방지).
+  if(S.autoApple && S.hp <= S.mhp*0.3 && S.ap>0){ S.ap--; S.hp=Math.min(S.mhp, S.hp+30); }
   const xpMult = 1 + (eqBonus.xpBonus||0);
   S.xp += km*2.5 * xpMult;
   if(S.dopT>0)S.dopT--;
@@ -358,17 +360,98 @@ function checkAchievements(){
     }
   });
 }
-function applyOfflineReward(lastTime){
-  const now=Date.now();let sec=Math.floor((now-lastTime)/1000);sec=Math.min(sec,8*3600);
-  if(sec<60)return;
-  // 1번 fix: 체력 회복 (1분당 +1, 최대 mhp까지)
-  const minutes = Math.floor(sec/60);
-  const hpRecovered = Math.min(S.mhp - S.hp, minutes);
-  S.hp = Math.min(S.mhp, S.hp + hpRecovered);
-  // 라이딩 중이었을 때만 km/money/xp 보상
-  const km=Math.floor(sec*.5),money=Math.floor(km*10),xp=Math.floor(km*2);
-  S.totKm+=km;S.money+=money;S.xp+=xp;S.offlineCount=(S.offlineCount||0)+1;
-  addLog('good','💤 오프라인 보상! +'+km+'km, ₩'+money.toLocaleString()+', XP+'+xp+(hpRecovered>0?', ❤️+'+hpRecovered:''));
+// #1 오프라인 여행 진행 — 자리 비운 시간만큼 실제로 여정을 굴린다(방치형 핵심).
+//  - 라이딩 중이었으면: 사과(연료)가 허용하는 만큼 이동·도착·레벨업 시뮬 → "여행 일지" 요약
+//  - 정지 상태였으면: 기존대로 체력만 회복
+//  이동거리는 (현재체력 + 사과수×30)km 로 자연 상한(사과가 연료). 시간 상한 8시간.
+function applyOfflineReward(lastTime, wasRiding){
+  const now=Date.now();
+  const rawSec=Math.floor((now-lastTime)/1000);
+  if(rawSec<60)return;
+  const capped = rawSec > 8*3600;
+  const sec=Math.min(rawSec,8*3600);
+  const hm=(s)=>{const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return (h?h+'시간 ':'')+m+'분';};
+
+  // 정지 상태로 나감 → 체력만 회복(1분당 +1)
+  if(!wasRiding || !S.dest){
+    const minutes=Math.floor(sec/60);
+    const hpRec=Math.min(S.mhp-S.hp, minutes);
+    S.hp=Math.min(S.mhp,S.hp+hpRec);
+    S.offlineCount=(S.offlineCount||0)+1;
+    showTravelLog({resting:true, timeStr:hm(sec), hpRec, capped});
+    return;
+  }
+
+  // 라이딩 중 → 여정 시뮬레이션
+  window._offlineSim=true;
+  const v=cv2();
+  const kmPerSec=v.sp*0.05;
+  const drainPerSec=Math.max(0.05, 0.05*v.sp); // tick과 동일한 ≈1HP/km
+  let hp=S.hp, dist=0, moneyGain=0, xpGain=0, applesUsed=0, levelsUp=0, stoppedNoApple=false, arrivedCount=0;
+  const arrived=[];
+  let t=0;
+  for(t=0;t<sec;t++){
+    if(hp - drainPerSec <= 0){
+      if(S.ap>0){ S.ap--; applesUsed++; hp=Math.min(S.mhp, hp+30); }
+      else { stoppedNoApple=true; break; }
+    }
+    hp-=drainPerSec;
+    dist+=kmPerSec; S.sgKm+=kmPerSec; S.totKm+=kmPerSec; xpGain+=kmPerSec*2.5;
+    if(S.dest && S.sgKm>=S.sgTot){
+      const city=S.dest;
+      S.city=city; S.dest=null; S.sgKm=0;
+      if(!S.visited.includes(city))S.visited.push(city);
+      const m=20000; S.money+=m; moneyGain+=m; arrivedCount++;
+      if(arrived.length<12) arrived.push(city);
+      autoPickNextDestination(); // 조용히(로그 억제) 다음 목적지
+      if(!S.dest) break; // 달·함정 등으로 더 못 가면 종료
+    }
+  }
+  // 남은 시간은 정지 휴식 회복
+  if(stoppedNoApple){ const restMin=Math.floor((sec-t)/60); hp=Math.min(S.mhp,hp+restMin); }
+  S.hp=Math.max(0,Math.min(S.mhp,hp));
+  // XP → 레벨업 일괄 처리
+  S.xp+=xpGain;
+  while(S.xp>=S.xpMax){ S.xp-=S.xpMax; S.lv++; S.xpMax=Math.floor(S.xpMax*1.35); S.sp++; const lm=5000*S.lv; S.money+=lm; moneyGain+=lm; levelsUp++; }
+  S.offlineCount=(S.offlineCount||0)+1;
+  window._offlineSim=false;
+  showTravelLog({resting:false, timeStr:hm(sec), dist:Math.floor(dist), arrived, arrivedCount,
+    moneyGain, xpGain:Math.floor(xpGain), applesUsed, levelsUp, stoppedNoApple, capped});
+}
+
+// #1 "여행 일지" 복귀 리포트 모달
+function showTravelLog(info){
+  const B='calc(6px * var(--u))', T='calc(8px * var(--u))', S6='calc(6px * var(--u))';
+  let body;
+  if(info.resting){
+    body=`<div style="font-size:${S6};color:#5C3D1E;line-height:2;text-align:center;">
+      💤 <b>${info.timeStr}</b> 동안 자리를 비웠어요.<br>
+      ${info.hpRec>0?`❤️ 체력 +${info.hpRec} 회복`:'푹 쉬었어요.'}
+      ${info.capped?'<br><span style="color:#8B6340;font-size:calc(5px * var(--u));">(최대 8시간까지 반영)</span>':''}
+    </div>`;
+  }else{
+    const row=(label,val)=>`<div style="display:flex;justify-content:space-between;padding:calc(2px * var(--u)) 0;border-bottom:1px dashed #E0C9A6;"><span style="color:#8B6340;">${label}</span><b style="color:#5C3D1E;">${val}</b></div>`;
+    const cities=info.arrivedCount>0
+      ? info.arrived.join(', ')+(info.arrivedCount>info.arrived.length?` 외 ${info.arrivedCount-info.arrived.length}곳`:'')
+      : '아직 도착 전';
+    body=`<div style="font-size:${S6};color:#5C3D1E;line-height:1.7;">
+      <div style="text-align:center;margin-bottom:calc(6px * var(--u));">🌏 <b>${info.timeStr}</b> 동안의 여정</div>
+      ${row('🚴 이동 거리', info.dist.toLocaleString()+'km')}
+      ${row('📍 도착', info.arrivedCount+'곳')}
+      ${info.arrivedCount>0?`<div style="font-size:calc(5px * var(--u));color:#8B6340;padding:calc(3px * var(--u)) 0;text-align:center;">${cities}</div>`:''}
+      ${row('💰 벌이', '₩'+info.moneyGain.toLocaleString())}
+      ${row('⭐ 경험치', 'XP +'+info.xpGain.toLocaleString()+(info.levelsUp>0?` (Lv +${info.levelsUp})`:''))}
+      ${row('🍎 사과 사용', info.applesUsed+'개')}
+      ${info.stoppedNoApple?`<div style="color:#B71C1C;font-size:calc(5px * var(--u));text-align:center;padding-top:calc(4px * var(--u));">🍎 사과가 떨어져 도중에 멈췄어요! 출발 전 넉넉히 챙겨가세요.</div>`:''}
+      ${info.capped?`<div style="color:#8B6340;font-size:calc(5px * var(--u));text-align:center;">(최대 8시간까지 반영)</div>`:''}
+    </div>`;
+  }
+  document.getElementById('modal-area').innerHTML=`
+  <div class="px-panel" style="border-color:#1976D2;margin-bottom:5px;box-shadow:0 0 calc(10px * var(--u)) #64B5F6;">
+    <div style="font-size:${T};color:#1976D2;text-align:center;margin-bottom:calc(8px * var(--u));">📖 여행 일지</div>
+    <div style="background:#FFF8DC;border:2px solid #D4B483;border-radius:6px;padding:calc(8px * var(--u));margin-bottom:calc(8px * var(--u));">${body}</div>
+    <button class="px-btn px-btn-green" style="width:100%;font-size:calc(7px * var(--u));padding:calc(10px * var(--u));" onclick="document.getElementById('modal-area').innerHTML='';if(typeof update==='function')update();">확인 ▶</button>
+  </div>`;
 }
 
 // ── 팝업 ───────────────────────────────────────────────
@@ -972,6 +1055,7 @@ function autoPickNextDestination(){
   S.dest=pick.n;
   S.sgKm=0;
   S.sgTot=getCityDist(S.city,pick.n);
+  if(window._offlineSim) return; // 오프라인 시뮬 중엔 로그 스팸 방지(여행 일지로 대신 요약)
   if(currentInJapan && pick.n==='부산'){
     addLog('good','⛴️ 일본 코스 완주! 부산으로 귀국! ('+S.sgTot+'km)');
   } else if(currentInJapan){
@@ -1849,7 +1933,7 @@ function doLoad(parsedD){
           if(!_validIds.includes(S.vId)) S.vId = topBike ? topBike.id : 'v1';
           addLog('neutral','🚲 탈것 시스템 개편! 자전거 '+Math.max(1,ownedCount)+'단계로 이전됨');
         }
-        if(!S.achievements)S.achievements=[];if(!S.boostCount)S.boostCount=0;if(!S.offlineCount)S.offlineCount=0;
+        if(!S.achievements)S.achievements=[];if(!S.boostCount)S.boostCount=0;if(!S.offlineCount)S.offlineCount=0;if(typeof S.autoApple!=='boolean')S.autoApple=false;
         if(!S.equipped)S.equipped={head:null,eyes:null,hands:null,feet:null,body:null};
         if(!S.inventory)S.inventory=[];
         // 1번 fix: 기존 저장 마이그레이션 — mhpSpBonus 없으면 추정 계산
@@ -1886,7 +1970,7 @@ function doLoad(parsedD){
         if(!_isJapanCity(S.city) && S.dest!=='후쿠오카') S.onFerryToJapan = false;
         // 충주에 있는데 아무 목적지도 없으면 정상 (toggleRide 시 자동 설정됨)
         logs=d.log||[];document.getElementById('ride-btn').textContent='▶ 출발!';
-        if(d.lpt)applyOfflineReward(d.lpt);
+        if(d.lpt)applyOfflineReward(d.lpt, !!(d.S && d.S.riding));
         showSt('📂 불러오기 완료!');addLog('good','📂 불러오기 완료');update();
         saveReady=true; // 로드 성공 → 자동저장 활성화
         return true;
@@ -1948,7 +2032,7 @@ function closeModalAndLaunch(wr){
 }
 function resetGame(){
   if(!confirm('초기화?'))return;localStorage.removeItem('bkdng_v45');saveReady=true; // 초기화 확정 → 새 상태로 자동저장 재개
-  S={city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],achievements:[],boostCount:0,offlineCount:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
+  S={city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],achievements:[],boostCount:0,offlineCount:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
   // 2번 fix: 시작 시 보유 탈것/장비 갯수로 seenTabs 초기화 (시작부터 빨간점 안 뜨게)
   S.seenTabs.veh = (S.vehs||[]).filter(v=>v.owned).length;
   S.seenTabs.gear = (S.inventory||[]).length;
@@ -2009,6 +2093,12 @@ function playSfx(name){
     case 'gear':     playTone(800, 0.08, 'triangle', 0.07); setTimeout(()=>playTone(1200, 0.12, 'triangle', 0.07), 80); break;
     case 'mythic':   playTone(523, 0.05, 'square', 0.08); setTimeout(()=>playTone(784, 0.05, 'square', 0.08),60); setTimeout(()=>playTone(1047, 0.05, 'square', 0.08),120); setTimeout(()=>playTone(1568, 0.30, 'square', 0.10),180); break;
   }
+}
+// #2 자동 사과 토글 — 체력 30% 이하면 자동으로 사과 섭취(방치 지원)
+function toggleAutoApple(){
+  S.autoApple = !S.autoApple;
+  addLog(S.autoApple?'good':'neutral', S.autoApple?'🍎 자동 사과 ON — 체력 30% 이하면 자동 섭취':'🍎 자동 사과 OFF');
+  update();
 }
 function toggleSound(){
   soundEnabled = !soundEnabled;
@@ -2481,6 +2571,13 @@ function update(){
   // 사운드 버튼 텍스트
   const sndBtn = document.getElementById('sound-btn');
   if(sndBtn) sndBtn.innerHTML = soundEnabled ? '🔊 음향' : '🔇 음향';
+  // #2 자동 사과 버튼 상태
+  const aaBtn = document.getElementById('autoapple-btn');
+  if(aaBtn){
+    aaBtn.innerHTML = S.autoApple ? '🍎 자동 ON' : '🍎 자동 OFF';
+    aaBtn.classList.toggle('px-btn-green', !!S.autoApple);
+    aaBtn.classList.toggle('px-btn-gray', !S.autoApple);
+  }
   // 3번: 탈출 주사위 버튼 (함정 도시 + 50km 누적 시)
   const trapBtn = document.getElementById('trapDiceBtn');
   if(trapBtn){

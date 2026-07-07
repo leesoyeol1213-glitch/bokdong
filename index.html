@@ -68,10 +68,11 @@
   <div style="padding:0 6px;margin-bottom:calc(5px * var(--u));">
     <button class="px-btn" id="ride-btn" onclick="toggleRide()" style="width:100%;font-size:calc(8px * var(--u));padding:calc(12px * var(--u));">▶ 출발!</button>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:calc(4px * var(--u));padding:0 6px;margin-bottom:calc(4px * var(--u));">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:calc(4px * var(--u));padding:0 6px;margin-bottom:calc(4px * var(--u));">
     <button class="px-btn px-btn-sm" onclick="useApple()">🍎<br>사과</button>
     <button class="px-btn px-btn-sm px-btn-orange" onclick="useJuice()">⚡<br>부스터</button>
     <button class="px-btn px-btn-sm" style="background:#9C6B2A;" onclick="openFood()">🍜<br>맛집</button>
+    <button class="px-btn px-btn-sm px-btn-gray" id="autoapple-btn" onclick="toggleAutoApple()">🍎 자동 OFF</button>
   </div>
   <div style="padding:0 6px;margin-bottom:calc(4px * var(--u));">
     <button class="px-btn px-btn-sm px-btn-blue" id="trapDiceBtn" onclick="rollEscapeDice()" style="display:none;width:100%;">🎲 탈출 주사위!</button>
