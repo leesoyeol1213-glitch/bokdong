@@ -3956,6 +3956,55 @@ function doSave(showToast){
 }
 // 수동 저장 버튼 — 자동저장 도입으로 확인 모달 제거(즉시 저장). 어차피 30초마다 덮어씀.
 function save(){doSave(true);}
+
+// ── 저장코드 백업/복원 (v9.19) ──────────────────────────
+// localStorage 하나에만 있던 세이브를 코드 문자열로 내보내/가져오기.
+// 용도: 브라우저 데이터 삭제 대비 보관, 폰↔PC 이동. 포맷: 'BKDNG1.' + base64(UTF-8 JSON)
+function _encodeSave(str){return 'BKDNG1.'+btoa(unescape(encodeURIComponent(str)));}
+function _decodeSave(code){
+  const t=(code||'').trim();
+  if(!t.startsWith('BKDNG1.'))return null;
+  try{return decodeURIComponent(escape(atob(t.slice(7))));}catch(e){return null;}
+}
+function openBackup(){
+  const wr=S.riding;
+  if(S.riding){S.riding=false;isResting=false;clearInterval(tickIv);tickIv=null;}
+  doSave(false); // 최신 상태를 코드에 반영
+  let code='';
+  try{const raw=localStorage.getItem('bkdng_v45');if(raw)code=_encodeSave(raw);}catch(e){}
+  document.getElementById('modal-area').innerHTML=`
+  <div class="px-panel" style="border-color:#1976D2;margin-bottom:5px;">
+    <div style="font-size:calc(8px * var(--u));color:#1976D2;text-align:center;margin-bottom:6px;">🔑 저장코드 백업/복원</div>
+    <div style="font-size:calc(6px * var(--u));color:#5C3D1E;margin-bottom:4px;">📤 내 저장코드 — 복사해서 메모장·카톡(나에게) 등에 보관:</div>
+    <textarea id="bk-out" readonly style="width:100%;height:calc(40px * var(--u));font-size:calc(5px * var(--u));border:2px solid #D4B483;border-radius:5px;padding:4px;box-sizing:border-box;resize:none;word-break:break-all;">${code}</textarea>
+    <button class="px-btn px-btn-blue" style="width:100%;font-size:calc(7px * var(--u));margin:4px 0 10px;" onclick="copyBackupCode()">📋 코드 복사</button>
+    <div style="font-size:calc(6px * var(--u));color:#5C3D1E;margin-bottom:4px;">📥 코드를 붙여넣어 복원 — <b style="color:#B71C1C;">현재 진행은 사라져요!</b></div>
+    <textarea id="bk-in" placeholder="BKDNG1. 로 시작하는 코드 붙여넣기" style="width:100%;height:calc(30px * var(--u));font-size:calc(5px * var(--u));border:2px solid #D4B483;border-radius:5px;padding:4px;box-sizing:border-box;resize:none;word-break:break-all;"></textarea>
+    <button class="px-btn px-btn-green" style="width:100%;font-size:calc(7px * var(--u));margin-top:4px;" onclick="importBackupCode()">📥 복원하기</button>
+    <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(7px * var(--u));margin-top:6px;" onclick="closeModal(${wr})">닫기 ▶</button>
+  </div>`;
+}
+function copyBackupCode(){
+  const ta=document.getElementById('bk-out');
+  if(!ta||!ta.value){showSt('저장코드가 없어요 — 먼저 게임을 진행하세요');return;}
+  ta.select();ta.setSelectionRange(0,999999); // 모바일 대비
+  const done=()=>showSt('📋 복사 완료! 메모장·카톡(나에게) 등에 보관하세요');
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(ta.value).then(done).catch(()=>{try{document.execCommand('copy');done();}catch(e){showSt('복사 실패 — 직접 길게 눌러 복사하세요');}});
+  }else{
+    try{document.execCommand('copy');done();}catch(e){showSt('복사 실패 — 직접 길게 눌러 복사하세요');}
+  }
+}
+function importBackupCode(){
+  const ta=document.getElementById('bk-in');
+  const json=_decodeSave(ta?ta.value:'');
+  if(!json){showSt('⚠️ 코드가 올바르지 않아요 (BKDNG1. 으로 시작하는지 확인)');return;}
+  let d=null;try{d=JSON.parse(json);}catch(e){}
+  if(!d||!d.S){showSt('⚠️ 코드 내용이 손상됐어요');return;}
+  try{localStorage.setItem('bkdng_v45',json);}catch(e){showSt('저장 실패');return;}
+  document.getElementById('modal-area').innerHTML='';
+  if(doLoad(d)){showSt('📥 저장코드 복원 완료!');addLog('good','🔑 저장코드로 복원 완료');}
+}
 function load(){
   const raw=localStorage.getItem('bkdng_v45');
   if(!raw){

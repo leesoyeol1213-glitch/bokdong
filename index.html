@@ -76,9 +76,10 @@
   <div style="padding:0 6px;margin-bottom:calc(4px * var(--u));">
     <button class="px-btn px-btn-sm px-btn-blue" id="trapDiceBtn" onclick="rollEscapeDice()" style="display:none;width:100%;">🎲 탈출 주사위!</button>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:calc(4px * var(--u));padding:0 6px;margin-bottom:calc(4px * var(--u));">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:calc(4px * var(--u));padding:0 6px;margin-bottom:calc(4px * var(--u));">
     <button class="px-btn px-btn-sm" onclick="save()">💾 저장</button>
     <button class="px-btn px-btn-sm" onclick="load()">📂 로드</button>
+    <button class="px-btn px-btn-sm px-btn-blue" onclick="openBackup()">🔑 백업</button>
     <button class="px-btn px-btn-sm" id="sound-btn" onclick="toggleSound()">🔊 음향</button>
     <button class="px-btn px-btn-sm px-btn-gray" onclick="resetGame()">↺ 초기화</button>
   </div>
