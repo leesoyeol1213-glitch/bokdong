@@ -99,6 +99,10 @@
 <div id="tab-log"  style="display:none;padding:0 6px;"><div id="ev-log"></div></div>
 </div>
 
-<script src="./src/game.js"></script>
+<!-- 로드 순서 중요: data(데이터·상태) → render(그리기) → logic(게임로직·UI) → boot(시동) -->
+<script src="./src/data.js"></script>
+<script src="./src/render.js"></script>
+<script src="./src/logic.js"></script>
+<script src="./src/boot.js"></script>
 </body>
 </html>

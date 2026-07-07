@@ -4,17 +4,22 @@
 
 ## 빠른 시작
 ```bash
-python3 -m http.server 8000
+npx serve -l 8000 .    # (이 PC는 python 이 스토어 스텁이라 serve 사용)
 # http://localhost:8000 접속
 ```
 
-## 구조
-- `index.html` — 진입점
-- `src/game.js` — 게임 로직 (핵심)
+## 구조 (v9.19에서 game.js 4분할 — 로드 순서 중요)
+- `index.html` — 진입점 (script 4개를 순서대로 로드)
+- `src/data.js` — 게임 데이터(도시/탈것/퀴즈/업적)·상태 `S`
+- `src/render.js` — 캔버스·스프라이트·배경·애니메이션 (그리기 전부)
+- `src/logic.js` — 게임 로직·이벤트·미션·장비·저장/백업·탭 UI
+- `src/boot.js` — 시동 (애니메이션 시작·자동 불러오기/자동저장)
 - `src/style.css` — 스타일
 - `assets/` — 스프라이트/배경 이미지
 - `원본소재/` — 부스트/TY 원본 시트 (재작업용)
 - `원본_단일파일_v918.html` — 이식 전 원본 (대조용)
+
+※ ES 모듈 아님 — 전역 공유 스크립트를 순서대로 로드 (HTML `onclick` 핸들러 호환 유지)
 
 ## 개발 시작 전 필독
 👉 **`CLAUDE_CODE_이식가이드.md`** — 프로젝트 전체 맥락, 시스템 지도, 미해결 과제, 개발 원칙
