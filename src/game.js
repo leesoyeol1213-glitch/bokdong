@@ -3940,20 +3940,22 @@ function _confirmCancel(){
 
 // ── 저장/불러오기 ───────────────────────────────────────
 // 9번/2번: 커스텀 팝업 사용
-function save(){
-  showConfirmModal({
-    title:'💾 저장하시겠어요?',
-    message:'현재 진행 상황이 저장됩니다.\n기존 저장은 덮어씌워집니다.',
-    okText:'저장',cancelText:'취소',color:'#1976D2',
-    onOk:()=>{
-      try{
-        const d={S:{...S,npcs:S.npcs.map(n=>({id:n.id,met:n.met}))},log:logs.slice(0,15),at:new Date().toLocaleString(),lpt:Date.now()};
-        localStorage.setItem('bkdng_v45',JSON.stringify(d));
-        showSt('💾 저장 완료!');addLog('good','💾 저장 완료');
-      }catch(e){showSt('저장 실패');addLog('bad','저장 실패');}
-    }
-  });
+// ── 자동저장 (v9.19) ────────────────────────────────────
+// saveReady: 시작 시 자동 불러오기가 끝나기 전에 자동저장이 기존 세이브를
+// 새 게임 상태로 덮어쓰는 사고 방지. 로드 성공/새 게임/초기화 시에만 true.
+let saveReady=false;
+/** 실제 저장 쓰기(공용). showToast=true면 수동 저장 피드백 표시. */
+function doSave(showToast){
+  if(!saveReady)return false;
+  try{
+    const d={S:{...S,npcs:S.npcs.map(n=>({id:n.id,met:n.met}))},log:logs.slice(0,15),at:new Date().toLocaleString(),lpt:Date.now()};
+    localStorage.setItem('bkdng_v45',JSON.stringify(d));
+    if(showToast){showSt('💾 저장 완료!');addLog('good','💾 저장 완료');}
+    return true;
+  }catch(e){if(showToast){showSt('저장 실패');addLog('bad','저장 실패');}return false;}
 }
+// 수동 저장 버튼 — 자동저장 도입으로 확인 모달 제거(즉시 저장). 어차피 30초마다 덮어씀.
+function save(){doSave(true);}
 function load(){
   const raw=localStorage.getItem('bkdng_v45');
   if(!raw){
@@ -3967,7 +3969,11 @@ function load(){
     title:'📂 불러올까요?',
     message:`마지막 저장: ${at}\n현재 진행 상황은 사라집니다.`,
     okText:'불러오기',cancelText:'취소',color:'#1976D2',
-    onOk:()=>{
+    onOk:()=>{doLoad(parsedD);}
+  });
+}
+/** 저장 데이터 적용(마이그레이션 포함) — 수동 로드·자동 로드 공용. 성공 시 자동저장 활성화. */
+function doLoad(parsedD){
       try{
         const d = parsedD;
         const nm=NPCS.map(n=>({...n}));
@@ -4030,9 +4036,9 @@ function load(){
         logs=d.log||[];document.getElementById('ride-btn').textContent='▶ 출발!';
         if(d.lpt)applyOfflineReward(d.lpt);
         showSt('📂 불러오기 완료!');addLog('good','📂 불러오기 완료');update();
-      }catch(e){showSt('실패');}
-    }
-  });
+        saveReady=true; // 로드 성공 → 자동저장 활성화
+        return true;
+      }catch(e){showSt('불러오기 실패');return false;}
 }
 
 // 2번: 일본 페리 구매 함수
@@ -4089,7 +4095,7 @@ function closeModalAndLaunch(wr){
   setTimeout(launchRocket,100);
 }
 function resetGame(){
-  if(!confirm('초기화?'))return;localStorage.removeItem('bkdng_v45');
+  if(!confirm('초기화?'))return;localStorage.removeItem('bkdng_v45');saveReady=true; // 초기화 확정 → 새 상태로 자동저장 재개
   S={city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],achievements:[],boostCount:0,offlineCount:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
   // 2번 fix: 시작 시 보유 탈것/장비 갯수로 seenTabs 초기화 (시작부터 빨간점 안 뜨게)
   S.seenTabs.veh = (S.vehs||[]).filter(v=>v.owned).length;
@@ -4678,5 +4684,26 @@ function setTabBadge(tab, on){
   } else if(dot) dot.remove();
 }
 
-try{if(localStorage.getItem('bkdng_v45'))showSt('저장 데이터 발견! 불러오기를 눌러주세요.');}catch(e){}
+// ── 자동 불러오기 + 자동저장 시동 (v9.19) ─────────────────
+// 방치형 UX: 시작 시 자동 로드(+오프라인 보상), 30초 주기·탭 이탈·닫기 시 자동 저장.
+(function initPersistence(){
+  let raw=null;
+  try{raw=localStorage.getItem('bkdng_v45');}catch(e){}
+  if(raw){
+    let d=null;
+    try{d=JSON.parse(raw);}catch(e){}
+    if(d && doLoad(d)){
+      showSt('📂 자동 불러오기 완료!');
+    }else{
+      // 손상 데이터 보호: 자동저장을 켜면 손상본을 새 게임으로 덮어씀 → 꺼둔 채 안내
+      showSt('⚠️ 저장 데이터 손상 — 보호를 위해 자동저장 중지. [초기화]로 새로 시작할 수 있어요.');
+    }
+  }else{
+    saveReady=true; // 새 게임 — 바로 자동저장 시작
+  }
+  setInterval(()=>doSave(false),30000);                                                  // 30초 주기
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)doSave(false);}); // 탭 이탈·홈버튼(모바일)
+  window.addEventListener('pagehide',()=>doSave(false));                                 // 페이지 종료(모바일 신뢰)
+  window.addEventListener('beforeunload',()=>doSave(false));                             // 데스크톱 창 닫기
+})();
 update();
