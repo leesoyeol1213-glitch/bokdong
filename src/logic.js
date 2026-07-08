@@ -362,7 +362,9 @@ function showNpcReunion(npc){
 function acceptReunion(id,money,xp,wr){
   const n=S.npcs.find(x=>x.id===id);
   S.money+=money;S.xp+=xp;
-  if(n){evAnimNpc=n;evAnim='npc_reward';evTimer=100;addLog('good','🔄 '+(NPC_EMOJI[id]||'👤')+' '+n.n+' 재회! ₩'+money.toLocaleString()+', XP+'+xp);}
+  if(n){evAnimNpc=n;evAnim='npc_reward';evTimer=100;addLog('good','🔄 '+(NPC_EMOJI[id]||'👤')+' '+n.n+' 재회! ₩'+money.toLocaleString()+', XP+'+xp);
+    awardMythicIfLucky(n.grade); // 전설·에픽·신 재회 시에도 신화 드롭 가능(월간 미션 달성 경로)
+  }
   closeModal(wr);
 }
 // 1번: 휴식 기능 제거됨. 오프라인 시 visibilitychange 핸들러에서 1분당 체력+1 회복
@@ -931,30 +933,32 @@ function acceptNpc(id,wr){
       evAnimNpc=n;evAnim='npc_reward';evTimer=100;
       trackMission('npc');
     }
-    if(['legend','epic','god'].includes(n.grade)){
-      const mythicItem = tryDropMythic(n.grade);
-      if(mythicItem){
-        S.inventory = S.inventory || [];
-        if(S.inventory.length < BAG_CAPACITY){
-          S.inventory.push(mythicItem);
-        } else {
-          const order = {common:0,rare:1,unique:2,legend:3,epic:4,mythic:5};
-          let lowestIdx=0;
-          for(let i=1;i<S.inventory.length;i++) if(order[S.inventory[i].rarity]<order[S.inventory[lowestIdx].rarity]) lowestIdx=i;
-          S.gearDust=(S.gearDust||0)+RARITY_DUST[S.inventory[lowestIdx].rarity];
-          S.inventory.splice(lowestIdx,1);
-          S.inventory.push(mythicItem);
-        }
-        const r = GEAR_RARITY.find(rr=>rr.key==='mythic');
-        addLog('good', `✨🌟 [${r.label}] 등장! ${getSlotIcon(mythicItem.slot)} ${mythicItem.name} 획득!! 🌟✨`);
-        setTimeout(()=>showGearDropAnim(mythicItem), 500);
-        playSfx('mythic');
-        trackMission('mythic');
-        refreshTabBadges();
-      }
-    }
+    awardMythicIfLucky(n.grade);
   }
   closeModal(wr);
+}
+// 전설·에픽·신 NPC(첫 만남/재회 공용)에서 확률적으로 신화 장비 지급. 월간 '신화 장비' 미션의 반복 획득 경로.
+function awardMythicIfLucky(grade){
+  if(!['legend','epic','god'].includes(grade)) return;
+  const mythicItem = tryDropMythic(grade);
+  if(!mythicItem) return;
+  S.inventory = S.inventory || [];
+  if(S.inventory.length < BAG_CAPACITY){
+    S.inventory.push(mythicItem);
+  } else {
+    const order = {common:0,rare:1,unique:2,legend:3,epic:4,mythic:5};
+    let lowestIdx=0;
+    for(let i=1;i<S.inventory.length;i++) if(order[S.inventory[i].rarity]<order[S.inventory[lowestIdx].rarity]) lowestIdx=i;
+    S.gearDust=(S.gearDust||0)+RARITY_DUST[S.inventory[lowestIdx].rarity];
+    S.inventory.splice(lowestIdx,1);
+    S.inventory.push(mythicItem);
+  }
+  const r = GEAR_RARITY.find(rr=>rr.key==='mythic');
+  addLog('good', `✨🌟 [${r.label}] 등장! ${getSlotIcon(mythicItem.slot)} ${mythicItem.name} 획득!! 🌟✨`);
+  setTimeout(()=>showGearDropAnim(mythicItem), 500);
+  playSfx('mythic');
+  trackMission('mythic');
+  refreshTabBadges();
 }
 let pendingSpecial=null; // 맛집 후 다시 띄울 특수 이벤트 도시(부산 페리·나로호·진천 등)
 function openFood(){
@@ -1857,8 +1861,8 @@ function enhanceGear(itemId){
   S.gearDust -= cost;
   if(Math.random() < prob){
     item.plus = plus + 1;
-    item.mult = item.mult * 1.15; // 강화 +1당 효과 15% 증가
-    addLog('good','✨ '+item.name+' +'+item.plus+' 강화 성공!');
+    // 강화 효과는 getGearEffectValue(rarity + plus×8%)로만 계산된다. (과거 item.mult*=1.15는 미사용 죽은 코드 → 제거)
+    addLog('good','✨ '+item.name+' +'+item.plus+' 강화 성공! (효과 +8%)');
   } else {
     addLog('bad','💥 '+item.name+' 강화 실패... (강화석 -'+cost+')');
   }
