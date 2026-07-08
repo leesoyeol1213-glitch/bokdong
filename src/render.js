@@ -1060,16 +1060,34 @@ var ASSETS_SOURCES = {
   bg_shinhan: "./assets/bg_shinhan.png",  // 신한 함정 (염전)
   bg_cheonghak: "./assets/bg_cheonghak.png",  // 청학동 함정 (훈장)
 
-  // NPC 픽셀 초상화 — 48x48 권장 (모달 + 카드용)
-  npc_rk:       null,  // 락둥이
-  npc_mc:       null,  // 마충구
-  npc_wrath:    null,  // 분노의 상수
-  npc_sloth:    null,  // 나태의 노무
-  npc_envy:     null,
-  npc_gluttony: null,
-  npc_pride:    null,
-  npc_lust:     null,
-  npc_fred:     null,
+  // NPC 픽셀 초상화 (배경 투명) — 모달 + 카드용
+  // 신 1
+  npc_mb:       "./assets/npc_mb.png",       // MR.블랙
+  // 전설 9
+  npc_rk:       "./assets/npc_rk.png",       // 락둥이(헤비메탈)
+  npc_mc:       "./assets/npc_mc.png",       // 마충구(삼성맨)
+  npc_ky:       "./assets/npc_ky.png",       // 경키
+  npc_gu:       "./assets/npc_gu.png",       // 기우기
+  npc_hm:       "./assets/npc_hm.png",       // 할망
+  npc_md:       "./assets/npc_md.png",       // 모도
+  npc_sx:       "./assets/npc_sx.png",       // 섹사
+  npc_tk:       "./assets/npc_tk.png",       // 거북긔
+  npc_br:       "./assets/npc_br.png",       // 브라질리언
+  // 에픽 4
+  npc_cv:       "./assets/npc_cv.png",       // 편의점 그녀
+  npc_at:       "./assets/npc_at.png",       // 아트
+  npc_rj:       "./assets/npc_rj.png",       // 리주노
+  npc_ly:       "./assets/npc_ly.png",       // 임연수
+  // 재앙 7대죄
+  npc_fred:     "./assets/npc_fred.png",     // 탐욕의 프레드
+  npc_wrath:    "./assets/npc_wrath.png",    // 분노의 상수
+  npc_sloth:    "./assets/npc_sloth.png",    // 나태의 노무
+  npc_envy:     "./assets/npc_envy.png",     // 시기의 짐승
+  npc_gluttony: "./assets/npc_gluttony.png", // 식탐의 찐기욱
+  npc_pride:    "./assets/npc_pride.png",    // 교만의 가오지훈
+  npc_lust:     "./assets/npc_lust.png",     // 색욕의 쾌락체
+  // 특별
+  npc_kimri:    "./assets/npc_kimri.png",    // 검도왕 김리
 
   // UI 프레임/아이콘
   ui_npc_frame: null,  // NPC 모달 갈색 액자
