@@ -112,9 +112,9 @@ function drawScene(){
   }
   // 부스터 불꽃 제거 — 캐릭터 PNG에 화염 자세가 이미 있음
   // HUD
-  p(4,4,120,18,'rgba(0,0,0,.55)');ctx.fillStyle='#FFD700';ctx.font='bold 10px monospace';ctx.fillText('📍 '+city.n,8,18);
-  if(S.restT>0){p(4,25,150,16,'rgba(0,0,0,.5)');ctx.fillStyle='#FFD700';ctx.font='8px monospace';ctx.fillText('💤 휴식 '+S.restT+'s',8,37);}
-  if(S.dopT>0){p(4,25,162,16,'rgba(200,80,0,.82)');ctx.fillStyle='#FFE082';ctx.font='bold 8px monospace';ctx.fillText('⚡ BOOST '+S.dopT+'s',8,37);}
+  p(4,4,120,18,'rgba(0,0,0,.55)');ctx.fillStyle='#FFD700';ctx.font='bold 10px Galmuri11, monospace';ctx.fillText('📍 '+city.n,8,18);
+  if(S.restT>0){p(4,25,150,16,'rgba(0,0,0,.5)');ctx.fillStyle='#FFD700';ctx.font='8px Galmuri11, monospace';ctx.fillText('💤 휴식 '+S.restT+'s',8,37);}
+  if(S.dopT>0){p(4,25,162,16,'rgba(200,80,0,.82)');ctx.fillStyle='#FFE082';ctx.font='bold 8px Galmuri11, monospace';ctx.fillText('⚡ BOOST '+S.dopT+'s',8,37);}
   if(boosterBubble>0){drawBoosterBubble(bikeX+10,85);boosterBubble--;}
 
   // TY 수호천사 (항상 표시)
@@ -183,7 +183,7 @@ function drawRocketLaunchAnim(){
     // 카운트다운 숫자
     if(a.countdownLeft > 0){
       ctx.fillStyle = '#FFEB3B';
-      ctx.font = 'bold 60px monospace';
+      ctx.font = 'bold 60px Galmuri11, monospace';
       ctx.textAlign = 'center';
       const scale = 1.0 + Math.sin(elapsed * 0.2) * 0.1;
       ctx.save();
@@ -276,11 +276,11 @@ function drawRocketLaunchAnim(){
       });
       // 메시지
       ctx.fillStyle = '#FFEB3B';
-      ctx.font = 'bold 14px monospace';
+      ctx.font = 'bold 14px Galmuri11, monospace';
       ctx.textAlign = 'center';
       ctx.fillText('🌕 달 도착! 🌕', 210, 30);
       ctx.fillStyle = '#FFFFFF';
-      ctx.font = '10px monospace';
+      ctx.font = '10px Galmuri11, monospace';
       ctx.fillText('₩500,000 보상', 210, 195);
     } else {
       // 폭발 화면
@@ -294,7 +294,7 @@ function drawRocketLaunchAnim(){
         ctx.fillRect(210 + Math.cos(a2)*d, 105 + Math.sin(a2)*d, 4, 4);
       }
       ctx.fillStyle = '#FFFFFF';
-      ctx.font = 'bold 16px monospace';
+      ctx.font = 'bold 16px Galmuri11, monospace';
       ctx.textAlign = 'center';
       ctx.fillText('💥 폭발!', 210, 110);
     }
@@ -335,7 +335,7 @@ function drawRocketSprite(cx, cy, rot, scale){
   ctx.closePath(); ctx.fill();
   // KRSL (한국)
   ctx.fillStyle = '#3D2510';
-  ctx.font = 'bold 4px monospace';
+  ctx.font = 'bold 4px Galmuri11, monospace';
   ctx.textAlign = 'center';
   ctx.fillText('KOR', 0, -2);
   ctx.restore();
@@ -375,7 +375,7 @@ function drawDisasterEffect(){
     ctx.fillStyle='rgba(0,0,0,0.7)';
     ctx.fillRect(160, 10, 100, 22);
     ctx.fillStyle='#FFEB3B';
-    ctx.font='bold 12px monospace';
+    ctx.font='bold 12px Galmuri11, monospace';
     ctx.textAlign='center';
     ctx.fillText('⚡ '+remaining+'초', 210, 26);
     ctx.textAlign='left';
@@ -406,7 +406,7 @@ function drawDisasterEffect(){
     ctx.fillStyle='rgba(0,0,0,0.7)';
     ctx.fillRect(160, 10, 100, 22);
     ctx.fillStyle='#B0BEC5';
-    ctx.font='bold 12px monospace';
+    ctx.font='bold 12px Galmuri11, monospace';
     ctx.textAlign='center';
     ctx.fillText('🌪️ '+remaining+'초', 210, 26);
     ctx.textAlign='left';
@@ -488,13 +488,13 @@ function drawOXResult(){
 
   // O 또는 X
   ctx.fillStyle='#FFF';
-  ctx.font='bold 52px monospace';
+  ctx.font='bold 52px Galmuri11, monospace';
   ctx.textAlign='center';
   ctx.textBaseline='middle';
   ctx.fillText(isOk?'O':'X', 0, 2);
 
   // 결과 텍스트
-  ctx.font='bold 10px monospace';
+  ctx.font='bold 10px Galmuri11, monospace';
   ctx.textBaseline='alphabetic';
   ctx.fillText(oxResult.msg, 0, 72);
 
@@ -530,10 +530,10 @@ function drawFoodOkAnim(){
   ctx.beginPath();ctx.arc(0,0,56,0,Math.PI*2);ctx.stroke();
   // 음식 이모지
   const food=FOODS.find(f=>f.c===S.city);
-  ctx.font='28px monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.font='28px Galmuri11, monospace';ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.fillText(food?food.e:'🍴',0,-8);
   // 텍스트
-  ctx.font='bold 8px monospace';ctx.fillStyle='#FFF';
+  ctx.font='bold 8px Galmuri11, monospace';ctx.fillStyle='#FFF';
   ctx.fillText('맛있다! 성공~',0,22);
   // 별 파티클
   for(let i=0;i<6;i++){
@@ -555,9 +555,9 @@ function drawFoodFailAnim(){
   ctx.beginPath();ctx.arc(0,0,52,0,Math.PI*2);ctx.fill();
   ctx.strokeStyle='#FFF';ctx.lineWidth=4;
   ctx.beginPath();ctx.arc(0,0,52,0,Math.PI*2);ctx.stroke();
-  ctx.font='26px monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.font='26px Galmuri11, monospace';ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.fillText('😅',0,-8);
-  ctx.font='bold 7px monospace';ctx.fillStyle='#FFF';
+  ctx.font='bold 7px Galmuri11, monospace';ctx.fillStyle='#FFF';
   ctx.fillText('아쉽다... ₩2,000',0,22);
   ctx.restore();
 }
@@ -577,15 +577,15 @@ function drawNpcRewardAnim(){
   ctx.strokeStyle=gc;ctx.lineWidth=4;
   ctx.beginPath();ctx.roundRect(-90,-40,180,80,16);ctx.fill();ctx.stroke();
   // 이모지 + 이름
-  ctx.font='22px monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.font='22px Galmuri11, monospace';ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.fillText(em,-52,0);
-  ctx.font='bold 8px monospace';ctx.fillStyle=gc;ctx.textBaseline='alphabetic';
+  ctx.font='bold 8px Galmuri11, monospace';ctx.fillStyle=gc;ctx.textBaseline='alphabetic';
   ctx.fillText(npc.n,20,-8);
-  ctx.font='bold 6px monospace';ctx.fillStyle='#5C3D1E';
+  ctx.font='bold 6px Galmuri11, monospace';ctx.fillStyle='#5C3D1E';
   ctx.fillText(npc.reward,20,12);
   // 등급 배지
   ctx.fillStyle=gc;ctx.beginPath();ctx.roundRect(-90,30,80,18,6);ctx.fill();
-  ctx.fillStyle='#FFF';ctx.font='bold 6px monospace';ctx.textAlign='center';
+  ctx.fillStyle='#FFF';ctx.font='bold 6px Galmuri11, monospace';ctx.textAlign='center';
   ctx.fillText('['+GRADE_LABEL[npc.grade]+'] GET!',  -50,42);
   // 파티클 (등급별 색)
   for(let i=0;i<5;i++){
@@ -605,9 +605,9 @@ function drawBoosterBubble(x,y){
   ctx.strokeStyle='#E65100';ctx.lineWidth=3;
   ctx.beginPath();ctx.moveTo(x-8,y+5);ctx.lineTo(x,y+19);ctx.lineTo(x+8,y+5);ctx.stroke();
   ctx.fillStyle='#FFF9C4';ctx.fillRect(x-7,y+1,14,6);
-  ctx.fillStyle='#E65100';ctx.font='bold 9px monospace';ctx.textAlign='center';
+  ctx.fillStyle='#E65100';ctx.font='bold 9px Galmuri11, monospace';ctx.textAlign='center';
   ctx.fillText('부스터 ON!',x,y-8);ctx.textAlign='left';
-  ['★','✦','✦'].forEach((s,i)=>{ctx.fillStyle='#FFB300';ctx.font='bold 10px monospace';ctx.fillText(s,x+(i===0?-64:i===1?54:50),y+(i===0?-10:i===1?-22:2));});
+  ['★','✦','✦'].forEach((s,i)=>{ctx.fillStyle='#FFB300';ctx.font='bold 10px Galmuri11, monospace';ctx.fillText(s,x+(i===0?-64:i===1?54:50),y+(i===0?-10:i===1?-22:2));});
   ctx.globalAlpha=1;
 }
 
@@ -711,7 +711,7 @@ function drawTY(){
       ctx.beginPath();ctx.moveTo(bx+bw+1,by+12);ctx.lineTo(bx+bw+8,by+18);ctx.stroke();
     }
     // 텍스트
-    ctx.fillStyle='#5C3D1E';ctx.font='bold 5px monospace';ctx.textAlign='left';
+    ctx.fillStyle='#5C3D1E';ctx.font='bold 5px Galmuri11, monospace';ctx.textAlign='left';
     const lineLen=22;
     const lines=[tyBubbleText.slice(0,lineLen),tyBubbleText.slice(lineLen,lineLen*2)].filter(Boolean);
     lines.forEach((ln,i)=>ctx.fillText(ln,bx+4,by+9+i*9));
@@ -765,7 +765,7 @@ function drawDiceAnim(){
   ctx.restore();
   if(diceAnim<25&&diceTarget){
     p(cx-90,cy+50,180,28,'rgba(0,0,0,.75)');
-    ctx.fillStyle='#FFD700';ctx.font='bold 9px monospace';ctx.textAlign='center';ctx.fillText('→ '+diceTarget,cx,cy+68);ctx.textAlign='left';
+    ctx.fillStyle='#FFD700';ctx.font='bold 9px Galmuri11, monospace';ctx.textAlign='center';ctx.fillText('→ '+diceTarget,cx,cy+68);ctx.textAlign='left';
   }
 }
 
@@ -784,13 +784,13 @@ function drawDogAnim(){
   if(frame%16<8){
     ctx.fillStyle='#FFF';ctx.strokeStyle='#555';ctx.lineWidth=1.5;
     ctx.beginPath();ctx.roundRect(dx-10,dy-42,44,20,5);ctx.fill();ctx.stroke();
-    ctx.fillStyle='#222';ctx.font='bold 8px monospace';ctx.textAlign='center';
+    ctx.fillStyle='#222';ctx.font='bold 8px Galmuri11, monospace';ctx.textAlign='center';
     ctx.fillText('왈왈!',dx+12,dy-27);ctx.textAlign='left';
     ctx.fillStyle='#FFF';ctx.beginPath();ctx.moveTo(dx+5,dy-22);ctx.lineTo(dx+10,dy-16);ctx.lineTo(dx+15,dy-22);ctx.fill();
   }
   // 중앙 배너
   p(40,88,340,26,'rgba(200,60,50,.9)');
-  ctx.fillStyle='#FFF';ctx.font='bold 7px monospace';ctx.textAlign='center';
+  ctx.fillStyle='#FFF';ctx.font='bold 7px Galmuri11, monospace';ctx.textAlign='center';
   ctx.fillText('🐕 강아지 추격! 체력 -8',210,106);ctx.textAlign='left';
 }
 
@@ -802,7 +802,7 @@ function drawYoutuberAnim(){
   p(camX-10,132,10,5,'#D4956A');p(camX-24,128,16,13,'#222');p(camX-28,130,5,9,'#333');p(camX-9,126,6,4,'#FF0000');
   if(frame%8<4){ctx.fillStyle='rgba(255,255,200,.5)';ctx.beginPath();ctx.ellipse(bikeX,130,52,34,0,0,Math.PI*2);ctx.fill();}
   p(40,88,340,26,'rgba(30,60,200,.9)');
-  ctx.fillStyle='#FFF';ctx.font='bold 7px monospace';ctx.textAlign='center';
+  ctx.fillStyle='#FFF';ctx.font='bold 7px Galmuri11, monospace';ctx.textAlign='center';
   ctx.fillText('🔴 유튜버 촬영! ₩15,000 획득',210,106);ctx.textAlign='left';
 }
 
@@ -817,11 +817,11 @@ function drawFoodAnim(){
   const ext=Math.min(16,(120-evTimer)/3);
   p(villX-6-ext,villY-22,ext+8,4,'#D4956A'); // 팔
   // 트레이 + 음식 이모지
-  ctx.font='16px monospace';ctx.textAlign='center';
+  ctx.font='16px Galmuri11, monospace';ctx.textAlign='center';
   ctx.fillText('🍱',villX-6-ext-6,villY-18);ctx.textAlign='left';
   // 중앙 배너
   p(40,88,340,26,'rgba(30,140,80,.9)');
-  ctx.fillStyle='#FFF';ctx.font='bold 7px monospace';ctx.textAlign='center';
+  ctx.fillStyle='#FFF';ctx.font='bold 7px Galmuri11, monospace';ctx.textAlign='center';
   ctx.fillText('🙏 주민이 음식을! 체력 +20',210,106);ctx.textAlign='left';
 }
 
@@ -838,12 +838,12 @@ function drawFlatAnim(){
   ctx.globalAlpha=1;
   // 펑크 텍스트 깜빡
   if(frame%10<5){
-    ctx.fillStyle='#E24B4A';ctx.font='bold 18px monospace';ctx.textAlign='center';
+    ctx.fillStyle='#E24B4A';ctx.font='bold 18px Galmuri11, monospace';ctx.textAlign='center';
     ctx.fillText('펑!!',bikeX,148);ctx.textAlign='left';
   }
   // 중앙 배너
   p(40,88,340,26,'rgba(200,50,50,.9)');
-  ctx.fillStyle='#FFF';ctx.font='bold 7px monospace';ctx.textAlign='center';
+  ctx.fillStyle='#FFF';ctx.font='bold 7px Galmuri11, monospace';ctx.textAlign='center';
   ctx.fillText('💥 타이어 펑크! 구간 -12km',210,106);ctx.textAlign='left';
 }
 
@@ -853,7 +853,7 @@ function drawRainAnim(){
   ctx.strokeStyle='rgba(150,200,255,.65)';ctx.lineWidth=1.5;
   for(let i=0;i<32;i++){const x=(i*23+frame*13)%460,y=(i*18+frame*10)%210;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-7,y+20);ctx.stroke();}
   p(40,88,340,26,'rgba(30,60,150,.9)');
-  ctx.fillStyle='#FFF';ctx.font='bold 7px monospace';ctx.textAlign='center';
+  ctx.fillStyle='#FFF';ctx.font='bold 7px Galmuri11, monospace';ctx.textAlign='center';
   ctx.fillText('🌧️ 소나기! 체력 -15',210,106);ctx.textAlign='left';
 }
 
@@ -867,7 +867,7 @@ function drawUphill(){
     ctx.beginPath();ctx.moveTo(ax,ay+10);ctx.lineTo(ax,ay);ctx.lineTo(ax-5,ay+6);ctx.moveTo(ax,ay);ctx.lineTo(ax+5,ay+6);ctx.stroke();
   }
   p(40,88,340,26,'rgba(160,90,10,.9)');
-  ctx.fillStyle='#FFF';ctx.font='bold 7px monospace';ctx.textAlign='center';
+  ctx.fillStyle='#FFF';ctx.font='bold 7px Galmuri11, monospace';ctx.textAlign='center';
   ctx.fillText('⬆️ 오르막! 체력 -10',210,106);ctx.textAlign='left';
 }
 
@@ -881,7 +881,7 @@ function drawDownhill(){
     ctx.beginPath();ctx.moveTo(ax,ay-10);ctx.lineTo(ax,ay);ctx.lineTo(ax-5,ay-6);ctx.moveTo(ax,ay);ctx.lineTo(ax+5,ay-6);ctx.stroke();
   }
   p(40,88,340,26,'rgba(30,110,30,.9)');
-  ctx.fillStyle='#FFF';ctx.font='bold 7px monospace';ctx.textAlign='center';
+  ctx.fillStyle='#FFF';ctx.font='bold 7px Galmuri11, monospace';ctx.textAlign='center';
   ctx.fillText('⬇️ 내리막! +6km 보너스',210,106);ctx.textAlign='left';
 }
 
@@ -901,16 +901,16 @@ function drawNpcAnim(){
   p(nx-2,ny-32,17,24,'#5B8DD9');p(nx,ny-8,6,14,'#5B8DD9');p(nx+7,ny-8,6,14,'#5B8DD9');
   p(nx+1,ny-46,12,16,'#D4956A');p(nx+1,ny-48,12,6,'#5D3A1A');
   const wy=ny-28+Math.sin(frame*.4)*8;p(nx-9,wy,7,4,'#D4956A');
-  ctx.font='14px monospace';ctx.textAlign='center';ctx.fillText(em,nx+7,ny-28);ctx.textAlign='left';
+  ctx.font='14px Galmuri11, monospace';ctx.textAlign='center';ctx.fillText(em,nx+7,ny-28);ctx.textAlign='left';
   // 이름 말풍선
   const bw=Math.min(170,npc.n.length*9+46);
   ctx.fillStyle=gb;ctx.strokeStyle=gc;ctx.lineWidth=3;
   ctx.beginPath();ctx.roundRect(nx+7-bw/2,ny-80,bw,22,6);ctx.fill();ctx.stroke();
   ctx.fillStyle=gb;ctx.beginPath();ctx.moveTo(nx+3,ny-58);ctx.lineTo(nx+8,ny-50);ctx.lineTo(nx+13,ny-58);ctx.fill();ctx.fillRect(nx+2,ny-60,14,5);
-  ctx.fillStyle=gc;ctx.font='bold 7px monospace';ctx.textAlign='center';ctx.fillText(npc.n,nx+7,ny-65);ctx.textAlign='left';
+  ctx.fillStyle=gc;ctx.font='bold 7px Galmuri11, monospace';ctx.textAlign='center';ctx.fillText(npc.n,nx+7,ny-65);ctx.textAlign='left';
   // 등급 배지
   p(nx+7-30,ny-44,60,14,gc);
-  ctx.fillStyle='#FFF';ctx.font='bold 5px monospace';ctx.textAlign='center';
+  ctx.fillStyle='#FFF';ctx.font='bold 5px Galmuri11, monospace';ctx.textAlign='center';
   ctx.fillText('['+GRADE_LABEL[npc.grade]+']',nx+7,ny-33);ctx.textAlign='left';
 }
 
@@ -1021,7 +1021,7 @@ function drawMoonRabbit(){
   if(Math.floor(frame/60)%4===0){
     ctx.fillStyle='#FFF9C4';ctx.strokeStyle='#FFB6C1';ctx.lineWidth=1.5;
     ctx.beginPath();ctx.roundRect(rx-32,ry-68,64,18,5);ctx.fill();ctx.stroke();
-    ctx.fillStyle='#5C3D1E';ctx.font='bold 5px monospace';ctx.textAlign='center';
+    ctx.fillStyle='#5C3D1E';ctx.font='bold 5px Galmuri11, monospace';ctx.textAlign='center';
     ctx.fillText('어서 와요~🌕',rx,ry-55);ctx.textAlign='left';
   }
 }

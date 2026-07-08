@@ -2,6 +2,9 @@
 // game.js(v9.19, 4758줄)에서 분할. 로드 순서: data → render → logic → boot (index.html)
 // 전역 공유(모듈 아님) — 분할 전과 의미 동일.
 
+// 캔버스 텍스트용 갈무리 폰트 미리 로드 → 로드되면 애니메이션 글씨가 한글로 크리스프하게 렌더
+try{ if(document.fonts && document.fonts.load){ document.fonts.load('11px Galmuri11'); document.fonts.load('bold 11px Galmuri11'); } }catch(e){}
+
 // 즉시 호출 대신 다음 프레임에 시작 — 모든 정의가 끝난 후 실행되도록
 requestAnimationFrame(animLoop);
 

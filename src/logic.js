@@ -1511,16 +1511,16 @@ function drawGearDropAnim(){
   ctx.beginPath();ctx.roundRect(-95,-32,190,64,12);ctx.fill();ctx.stroke();
   // 등급 라벨
   ctx.fillStyle = r.color;
-  ctx.font = 'bold 8px monospace';
+  ctx.font = 'bold 8px Galmuri11, monospace';
   ctx.textAlign = 'center';
   ctx.fillText('🎁 ['+r.label+'] 획득!', 0, -16);
   // 아이콘 + 이름
-  ctx.font = '18px monospace';
+  ctx.font = '18px Galmuri11, monospace';
   ctx.fillText(getSlotIcon(item.slot), -70, 12);
   ctx.fillStyle = '#3D2510';
-  ctx.font = 'bold 8px monospace';
+  ctx.font = 'bold 8px Galmuri11, monospace';
   ctx.fillText(item.name, 8, 6);
-  ctx.font = '6px monospace';
+  ctx.font = '6px Galmuri11, monospace';
   ctx.fillStyle = r.color;
   ctx.fillText(effectText(item.slot, item.mult, item), 8, 20);
   // 파티클 (rare 이상)

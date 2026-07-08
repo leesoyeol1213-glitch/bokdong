@@ -1,6 +1,6 @@
 
-/* Press Start 2P 폰트 — 로컬 폴백 포함 */
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+/* 갈무리(Galmuri) — 한글 지원 픽셀 폰트. 한글이 깨지지 않고 다크 테마와 어울린다. */
+@import url('https://cdn.jsdelivr.net/gh/quiple/galmuri/dist/galmuri.css');
 
 /* ── 다크 모던 테마 토큰 (v9.20) ─────────────────────────────
    게임 캔버스(픽셀 아트)는 그대로, 주변 UI만 어둡게. 픽셀 폰트 정체성은 유지. */
@@ -21,7 +21,12 @@
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0; padding: 0;
+}
+/* 픽셀화는 픽셀 아트(캔버스/스프라이트 이미지)에만 — 텍스트엔 적용 X(한글 깨짐 방지) */
+#cv, .veh-canvas, img {
   image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
 }
 html, body {
   width: 100%; height: 100%;
@@ -31,7 +36,8 @@ html, body {
 }
 body {
   background: var(--bg);
-  font-family: 'Press Start 2P', 'Courier New', monospace;
+  font-family: 'Galmuri11', monospace;
+  font-size: calc(11px * var(--u));
   display: block;
   min-height: 100vh;
   overscroll-behavior: none;
@@ -74,17 +80,17 @@ body {
   background: var(--sunk);
   border: 1px solid var(--line-2);
   border-radius: calc(8px * var(--u));
-  padding: calc(4px * var(--u)) calc(7px * var(--u));
-  font-size: calc(7px * var(--u));
+  padding: calc(5px * var(--u)) calc(8px * var(--u));
+  font-size: calc(10px * var(--u));
   color: var(--ink);
   white-space: nowrap;
 }
-.mini-lbl { font-size: calc(7px * var(--u)); color: var(--ink-soft); margin-bottom: calc(2px * var(--u)); }
-.mini-val { font-size: calc(7px * var(--u)); color: var(--ink-mid); margin-top: 1px; }
-.panel-title { font-size: calc(7px * var(--u)); color: var(--ink); }
-.panel-sub   { font-size: calc(7px * var(--u)); color: var(--ink-soft); }
+.mini-lbl { font-size: calc(9px * var(--u)); color: var(--ink-soft); margin-bottom: calc(2px * var(--u)); }
+.mini-val { font-size: calc(10px * var(--u)); color: var(--ink-mid); margin-top: 1px; }
+.panel-title { font-size: calc(11px * var(--u)); color: var(--ink); }
+.panel-sub   { font-size: calc(9px * var(--u)); color: var(--ink-soft); }
 .divider { border-top: 1px solid var(--line); }
-.big-km { font-size: calc(11px * var(--u)); color: var(--accent); font-weight: bold; letter-spacing: 1px; }
+.big-km { font-size: calc(15px * var(--u)); color: var(--accent); font-weight: bold; letter-spacing: 1px; }
 .quote { color: var(--ink-soft); }
 
 /* ── 버튼 ── */
@@ -95,8 +101,8 @@ body {
   border-radius: calc(10px * var(--u));
   box-shadow: 0 3px 8px rgba(0,0,0,.35);
   padding: calc(8px * var(--u)) calc(10px * var(--u));
-  font-family: 'Press Start 2P', 'Courier New', monospace;
-  font-size: calc(8px * var(--u));
+  font-family: 'Galmuri11', monospace;
+  font-size: calc(11px * var(--u));
   color: var(--ink); cursor: pointer; text-align: center; line-height: 1.4;
 }
 .px-btn:active { transform: translateY(1px); box-shadow: 0 1px 4px rgba(0,0,0,.45); }
@@ -106,8 +112,8 @@ body {
 .px-btn-gray   { background:#475569; border-color:#64748b; color:var(--ink); }
 .px-btn-orange { background: linear-gradient(180deg,#fb923c,#ea580c); border-color:#c2410c; color:#3a1200; }
 .px-btn-sm {
-  padding: calc(5px * var(--u)) calc(7px * var(--u));
-  font-size: calc(6px * var(--u));
+  padding: calc(6px * var(--u)) calc(7px * var(--u));
+  font-size: calc(9px * var(--u));
   border-radius: calc(8px * var(--u));
 }
 #ride-btn {
@@ -135,8 +141,8 @@ body {
   border-radius: calc(9px * var(--u));
   box-shadow: none;
   padding: calc(8px * var(--u)) calc(2px * var(--u));
-  font-family: 'Press Start 2P', 'Courier New', monospace;
-  font-size: calc(7px * var(--u)); color: var(--ink-mid);
+  font-family: 'Galmuri11', monospace;
+  font-size: calc(10px * var(--u)); color: var(--ink-mid);
   cursor: pointer; white-space: nowrap;
   text-align: center; min-width: 0;
 }
@@ -152,7 +158,7 @@ body {
   border-radius: calc(6px * var(--u));
   padding: calc(6px * var(--u)) calc(9px * var(--u));
   margin-bottom: calc(4px * var(--u));
-  font-size: calc(6px * var(--u)); color: var(--ink-mid); line-height: 1.7;
+  font-size: calc(9px * var(--u)); color: var(--ink-mid); line-height: 1.7;
 }
 .ev-good{border-color:#22c55e;}.ev-bad{border-color:#f87171;}.ev-neutral{border-color:#38bdf8;}
 .stat-row {
