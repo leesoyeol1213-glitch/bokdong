@@ -6,30 +6,30 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>임복동 세계일주 v9.19</title>
+<title>임복동 세계일주 v9.20</title>
 <link rel="stylesheet" href="./src/style.css">
 </head>
 <body>
 <div id="app">
 <canvas id="cv" width="420" height="236"></canvas>
 
-<div class="px-panel" style="margin:0 6px 4px;padding:calc(8px * var(--u)) calc(10px * var(--u));">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:calc(5px * var(--u));">
-    <div style="font-size:calc(7px * var(--u));color:#3D2510;">임복동</div>
+<div class="px-panel" style="margin:0 6px 4px;padding:calc(9px * var(--u)) calc(11px * var(--u));">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:calc(6px * var(--u));">
+    <div class="panel-title">임복동</div>
     <div style="display:flex;gap:calc(5px * var(--u));">
-      <div style="background:#E8D0A0;border:2px solid #8B6340;border-radius:calc(5px * var(--u));padding:calc(3px * var(--u)) calc(6px * var(--u));font-size:calc(7px * var(--u));color:#3D2510;">Lv.<span id="lv">1</span></div>
-      <div style="background:#E8D0A0;border:2px solid #8B6340;border-radius:calc(5px * var(--u));padding:calc(3px * var(--u)) calc(6px * var(--u));font-size:calc(7px * var(--u));color:#3D2510;">₩<span id="mon">800</span></div>
+      <div class="chip">Lv.<span id="lv">1</span></div>
+      <div class="chip">₩<span id="mon">800</span></div>
     </div>
   </div>
-  <div style="display:flex;gap:calc(5px * var(--u));margin-bottom:calc(5px * var(--u));">
-    <div style="background:#E8D0A0;border:2px solid #8B6340;border-radius:calc(5px * var(--u));padding:calc(3px * var(--u)) calc(6px * var(--u));font-size:calc(7px * var(--u));color:#3D2510;flex:1;overflow:hidden;">🚴<span id="veh-lbl" style="font-size:calc(7px * var(--u));">세발자전거</span></div>
-    <div style="background:#E8D0A0;border:2px solid #8B6340;border-radius:calc(5px * var(--u));padding:calc(3px * var(--u)) calc(6px * var(--u));font-size:calc(7px * var(--u));color:#3D2510;flex:1;">📍<span id="loc-lbl">충주</span></div>
-    <div style="background:#E8D0A0;border:2px solid #8B6340;border-radius:calc(5px * var(--u));padding:calc(3px * var(--u)) calc(6px * var(--u));font-size:calc(7px * var(--u));color:#3D2510;">🍎<span id="apN">3</span> 🧃<span id="jcN">2</span></div>
+  <div style="display:flex;gap:calc(5px * var(--u));margin-bottom:calc(6px * var(--u));">
+    <div class="chip" style="flex:1;overflow:hidden;">🚴<span id="veh-lbl">세발자전거</span></div>
+    <div class="chip" style="flex:1;">📍<span id="loc-lbl">충주</span></div>
+    <div class="chip">🍎<span id="apN">3</span> 🧃<span id="jcN">2</span></div>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:calc(5px * var(--u));">
-    <div><div style="font-size:calc(7px * var(--u));color:#8B6340;margin-bottom:calc(2px * var(--u));">체력</div><div class="px-bar-bg"><div class="px-bar-fill" id="hp-b" style="width:100%;background:#E53935;"></div></div><div style="font-size:calc(7px * var(--u));color:#5C3D1E;margin-top:1px;" id="hp-v">100/100</div></div>
-    <div><div style="font-size:calc(7px * var(--u));color:#8B6340;margin-bottom:calc(2px * var(--u));">경험치</div><div class="px-bar-bg"><div class="px-bar-fill" id="xp-b" style="width:0%;background:#7F77DD;"></div></div><div style="font-size:calc(7px * var(--u));color:#5C3D1E;margin-top:1px;" id="xp-v">0/100</div></div>
-    <div><div style="font-size:calc(7px * var(--u));color:#E65100;margin-bottom:calc(2px * var(--u));">부스터</div><div class="px-bar-bg"><div class="px-bar-fill" id="dop-b" style="width:0%;background:#FF6D00;"></div></div><div style="font-size:calc(7px * var(--u));color:#5C3D1E;margin-top:1px;" id="dop-v">OFF</div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:calc(6px * var(--u));">
+    <div><div class="mini-lbl">체력</div><div class="px-bar-bg"><div class="px-bar-fill" id="hp-b" style="width:100%;background:#ef4444;"></div></div><div class="mini-val" id="hp-v">100/100</div></div>
+    <div><div class="mini-lbl">경험치</div><div class="px-bar-bg"><div class="px-bar-fill" id="xp-b" style="width:0%;background:#a78bfa;"></div></div><div class="mini-val" id="xp-v">0/100</div></div>
+    <div><div class="mini-lbl" style="color:#fb923c;">부스터</div><div class="px-bar-bg"><div class="px-bar-fill" id="dop-b" style="width:0%;background:#fb923c;"></div></div><div class="mini-val" id="dop-v">OFF</div></div>
   </div>
 </div>
 
@@ -50,18 +50,18 @@
 <div id="tab-main">
   <div class="px-panel">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:calc(5px * var(--u));">
-      <div style="font-size:calc(7px * var(--u));color:#3D2510;" id="seg-lbl">목적지 없음</div>
-      <div style="font-size:calc(7px * var(--u));color:#8B6340;" id="seg-pct">-</div>
+      <div class="panel-title" id="seg-lbl">목적지 없음</div>
+      <div class="panel-sub" id="seg-pct">-</div>
     </div>
-    <div class="px-bar-bg" style="height:calc(10px * var(--u));margin-bottom:calc(3px * var(--u));"><div class="px-bar-fill" id="seg-b" style="width:0%;background:#1976D2;"></div></div>
-    <div style="font-size:calc(7px * var(--u));color:#8B6340;" id="seg-info">총 0km · 충동적으로 어딜 갈까...</div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:calc(5px * var(--u));padding-top:calc(5px * var(--u));border-top:2px solid #D4B483;">
-      <div style="font-size:calc(8px * var(--u));color:#5C3D1E;">🛣️ 누적 거리</div>
-      <div style="font-size:calc(11px * var(--u));color:#3D2510;font-weight:bold;letter-spacing:1px;" id="total-km">0 km</div>
+    <div class="px-bar-bg" style="height:calc(10px * var(--u));margin-bottom:calc(3px * var(--u));"><div class="px-bar-fill" id="seg-b" style="width:0%;background:#38bdf8;"></div></div>
+    <div class="panel-sub" id="seg-info">총 0km · 충동적으로 어딜 갈까...</div>
+    <div class="divider" style="display:flex;justify-content:space-between;align-items:center;margin-top:calc(6px * var(--u));padding-top:calc(6px * var(--u));">
+      <div style="font-size:calc(8px * var(--u));color:var(--ink);">🛣️ 누적 거리</div>
+      <div class="big-km" id="total-km">0 km</div>
     </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:calc(4px * var(--u));">
-      <div style="font-size:calc(6px * var(--u));color:#8B6340;" id="weather-info">☀️ 맑음</div>
-      <div style="font-size:calc(6px * var(--u));color:#8B6340;" id="time-info">🌅 아침</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:calc(5px * var(--u));">
+      <div class="panel-sub" id="weather-info">☀️ 맑음</div>
+      <div class="panel-sub" id="time-info">🌅 아침</div>
     </div>
   </div>
   <div id="modal-area"></div>
@@ -71,7 +71,7 @@
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:calc(4px * var(--u));padding:0 6px;margin-bottom:calc(4px * var(--u));">
     <button class="px-btn px-btn-sm" onclick="useApple()">🍎<br>사과</button>
     <button class="px-btn px-btn-sm px-btn-orange" onclick="useJuice()">⚡<br>부스터</button>
-    <button class="px-btn px-btn-sm" style="background:#9C6B2A;" onclick="openFood()">🍜<br>맛집</button>
+    <button class="px-btn px-btn-sm" onclick="openFood()">🍜<br>맛집</button>
     <button class="px-btn px-btn-sm px-btn-gray" id="autoapple-btn" onclick="toggleAutoApple()">🍎 자동 OFF</button>
   </div>
   <div style="padding:0 6px;margin-bottom:calc(4px * var(--u));">
@@ -84,8 +84,8 @@
     <button class="px-btn px-btn-sm" id="sound-btn" onclick="toggleSound()">🔊 음향</button>
     <button class="px-btn px-btn-sm px-btn-gray" onclick="resetGame()">↺ 초기화</button>
   </div>
-  <div style="text-align:center;font-size:calc(7px * var(--u));color:#8B6340;padding:calc(3px * var(--u));" id="sv-st"></div>
-  <div style="text-align:center;font-size:calc(7px * var(--u));color:#5C3D1E;padding:calc(3px * var(--u));font-style:italic;" id="quote">"갑자기... 그냥 가고 싶어졌어."</div>
+  <div class="panel-sub" style="text-align:center;padding:calc(3px * var(--u));" id="sv-st"></div>
+  <div class="quote" style="text-align:center;font-size:calc(7px * var(--u));padding:calc(3px * var(--u));font-style:italic;" id="quote">"갑자기... 그냥 가고 싶어졌어."</div>
 </div>
 
 <div id="tab-npc"  style="display:none;padding:0 6px;"><div id="npc-list"></div></div>
