@@ -100,7 +100,7 @@ const NPC_EMOJI={
   // 재앙 (7대죄)
   fred:'💸', wrath:'😡', sloth:'😴', envy:'😒', gluttony:'🍴', pride:'🦚', lust:'💋',
   // 일본
-  sushi:'🍣', samurai:'⚔️', mangaka:'✏️', yakuza:'🐉', idol:'🌸',
+  sushi:'🍣', samurai:'⚔️', mangaka:'✏️', yakuza:'🐉', kimri:'🤺',
   // 진천 박사
   drO:'👩‍🔬',
 };
@@ -373,9 +373,9 @@ const NPCS=[
     reward:'₩400,000, 체력+40',
     lines:['(문신을 보이며) 형씨, 조선에서 왔다고?','우리 영역 지나가는 거 봐줄게. 이거 받아.'],
     eff:s=>{s.money+=400000;s.hp=Math.min(s.mhp,s.hp+40);}},
-  {id:'idol', grade:'legend', n:'아이돌 미사키', role:'도쿄 톱 아이돌', met:false,
+  {id:'kimri', grade:'legend', n:'검도왕 김리', role:'한국 검도 국가대표', met:false,
     reward:'₩600,000, XP+400, 부스터+40초',
-    lines:['꺄아악!! 한국 자전거 오빠 너무 멋있어요!!','사인해드릴게요! 사진도! SNS에 올려도 돼요?'],
+    lines:['죽도를 잡던 손으로 핸들을 잡아봤네. 제법인걸?','기(氣)·검(劍)·체(體)! 자네 페달링에 검도의 호흡이 실렸군!'],
     eff:s=>{s.money+=600000;s.xp+=400;s.dopT=Math.max(s.dopT,40);}},
 ];
 
@@ -568,7 +568,7 @@ const ACHIEVEMENTS=[
   {id:'jp_first', grp:'일본',emoji:'⛴️',name:'페리 출항',     desc:'후쿠오카 도착',           check:s=>s.visited.includes('후쿠오카'),  rw:{money:100000,xp:200}},
   {id:'jp_all',   grp:'일본',emoji:'🇯🇵',name:'일본 완전 정복', desc:'일본 도시 5곳 모두 방문',  check:s=>['후쿠오카','오사카','교토','도쿄','삿포로'].every(c=>s.visited.includes(c)), rw:{money:1500000,sp:8,xp:2000}},
   {id:'jp_food',  grp:'일본',emoji:'🍣',name:'일본 미식회',    desc:'일본 맛집 5곳 클리어',     check:s=>['후쿠오카','오사카','교토','도쿄','삿포로'].every(c=>s.foodDone.includes(c)), rw:{money:800000,sp:3}},
-  {id:'idol_meet',grp:'일본',emoji:'🌸',name:'아이돌과 셀카',  desc:'아이돌 미사키 만나기',     check:s=>s.npcs.find(n=>n.id==='idol')?.met, rw:{money:200000,xp:300}},
+  {id:'kimri_meet',grp:'특별',emoji:'🤺',name:'검도왕과 대련',  desc:'검도왕 김리 만나기',     check:s=>s.npcs.find(n=>n.id==='kimri')?.met, rw:{money:200000,xp:300}},
   // 7대죄
   {id:'sin_greed', grp:'7대죄',emoji:'💸',name:'탐욕을 견디다',  desc:'탐욕의 프레드 만나기',  check:s=>s.npcs.find(n=>n.id==='fred')?.met,    rw:{money:200000,xp:300}},
   {id:'sin_wrath', grp:'7대죄',emoji:'😡',name:'분노에 휘말렸다',desc:'분노의 상수 만나기',    check:s=>s.npcs.find(n=>n.id==='wrath')?.met,   rw:{money:200000,xp:300}},
