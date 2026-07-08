@@ -120,7 +120,7 @@ function tick(){
   S._wrathPrev = !!S.wrathUntil;
   S._lustPrev = !!S.lustUntil;
 
-  const baseSp = (v.sp + (S.dopT>0?S.dopSp:0) + (eqBonus.speedBonus||0)) * sinSpeedMult;
+  const baseSp = (v.sp + (S.dopT>0?S.dopSp:0) + (eqBonus.speedBonus||0)) * sinSpeedMult * prestigeMult();
   const wMod = weather.mod.speedMult || 1.0;
   const km=(baseSp * wMod)*.05;
   S.sgKm+=km;S.totKm+=km;
@@ -170,7 +170,7 @@ function tick(){
     const total = Math.floor((S.visited.length/CITIES.length + S.foodDone.length/FOODS.length + S.npcs.filter(n=>n.met&&!n.locked).length/Math.max(1,S.npcs.filter(n=>!n.locked).length)) /3 * 100);
     const codexBonus = 1 + Math.floor(total/10) * 0.02;
     const moneyMult = (1 + (eqBonus.moneyBonus||0)) * codexBonus * (weather.mod.moneyMult || 1.0);
-    let arriveMoney = Math.floor(20000 * moneyMult);
+    let arriveMoney = Math.floor(20000 * moneyMult * prestigeMult());
     // 7대죄 #6 교만: 다음 도시 보상 -90%
     if(S.prideNextCity){
       arriveMoney = Math.floor(arriveMoney * 0.1);
@@ -435,7 +435,7 @@ function applyOfflineReward(lastTime, wasRiding){
   // 라이딩 중 → 여정 시뮬레이션
   window._offlineSim=true;
   const v=cv2();
-  const kmPerSec=v.sp*0.05;
+  const kmPerSec=v.sp*0.05*prestigeMult(); // 프레스티지 배수(오프라인 이동 거리도 늘어남)
   const drainPerSec=Math.max(0.05, 0.05*v.sp); // tick과 동일한 ≈1HP/km
   let hp=S.hp, dist=0, moneyGain=0, xpGain=0, applesUsed=0, levelsUp=0, stoppedNoApple=false, arrivedCount=0;
   const arrived=[];
@@ -2019,7 +2019,7 @@ function doLoad(parsedD){
           if(!_validIds.includes(S.vId)) S.vId = topBike ? topBike.id : 'v1';
           addLog('neutral','🚲 탈것 시스템 개편! 자전거 '+Math.max(1,ownedCount)+'단계로 이전됨');
         }
-        if(!S.achievements)S.achievements=[];if(!S.boostCount)S.boostCount=0;if(!S.offlineCount)S.offlineCount=0;if(typeof S.autoApple!=='boolean')S.autoApple=false;
+        if(!S.achievements)S.achievements=[];if(!S.boostCount)S.boostCount=0;if(!S.offlineCount)S.offlineCount=0;if(typeof S.autoApple!=='boolean')S.autoApple=false;if(typeof S.prestige!=='number')S.prestige=0;
         if(!S.equipped)S.equipped={head:null,eyes:null,hands:null,feet:null,body:null};
         if(!S.inventory)S.inventory=[];
         // 1번 fix: 기존 저장 마이그레이션 — mhpSpBonus 없으면 추정 계산
@@ -2116,18 +2116,52 @@ function closeModalAndLaunch(wr){
   closeModal(wr);
   setTimeout(launchRocket,100);
 }
-function resetGame(){
-  if(modalOpen()){showSt('진행 중인 선택을 먼저 마쳐주세요');return;}
-  if(!confirm('초기화?'))return;localStorage.removeItem('bkdng_v45');saveReady=true; // 초기화 확정 → 새 상태로 자동저장 재개
-  S={city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],achievements:[],boostCount:0,offlineCount:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
-  // 2번 fix: 시작 시 보유 탈것/장비 갯수로 seenTabs 초기화 (시작부터 빨간점 안 뜨게)
+// 새 게임 초기 상태(공통). resetGame·doPrestige가 공유한다.
+function freshState(){
+  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
+}
+// 초기화 후 공통 뒷정리(뱃지·애니메이션·루프)
+function afterReset(){
   S.seenTabs.veh = (S.vehs||[]).filter(v=>v.owned).length;
   S.seenTabs.gear = (S.inventory||[]).length;
   S.seenTabs.npc = S.npcs.filter(n=>n.met&&!n.locked).length;
   S.seenTabs.ach = (S.achievements||[]).length;
-  if(tickIv){clearInterval(tickIv);tickIv=null;}isResting=false;boosterBubble=0;evAnim=null;evAnimNpc=null;diceAnim=0;diceTarget=null;tyTalkTimer=1800;tyBubbleTimer=0;tyBubbleText='';oxResult=null;logs=[];
+  if(tickIv){clearInterval(tickIv);tickIv=null;}isResting=false;boosterBubble=0;evAnim=null;evAnimNpc=null;diceAnim=0;diceTarget=null;tyTalkTimer=1800;tyBubbleTimer=0;tyBubbleText='';oxResult=null;
   document.getElementById('ride-btn').textContent='▶ 출발!';
+}
+function resetGame(){
+  if(modalOpen()){showSt('진행 중인 선택을 먼저 마쳐주세요');return;}
+  if(!confirm('초기화?'))return;localStorage.removeItem('bkdng_v45');saveReady=true; // 초기화 확정 → 새 상태로 자동저장 재개
+  S=freshState(); logs=[];
+  afterReset();
   showSt('초기화 완료');update();
+}
+
+// ── 프레스티지(2회차 세계일주) — 콘텐츠 소진 해결. 진행 리셋 + 영구 배수 ──
+function prestigeMult(){ return 1 + 0.25*(S.prestige||0); } // 속도·수입 +25%/회차
+function canPrestige(){
+  if(vehOwned('v30')) return true; // 전설의 서퍼티지(₩2억) 보유 = 사실상 완주
+  return CITIES.filter(c=>c.region!=='우주').every(c=>S.visited.includes(c.n)); // 또는 전 도시 방문
+}
+function doPrestige(){
+  if(modalOpen()){showSt('진행 중인 선택을 먼저 마쳐주세요');return;}
+  if(!canPrestige()){showSt('아직 조건 미달 — v30 보유 또는 전 도시 방문 시 가능');return;}
+  const nextMult = 1 + 0.25*((S.prestige||0)+1);
+  showConfirmModal({
+    title:'🌏 '+((S.prestige||0)+1)+'회차 세계일주?',
+    message:`지금까지의 진행(레벨·돈·자전거·장비·방문)이 초기화됩니다.\n대신 영구 보너스 "여행 노하우"를 얻어요:\n\n🚀 속도·수입 +${Math.round((nextMult-1)*100)}% (영구)\n🏆 업적·프레스티지 횟수는 유지\n👥 NPC를 다시 만나 보상을 또 받습니다`,
+    okText:'2회차 출발! 🌏', cancelText:'아직...', color:'#8B5CF6',
+    onOk:()=>{
+      const keep={ prestige:(S.prestige||0)+1, achievements:S.achievements||[], paints:S.paints||['gray'], activePaint:S.activePaint||'gray', autoApple:!!S.autoApple };
+      S=freshState();
+      S.prestige=keep.prestige; S.achievements=keep.achievements; S.paints=keep.paints; S.activePaint=keep.activePaint; S.autoApple=keep.autoApple;
+      afterReset();
+      addLog('good','🌏✨ '+S.prestige+'회차 세계일주 시작! 여행 노하우: 속도·수입 +'+Math.round((prestigeMult()-1)*100)+'% (영구)');
+      showSt('🌏 '+S.prestige+'회차 시작!');
+      playSfx('levelup');
+      update();
+    }
+  });
 }
 function showSt(msg){const el=document.getElementById('sv-st');if(el){el.textContent=msg;setTimeout(()=>el.textContent='',3000);}}
 function addLog(t,m){
@@ -2484,11 +2518,22 @@ function renderStat(){
     ? `다음 진화까지 ${(nextKm - Math.floor(S.totKm||0)).toLocaleString()}km`
     : '최대 진화 도달! ✨';
 
-  document.getElementById('stat-panel').innerHTML=`
+  // 프레스티지(2회차) 패널 — 현재 회차·보너스 + 진입 버튼
+  const pv=S.prestige||0;
+  const canP=canPrestige();
+  const prestigeHtml=`
+  <div class="px-panel" style="margin-bottom:5px;background:linear-gradient(135deg,#2b1b45,#3b2566);border-color:#8B5CF6;">
+    <div style="${fs(8)};color:#C4B5FD;text-align:center;font-weight:bold;margin-bottom:4px;">🌏 세계일주 ${pv+1}회차</div>
+    ${pv>0?`<div style="${fs(6)};color:#DDD6FE;text-align:center;margin-bottom:6px;">여행 노하우: 속도·수입 <b>+${Math.round((prestigeMult()-1)*100)}%</b> (영구)</div>`:''}
+    ${canP
+      ? `<button class="px-btn" style="width:100%;${fs(7)};background:linear-gradient(180deg,#a78bfa,#7c3aed);border-color:#6d28d9;color:#fff;" onclick="doPrestige()">🌏 ${pv+1}회차 출발! (속도·수입 +25% 획득)</button>`
+      : `<div style="${fs(5)};color:#C4B5FD;text-align:center;">v30(전설의 서퍼티지) 보유 또는 전 도시 방문 시 2회차 가능</div>`}
+  </div>
   <div class="px-panel" style="margin-bottom:5px;background:linear-gradient(135deg,#FFF8E1,#FFFDE7);border-color:${pet.textColor};">
     <div style="${fs(7)};color:${pet.textColor};margin-bottom:6px;text-align:center;font-weight:bold;text-shadow:1px 1px 0 #FFF;">${pet.name} (${pet.stage}/4 단계)</div>
     <div style="${fs(5)};color:#5C3D1E;text-align:center;font-weight:bold;">${petNextText}</div>
-  </div>
+  </div>`;
+  document.getElementById('stat-panel').innerHTML=prestigeHtml+`
   <div class="px-panel" style="margin-bottom:5px;">
     <div style="${fs(7)};color:#5C3D1E;margin-bottom:8px;border-bottom:2px solid #D4B483;padding-bottom:5px;">▶ 현재 스테이터스</div>
     <div class="stat-row"><div style="${fs(6)};color:#8B6340;">레벨</div><div style="${fs(6)};color:#3D2510;">Lv. ${S.lv}</div></div>

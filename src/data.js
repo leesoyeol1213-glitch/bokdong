@@ -618,7 +618,7 @@ let S={
   equipped:{head:null,eyes:null,hands:null,feet:null,body:null},
   npcs:NPCS.map(n=>({...n})),
   visited:[],foodDone:[],
-  achievements:[],boostCount:0,offlineCount:0,
+  achievements:[],boostCount:0,offlineCount:0,prestige:0,
   vehs:VEHS.map(v=>({id:v.id,owned:v.owned})),
 };
 let tickIv=null,npcIv=null,logs=[],curTab='main',isResting=false;
