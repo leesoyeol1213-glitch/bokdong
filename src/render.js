@@ -22,6 +22,8 @@ const PALETTES={
 function drawScene(){
   // 옵션 B v2: 캔버스 420x236 (16:9)
   ctx.clearRect(0,0,420,236);
+  // 텍스트 정렬 상태 초기화 — 이전 프레임/함수의 textAlign·baseline 누수로 대사가 쏠리는 것 방지
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
   ctx.save();
   ctx.translate(0, 26);
 
@@ -111,9 +113,9 @@ function drawScene(){
     for(let i=0;i<lc;i++){const y=132+i*8;ctx.beginPath();ctx.moveTo(bikeX-48,y);ctx.lineTo(bikeX-48-ll,y);ctx.stroke();}
   }
   // 부스터 불꽃 제거 — 캐릭터 PNG에 화염 자세가 이미 있음
-  // HUD
-  p(4,4,120,18,'rgba(0,0,0,.55)');ctx.fillStyle='#FFD700';ctx.font='bold 10px Galmuri11, monospace';ctx.fillText('📍 '+city.n,8,18);
-  if(S.restT>0){p(4,25,150,16,'rgba(0,0,0,.5)');ctx.fillStyle='#FFD700';ctx.font='8px Galmuri11, monospace';ctx.fillText('💤 휴식 '+S.restT+'s',8,37);}
+  // HUD (배경을 더 진하게 → 밝은 배경에서도 글씨 인식 잘 되게)
+  p(4,4,124,18,'rgba(0,0,0,.75)');ctx.fillStyle='#FFD700';ctx.font='bold 10px Galmuri11, monospace';ctx.fillText('📍 '+city.n,8,18);
+  if(S.restT>0){p(4,25,150,16,'rgba(0,0,0,.75)');ctx.fillStyle='#FFD700';ctx.font='8px Galmuri11, monospace';ctx.fillText('💤 휴식 '+S.restT+'s',8,37);}
   if(S.dopT>0){p(4,25,162,16,'rgba(200,80,0,.82)');ctx.fillStyle='#FFE082';ctx.font='bold 8px Galmuri11, monospace';ctx.fillText('⚡ BOOST '+S.dopT+'s',8,37);}
   if(boosterBubble>0){drawBoosterBubble(bikeX+10,85);boosterBubble--;}
 
@@ -579,10 +581,11 @@ function drawNpcRewardAnim(){
   // 이모지 + 이름
   ctx.font='22px Galmuri11, monospace';ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.fillText(em,-52,0);
-  ctx.font='bold 8px Galmuri11, monospace';ctx.fillStyle=gc;ctx.textBaseline='alphabetic';
-  ctx.fillText(npc.n,20,-8);
+  // 이름·보상은 왼쪽 정렬(이모지에 쓴 center가 남아 왼쪽으로 쏠리던 버그 수정)
+  ctx.font='bold 8px Galmuri11, monospace';ctx.fillStyle=gc;ctx.textBaseline='alphabetic';ctx.textAlign='left';
+  ctx.fillText(npc.n,-24,-8);
   ctx.font='bold 6px Galmuri11, monospace';ctx.fillStyle='#5C3D1E';
-  ctx.fillText(npc.reward,20,12);
+  ctx.fillText(npc.reward,-24,12);
   // 등급 배지
   ctx.fillStyle=gc;ctx.beginPath();ctx.roundRect(-90,30,80,18,6);ctx.fill();
   ctx.fillStyle='#FFF';ctx.font='bold 6px Galmuri11, monospace';ctx.textAlign='center';
