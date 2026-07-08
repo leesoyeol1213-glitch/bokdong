@@ -75,6 +75,9 @@ const VEHS=[
 const GRADE_LABEL={normal:'일반',rare:'레어',unique:'유니크',legend:'전설',epic:'에픽',god:'신',disaster:'☠️재앙'};
 const GRADE_COLOR={normal:'#6B4A2A',rare:'#1565C0',unique:'#2E7D32',legend:'#F9A825',epic:'#6A1B9A',god:'#B8860B',disaster:'#5D0303'};
 const GRADE_BG   ={normal:'#F5E6C8',rare:'#E3F2FD',unique:'#E8F5E9',legend:'#FFFDE7',epic:'#F3E5F5',god:'#FFF8E1',disaster:'#3D0000'};
+// #4 NPC 재회 — 이미 만난 NPC가 다시 등장할 때 주는 축소 보상(첫 만남의 약 1/10). 재앙 제외.
+const REUNION_MONEY={normal:600,rare:1500,unique:3000,legend:8000,epic:15000,god:30000};
+const REUNION_LINES=['또 만났네! 반가워 복동아!','어? 그때 그 라이더 아니야?','세상 참 좁다~ 여기서 또 보네!','오랜만이야! 여행은 잘 하고 있어?','복동이다! 잘 지냈어?','길에서 또 마주치다니 인연이네~'];
 
 const NPC_EMOJI={
   // 일반 10

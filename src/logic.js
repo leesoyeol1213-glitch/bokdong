@@ -326,6 +326,44 @@ function fireNpc(){
   if(uniques.length&&rnd<.342) {showNpcModal(uniques[Math.floor(Math.random()*uniques.length)]);return;}
   if(rares.length  &&rnd<.692) {showNpcModal(rares  [Math.floor(Math.random()*rares.length)]);return;}
   if(normals.length&&rnd<.942) {showNpcModal(normals[Math.floor(Math.random()*normals.length)]);return;}
+  // #4 여기 도달 = 이번 타이밍에 첫 만남 없음(대개 로스터를 다 만난 상태) → 재회 이벤트로 채움.
+  //  긍정 NPC만, 축소 보상. 도감 완성 후에도 만남 이벤트가 살아있게 한다.
+  const metPositive=S.npcs.filter(n=>n.met&&!n.locked&&n.grade!=='disaster');
+  if(metPositive.length && Math.random()<0.4){
+    showNpcReunion(metPositive[Math.floor(Math.random()*metPositive.length)]);
+  }
+}
+// #4 NPC 재회 모달 (축소 보상 · met 변경 없음 · 아이템/eff 없음)
+function showNpcReunion(npc){
+  const wr=S.riding;if(S.riding){S.riding=false;isResting=false;clearInterval(tickIv);tickIv=null;}
+  const em=NPC_EMOJI[npc.id]||'👤';
+  const gc=GRADE_COLOR[npc.grade]||'#5C3D1E';
+  const gb=GRADE_BG[npc.grade]||'#F5E6C8';
+  const money=REUNION_MONEY[npc.grade]||500;
+  const xp=Math.max(10,Math.floor(money/10));
+  const line=REUNION_LINES[Math.floor(Math.random()*REUNION_LINES.length)];
+  const key='npc_'+npc.id;
+  const portrait=hasAsset(key)
+    ? `<img src="${ASSETS_SOURCES[key]}" style="width:44px;height:44px;border:3px solid ${gc};border-radius:8px;image-rendering:pixelated;background:${gb};flex-shrink:0;box-shadow:2px 2px 0 ${gc};">`
+    : `<div style="width:44px;height:44px;background:${gb};border:3px solid ${gc};border-radius:8px;box-shadow:2px 2px 0 ${gc};display:flex;align-items:center;justify-content:center;font-size:calc(22px * var(--u));flex-shrink:0;">${em}</div>`;
+  document.getElementById('modal-area').innerHTML=`
+  <div class="px-panel" style="border-color:${gc};margin-bottom:5px;">
+    <div style="text-align:center;font-size:calc(6px * var(--u));color:#8B6340;margin-bottom:5px;">🔄 다시 만난 인연</div>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
+      ${portrait}
+      <div><div style="font-size:calc(7px * var(--u));color:#3D2510;">${npc.n}</div>
+      <div style="font-size:calc(6px * var(--u));color:#8B6340;">${npc.role}</div></div>
+    </div>
+    <div style="font-size:calc(7px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid #D4B483;border-left:4px solid ${gc};border-radius:0 6px 6px 0;padding:7px 9px;margin-bottom:8px;line-height:2;">"${line}"</div>
+    <div style="font-size:calc(6px * var(--u));color:#8B6340;margin-bottom:10px;">재회 선물: <span style="color:#3D2510;">₩${money.toLocaleString()} · XP+${xp}</span></div>
+    <button class="px-btn px-btn-green" style="width:100%;font-size:calc(7px * var(--u));" onclick="acceptReunion('${npc.id}',${money},${xp},${wr})">반가워! 계속 달리자 ▶</button>
+  </div>`;
+}
+function acceptReunion(id,money,xp,wr){
+  const n=S.npcs.find(x=>x.id===id);
+  S.money+=money;S.xp+=xp;
+  if(n){evAnimNpc=n;evAnim='npc_reward';evTimer=100;addLog('good','🔄 '+(NPC_EMOJI[id]||'👤')+' '+n.n+' 재회! ₩'+money.toLocaleString()+', XP+'+xp);}
+  closeModal(wr);
 }
 // 1번: 휴식 기능 제거됨. 오프라인 시 visibilitychange 핸들러에서 1분당 체력+1 회복
 function doRest(){addLog('neutral','💡 휴식 기능은 제거됐어요. 오프라인 시 1분당 체력+1 자동 회복!');}
