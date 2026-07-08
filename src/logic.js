@@ -422,8 +422,9 @@ function applyOfflineReward(lastTime, wasRiding){
   // 정지 상태로 나감 → 체력만 회복(1분당 +1)
   if(!wasRiding || !S.dest){
     const minutes=Math.floor(sec/60);
-    const hpRec=Math.min(S.mhp-S.hp, minutes);
-    S.hp=Math.min(S.mhp,S.hp+hpRec);
+    const before=S.hp;
+    S.hp=Math.min(S.mhp, S.hp+minutes);
+    const hpRec=Math.round(S.hp-before); // 표시용 정수(내부 hp는 소수 유지)
     S.offlineCount=(S.offlineCount||0)+1;
     showTravelLog({resting:true, timeStr:hm(sec), hpRec, capped});
     return;
@@ -955,9 +956,16 @@ function acceptNpc(id,wr){
   }
   closeModal(wr);
 }
+let pendingSpecial=null; // 맛집 후 다시 띄울 특수 이벤트 도시(부산 페리·나로호·진천 등)
 function openFood(){
-  if(modalOpen()){showSt('진행 중인 선택을 먼저 마쳐주세요');return;} // 부산 페리 등 열린 모달 보호
-  const food=FOODS.find(f=>f.c===S.city);if(!food){addLog('neutral','등록된 맛집 없음');return;}if(S.foodDone.includes(S.city)){addLog('neutral','이미 방문!');return;}
+  const food=FOODS.find(f=>f.c===S.city);
+  if(!food){ if(!modalOpen())addLog('neutral','등록된 맛집 없음'); return; }
+  if(S.foodDone.includes(S.city)){ if(!modalOpen())addLog('neutral','이미 방문!'); return; }
+  // 특수 이벤트 모달이 열린 채 맛집을 누르면, 맛집이 끝난 뒤 그 이벤트를 다시 띄운다(이벤트 손실 방지)
+  const ci=CITIES.find(c=>c.n===S.city);
+  if(modalOpen() && ci && ci.special && !['moon','trap_shinhan','trap_cheonghak'].includes(ci.special)){
+    pendingSpecial = ci;
+  }
   const wr=S.riding;if(S.riding){S.riding=false;isResting=false;clearInterval(tickIv);tickIv=null;}
   if(food.type==='timing')showTimingGame(food,wr);
   else if(food.type==='rps')showRpsGame(food,wr);
@@ -1065,6 +1073,9 @@ function modalOpen(){
 }
 function closeModal(wr){
   document.getElementById('modal-area').innerHTML='';
+  // 맛집 등으로 잠시 가려졌던 특수 이벤트(페리·로켓·닥터오)를 다시 띄운다.
+  // 도착 시점처럼 라이딩 상태로 복원해, 이벤트를 닫으면 정상적으로 다시 달리게 한다.
+  if(pendingSpecial){ const ci=pendingSpecial; pendingSpecial=null; S.riding=true; showHistModal(ci); return; }
   // 1번: 모달 닫힐 때 목적지가 없고 함정/달도 아니면 자동으로 새 목적지 설정
   autoPickNextDestination();
   if(wr&&!isResting){S.riding=true;tickIv=setInterval(tick,1000);startNpcTimer();}

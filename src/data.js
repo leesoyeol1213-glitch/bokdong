@@ -501,6 +501,7 @@ const FOODS=[
   {c:'포항',n:'과메기',e:'🐟',type:'tap'},
   {c:'부산',n:'돼지국밥',e:'🍲',type:'timing'},
   {c:'대구',n:'막창구이',e:'🔥',type:'timing'},
+  {c:'진천',n:'생거진천 쌀밥정식',e:'🍚',type:'tap'},
   {c:'여수',n:'갓김치 삼겹살',e:'🥓',type:'tap'},
   {c:'목포',n:'홍어삼합',e:'🐙',type:'tap'},
   {c:'군산',n:'짬뽕',e:'🍜',type:'timing'},
