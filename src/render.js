@@ -1203,8 +1203,8 @@ var BOKDONG_SPRITES = {
   ty_9: "./assets/ty_9.png",
   ty_10: "./assets/ty_10.png",
 };
-// 부스트 스프라이트: 5단계 × 10프레임 (v9.19 재작업 시트 — 프레임 간 크기·위치 일관)
-for (let _t = 1; _t <= 5; _t++) for (let _f = 1; _f <= 10; _f++)
+// 부스트 스프라이트: 5단계 × 5프레임 (v9.22 재작업 시트 — 마젠타 배경, 캐릭터 앵커 정렬)
+for (let _t = 1; _t <= 5; _t++) for (let _f = 1; _f <= 5; _f++)
   BOKDONG_SPRITES['b' + _t + '_' + _f] = './assets/b' + _t + '_' + _f + '.png';
 // 이미지 객체로 미리 로드
 var BOKDONG_IMG = {};
@@ -1243,7 +1243,7 @@ function drawBokdongSprite(ctx2, cx, cy, scale, isRiding){
     frameNum = 1;
   } else {
     const speed = isBoost ? 4 : 7;   // 부스터는 더 빠른 페달링
-    const cycleLen = isBoost ? 10 : 5;
+    const cycleLen = 5;              // 일반·부스터 모두 5프레임 루프
     frameNum = (Math.floor(frame / speed) % cycleLen) + 1;
   }
   // 부스터 시: 자전거 단계에 맞는 부스트 오라 (b{tier}_{frame}), 일반: cyc_{frame}
