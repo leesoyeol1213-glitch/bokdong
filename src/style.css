@@ -152,29 +152,42 @@ body {
   box-shadow: 0 0 0 1px #7dd3fc, 0 4px 10px rgba(14,165,233,.4);
 }
 
-/* ── 리스트/이벤트 로그 ── */
+/* ── 탭 내부·모달 콘텐츠 = 밝은 크림 카드 (다크 페이지 위 '여행 수첩' 느낌) ──
+   홈(#tab-main 직속 패널)은 다크 유지. 탭 콘텐츠·모달만 밝게 → 기존 갈색 글씨가 읽힌다.
+   (모달이 자체 인라인 배경을 가지면 인라인이 우선하므로 그대로 유지됨) */
+#modal-area .px-panel,
+#tab-npc .px-panel, #tab-mission .px-panel, #tab-codex .px-panel,
+#tab-veh .px-panel, #tab-gear .px-panel, #tab-item .px-panel,
+#tab-stat .px-panel, #tab-ach .px-panel, #tab-gacha .px-panel, #tab-log .px-panel {
+  background: #f4ead3;
+  border: 1px solid #d8c29c;
+  color: #3D2510;
+  box-shadow: 0 4px 14px rgba(0,0,0,.4);
+}
+
+/* ── 리스트/이벤트 로그 (탭 콘텐츠 전용 → 밝은 톤) ── */
 .ev-item {
-  background: var(--panel-2); border-left: calc(4px * var(--u)) solid var(--line);
+  background: #efe2c6; border-left: calc(4px * var(--u)) solid #c9b487;
   border-radius: calc(6px * var(--u));
   padding: calc(6px * var(--u)) calc(9px * var(--u));
   margin-bottom: calc(4px * var(--u));
-  font-size: calc(9px * var(--u)); color: var(--ink-mid); line-height: 1.7;
+  font-size: calc(9px * var(--u)); color: #5C3D1E; line-height: 1.7;
 }
-.ev-good{border-color:#22c55e;}.ev-bad{border-color:#f87171;}.ev-neutral{border-color:#38bdf8;}
+.ev-good{border-color:#2E9E4F;}.ev-bad{border-color:#D64545;}.ev-neutral{border-color:#2f7dd1;}
 .stat-row {
   display: flex; justify-content: space-between; align-items: center;
   padding: calc(6px * var(--u)) 0;
-  border-bottom: 1px solid var(--line);
-  color: var(--ink);
+  border-bottom: 1px solid #d8c29c;
+  color: #3D2510;
 }
 .stat-row:last-child { border-bottom: none; }
 .ach-item {
-  background: var(--panel-2); border: 1px solid var(--line);
+  background: #efe2c6; border: 1px solid #c9b487;
   border-radius: calc(10px * var(--u)); padding: calc(8px * var(--u));
   margin-bottom: calc(5px * var(--u)); display: flex;
-  gap: calc(8px * var(--u)); align-items: center; color: var(--ink);
+  gap: calc(8px * var(--u)); align-items: center; color: #3D2510;
 }
-.ach-done { border-color:#22c55e; background: rgba(34,197,94,.12); }
+.ach-done { border-color:#4CAF50; background:#d9edcf; }
 .veh-canvas {
   display: block; border-radius: calc(8px * var(--u));
   background: var(--sunk); border: 1px solid var(--line);
