@@ -1107,6 +1107,51 @@ function drawCityBackground(ctx, cityName, x, y, w, h){
   if(key && drawAsset(ctx, key, x, y, w, h)) return true;
   return drawAsset(ctx, 'bg_default', x, y, w, h);
 }
+// #6 여행 엽서 — 도시별 배경 키(drawScene의 pickBgKey와 동일 규칙, S 비의존 재사용)
+function bgKeyForCity(cityName){
+  const c = CITIES.find(x=>x.n===cityName);
+  const specificMap = {'서울':'bg_seoul','충주':'bg_chungju','제주':'bg_jeju','달':'bg_moon','신한':'bg_shinhan','지리산청학동':'bg_cheonghak'};
+  if(specificMap[cityName] && hasAsset(specificMap[cityName])) return specificMap[cityName];
+  const genericMap = {'mountain':'bg_nature','snow':'bg_nature','coast':'bg_coast_gen','city':'bg_city_gen','industrial':'bg_city_gen','space':'bg_moon'};
+  const g = c && genericMap[c.bg];
+  if(g && hasAsset(g)) return g;
+  if(hasAsset('bg_nature')) return 'bg_nature';
+  return null;
+}
+// 엽서 1장을 임의 크기 캔버스 컨텍스트에 그린다(배경+복동이+도시명+날짜+테두리).
+function renderPostcardTo(ctx, w, h, cityName, dateStr){
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  // 크림 프레임
+  ctx.fillStyle = '#f4ead3'; ctx.fillRect(0,0,w,h);
+  const pad = Math.max(3, Math.round(w*0.045));
+  const iw = w - pad*2, ih = h - pad*2, ix = pad, iy = pad;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(ix,iy,iw,ih); ctx.clip();
+  // 배경
+  const bgKey = bgKeyForCity(cityName);
+  const img = bgKey && ASSETS_IMG[bgKey];
+  if(img && img.complete && img.naturalWidth){
+    ctx.drawImage(img, ix, iy - Math.round(ih*0.10), iw, Math.round(ih*1.18)); // 살짝 위로 크롭
+  } else {
+    ctx.fillStyle = '#7EC8E3'; ctx.fillRect(ix,iy,iw,ih);
+  }
+  // 복동이 (하단 중앙)
+  try { drawBokdongSprite(ctx, ix + iw*0.5, iy + ih*0.66, (ih/150), false); } catch(e){}
+  // 하단 배너(도시명·날짜)
+  const bh = Math.max(18, Math.round(ih*0.26));
+  ctx.fillStyle = 'rgba(15,20,35,.62)'; ctx.fillRect(ix, iy+ih-bh, iw, bh);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold ' + Math.round(bh*0.42) + 'px Galmuri11, monospace';
+  ctx.fillText('📍 ' + cityName, ix+6, iy+ih-bh + Math.round(bh*0.36));
+  ctx.fillStyle = '#FFE082'; ctx.font = Math.round(bh*0.3) + 'px Galmuri11, monospace';
+  ctx.fillText(dateStr, ix+6, iy+ih - Math.round(bh*0.28));
+  ctx.restore();
+  // 테두리
+  ctx.strokeStyle = '#c9b487'; ctx.lineWidth = 2; ctx.strokeRect(1,1,w-2,h-2);
+  ctx.restore();
+}
+
 // 자동 로더 — 페이지 로드 시 ASSETS_SOURCES의 모든 base64를 Image로 변환
 function _loadAssets(){
   Object.keys(ASSETS_SOURCES).forEach(key=>{

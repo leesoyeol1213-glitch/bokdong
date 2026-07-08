@@ -181,7 +181,11 @@ function tick(){
     const ci=CITIES.find(c=>c.n===S.city)||CITIES[0];
     // 일본 도착 완료 → 페리 플래그 해제 (이후 일본 내 이동은 currentInJapan 로직이 담당)
     if(ci.region==='일본') S.onFerryToJapan = false;
-    if(!S.visited.includes(S.city))S.visited.push(S.city);
+    if(!S.visited.includes(S.city)){
+      S.visited.push(S.city);
+      // #6 여행 엽서 수집(도시별 1장, 첫 도착 시)
+      collectPostcard(S.city);
+    }
     addLog('good','🎉 '+S.city+' 도착! ₩'+arriveMoney.toLocaleString());addLog('neutral','📜 '+ci.hist);
     playSfx('arrive');
     trackMission('arrive');
@@ -2020,6 +2024,8 @@ function doLoad(parsedD){
           addLog('neutral','🚲 탈것 시스템 개편! 자전거 '+Math.max(1,ownedCount)+'단계로 이전됨');
         }
         if(!S.achievements)S.achievements=[];if(!S.boostCount)S.boostCount=0;if(!S.offlineCount)S.offlineCount=0;if(typeof S.autoApple!=='boolean')S.autoApple=false;if(typeof S.prestige!=='number')S.prestige=0;
+        // #6 엽서 마이그레이션: 없으면 이미 방문한 도시들로 소급 생성
+        if(!Array.isArray(S.postcards)){ S.postcards=[]; (S.visited||[]).forEach(c=>collectPostcard(c)); }
         if(!S.equipped)S.equipped={head:null,eyes:null,hands:null,feet:null,body:null};
         if(!S.inventory)S.inventory=[];
         // 1번 fix: 기존 저장 마이그레이션 — mhpSpBonus 없으면 추정 계산
@@ -2118,7 +2124,7 @@ function closeModalAndLaunch(wr){
 }
 // 새 게임 초기 상태(공통). resetGame·doPrestige가 공유한다.
 function freshState(){
-  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
+  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
 }
 // 초기화 후 공통 뒷정리(뱃지·애니메이션·루프)
 function afterReset(){
@@ -2135,6 +2141,62 @@ function resetGame(){
   S=freshState(); logs=[];
   afterReset();
   showSt('초기화 완료');update();
+}
+
+// ── #6 여행 엽서 앨범 ──────────────────────────────────
+// 도시 첫 도착마다 엽서 1장 수집(데이터는 {도시,날짜}만, 그림은 즉석 렌더 → 저장 용량 절약)
+function collectPostcard(city){
+  if(!Array.isArray(S.postcards)) S.postcards=[];
+  if(S.postcards.some(p=>p.city===city)) return;
+  const d=new Date();
+  const date=d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0');
+  S.postcards.push({city, date});
+}
+function renderPostcards(){
+  const el=document.getElementById('postcard-panel'); if(!el) return;
+  const list=S.postcards||[];
+  if(list.length===0){
+    el.innerHTML=`<div class="px-panel" style="text-align:center;"><div style="font-size:calc(10px * var(--u));color:#5C3D1E;line-height:1.9;">아직 모은 엽서가 없어요.<br>도시에 도착하면 여행 엽서가<br>한 장씩 수집됩니다 📮</div></div>`;
+    return;
+  }
+  const cards=list.map((p,i)=>`<div style="cursor:pointer;" onclick="showPostcardBig(${i})"><canvas class="pc-thumb" data-i="${i}" width="200" height="130" style="width:100%;height:auto;border-radius:6px;display:block;image-rendering:pixelated;box-shadow:0 3px 8px rgba(0,0,0,.4);"></canvas></div>`).join('');
+  el.innerHTML=`
+    <div class="px-panel" style="margin-bottom:5px;">
+      <div style="font-size:calc(12px * var(--u));color:#3D2510;text-align:center;margin-bottom:3px;">📮 여행 엽서 (${list.length})</div>
+      <div style="font-size:calc(8px * var(--u));color:#8B6340;text-align:center;">도시 도착마다 한 장 · 눌러서 크게 보고 저장</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:calc(7px * var(--u));padding-bottom:calc(10px * var(--u));">${cards}</div>`;
+  el.querySelectorAll('canvas.pc-thumb').forEach(cv=>{
+    const p=list[+cv.dataset.i];
+    renderPostcardTo(cv.getContext('2d'), cv.width, cv.height, p.city, p.date);
+  });
+}
+function showPostcardBig(i){
+  const el=document.getElementById('postcard-panel'); const p=(S.postcards||[])[i];
+  if(!el||!p) return;
+  el.innerHTML=`
+    <div class="px-panel" style="margin-bottom:5px;">
+      <canvas id="pc-big" width="360" height="234" style="width:100%;height:auto;border-radius:8px;image-rendering:pixelated;display:block;margin-bottom:9px;"></canvas>
+      <button class="px-btn px-btn-blue" style="width:100%;font-size:calc(10px * var(--u));margin-bottom:6px;" onclick="savePostcardImage(${i})">🖼 이미지 저장</button>
+      <button class="px-btn" style="width:100%;font-size:calc(10px * var(--u));" onclick="renderPostcards()">◀ 앨범으로</button>
+    </div>`;
+  const cv=document.getElementById('pc-big');
+  renderPostcardTo(cv.getContext('2d'), cv.width, cv.height, p.city, p.date);
+}
+function savePostcardImage(i){
+  const p=(S.postcards||[])[i]; if(!p) return;
+  const cv=document.createElement('canvas'); cv.width=600; cv.height=390;
+  renderPostcardTo(cv.getContext('2d'), cv.width, cv.height, p.city, p.date);
+  try{
+    cv.toBlob(function(blob){
+      if(!blob){ showSt('저장 실패'); return; }
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download='임복동_엽서_'+p.city+'.png';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+      showSt('🖼 엽서 저장 완료!');
+    },'image/png');
+  }catch(e){ showSt('저장 실패'); }
 }
 
 // ── 프레스티지(2회차 세계일주) — 콘텐츠 소진 해결. 진행 리셋 + 영구 배수 ──
@@ -2237,8 +2299,8 @@ function toggleSound(){
 
 // ── 탭 ─────────────────────────────────────────────────
 function ST(tab){
-  ['main','mission','npc','veh','gear','item','codex','stat','ach','gacha','log'].forEach(t=>{const el=document.getElementById('tab-'+t);if(el)el.style.display=t===tab?'block':'none';});
-  document.querySelectorAll('.px-tab').forEach((el,i)=>el.classList.toggle('on',['main','mission','npc','veh','gear','item','codex','stat','ach','gacha','log'][i]===tab));
+  ['main','mission','npc','veh','gear','item','codex','stat','ach','gacha','postcard','log'].forEach(t=>{const el=document.getElementById('tab-'+t);if(el)el.style.display=t===tab?'block':'none';});
+  document.querySelectorAll('.px-tab').forEach((el,i)=>el.classList.toggle('on',['main','mission','npc','veh','gear','item','codex','stat','ach','gacha','postcard','log'][i]===tab));
   curTab=tab;
   if(!S.seenTabs) S.seenTabs={npc:0,veh:0,ach:0,gear:0};
   if(tab==='npc') S.seenTabs.npc = S.npcs.filter(n=>n.met&&!n.locked).length;
@@ -2260,7 +2322,7 @@ function ST(tab){
   if(tab==='mission')renderMission();
   if(tab==='codex')renderCodex();
   if(tab==='gacha')renderGachaShop();
-  if(tab==='npc')renderNpcs();if(tab==='veh')renderVehs();if(tab==='gear')renderGear();if(tab==='item')renderItems();if(tab==='stat')renderStat();if(tab==='ach')renderAch();if(tab==='log')renderLog();
+  if(tab==='npc')renderNpcs();if(tab==='veh')renderVehs();if(tab==='gear')renderGear();if(tab==='item')renderItems();if(tab==='stat')renderStat();if(tab==='ach')renderAch();if(tab==='postcard')renderPostcards();if(tab==='log')renderLog();
 }
 
 function renderLog(){const el=document.getElementById('ev-log');if(!logs.length){el.innerHTML='<div class="px-panel" style="font-size:calc(7px * var(--u));text-align:center;color:#8B6340;">아직 이벤트 없음</div>';return;}el.innerHTML=logs.map(e=>`<div class="ev-item ev-${e.type}">${e.msg}</div>`).join('');}

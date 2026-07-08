@@ -617,7 +617,7 @@ let S={
   inventory:[],
   equipped:{head:null,eyes:null,hands:null,feet:null,body:null},
   npcs:NPCS.map(n=>({...n})),
-  visited:[],foodDone:[],
+  visited:[],foodDone:[],postcards:[],
   achievements:[],boostCount:0,offlineCount:0,prestige:0,
   vehs:VEHS.map(v=>({id:v.id,owned:v.owned})),
 };
