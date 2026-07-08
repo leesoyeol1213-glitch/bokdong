@@ -891,7 +891,8 @@ function drawDownhill(){
 // NPC 등장 애니메이션 (등급 색상 반영)
 function drawNpcAnim(){
   const npc=evAnimNpc;
-  const nx=bikeX+80+Math.sin(frame*.15)*6,ny=148;
+  // NPC는 자전거 오른쪽에 등장하되, 화면 밖으로 쏠려 잘리지 않게 x를 화면 안으로 제한
+  const nx=Math.max(90,Math.min(330,bikeX+80))+Math.sin(frame*.15)*6,ny=148;
   const em=NPC_EMOJI[npc.id]||'👤';
   const gc=GRADE_COLOR[npc.grade]||'#5C3D1E';
   const gb=GRADE_BG[npc.grade]||'#F5E6C8';
@@ -905,16 +906,20 @@ function drawNpcAnim(){
   p(nx+1,ny-46,12,16,'#D4956A');p(nx+1,ny-48,12,6,'#5D3A1A');
   const wy=ny-28+Math.sin(frame*.4)*8;p(nx-9,wy,7,4,'#D4956A');
   ctx.font='14px Galmuri11, monospace';ctx.textAlign='center';ctx.fillText(em,nx+7,ny-28);ctx.textAlign='left';
-  // 이름 말풍선
+  // 이름 말풍선 — 캐릭터를 따라가되, 화면 밖으로 쏠려 잘리지 않게 라벨 중심(lx)을 화면 안으로 클램프
   const bw=Math.min(170,npc.n.length*9+46);
+  const half=Math.max(bw/2, 34); // 말풍선/배지 중 넓은 쪽 절반
+  const lx=Math.max(half+4, Math.min(420-half-4, nx+7));
   ctx.fillStyle=gb;ctx.strokeStyle=gc;ctx.lineWidth=3;
-  ctx.beginPath();ctx.roundRect(nx+7-bw/2,ny-80,bw,22,6);ctx.fill();ctx.stroke();
-  ctx.fillStyle=gb;ctx.beginPath();ctx.moveTo(nx+3,ny-58);ctx.lineTo(nx+8,ny-50);ctx.lineTo(nx+13,ny-58);ctx.fill();ctx.fillRect(nx+2,ny-60,14,5);
-  ctx.fillStyle=gc;ctx.font='bold 7px Galmuri11, monospace';ctx.textAlign='center';ctx.fillText(npc.n,nx+7,ny-65);ctx.textAlign='left';
+  ctx.beginPath();ctx.roundRect(lx-bw/2,ny-80,bw,22,6);ctx.fill();ctx.stroke();
+  // 말풍선 꼬리는 캐릭터(nx) 쪽을 가리키되 말풍선 폭 안에 머물게
+  const tx=Math.max(lx-bw/2+6, Math.min(lx+bw/2-14, nx+3));
+  ctx.fillStyle=gb;ctx.beginPath();ctx.moveTo(tx,ny-58);ctx.lineTo(tx+5,ny-50);ctx.lineTo(tx+10,ny-58);ctx.fill();ctx.fillRect(tx-1,ny-60,14,5);
+  ctx.fillStyle=gc;ctx.font='bold 7px Galmuri11, monospace';ctx.textAlign='center';ctx.fillText(npc.n,lx,ny-65);ctx.textAlign='left';
   // 등급 배지
-  p(nx+7-30,ny-44,60,14,gc);
+  p(lx-30,ny-44,60,14,gc);
   ctx.fillStyle='#FFF';ctx.font='bold 5px Galmuri11, monospace';ctx.textAlign='center';
-  ctx.fillText('['+GRADE_LABEL[npc.grade]+']',nx+7,ny-33);ctx.textAlign='left';
+  ctx.fillText('['+GRADE_LABEL[npc.grade]+']',lx,ny-33);ctx.textAlign='left';
 }
 
 // ── 배경 (속도 연동) ───────────────────────────────────
