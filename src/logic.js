@@ -205,11 +205,13 @@ function tick(){
   // 3번: 함정 도시 (신한/청학동) — 200km 무의미 라이딩
   if(S.trapZone){
     S.trapZone.kmIn += km;
-    // 50km 단위로 탈출 주사위 버튼 활성화
+    // 50km 단위로 탈출 주사위 '기회 1회' 지급(무제한 재시도 방지 — 마일스톤당 딱 1번)
     const reachedDice = Math.floor(S.trapZone.kmIn / 50);
     if(reachedDice > S.trapZone.lastDiceAt){
+      const gained = reachedDice - S.trapZone.lastDiceAt;
       S.trapZone.lastDiceAt = reachedDice;
-      addLog('neutral','🎲 50km 도달! 탈출 주사위 사용 가능 (메인 화면)');
+      S.trapZone.diceCharges = (S.trapZone.diceCharges||0) + gained;
+      addLog('neutral','🎲 50km 도달! 탈출 주사위 기회 +'+gained+' (메인 화면)');
     }
     // 200km 달성 시 자동 탈출
     if(S.trapZone.kmIn >= 200){
@@ -644,7 +646,7 @@ function showHistModal(ci){
 
 // ── 3번: 함정 도시 — 200km 무의미 라이딩 + 50km마다 주사위 ─────
 function enterTrapZone(special, wr){
-  S.trapZone = {special, totalKm: 200, kmIn: 0, lastDiceAt: 0};
+  S.trapZone = {special, totalKm: 200, kmIn: 0, lastDiceAt: 0, diceCharges: 0};
   S.dest = null; S.sgKm = 0;
   // closeModal이 wr이면 자동으로 riding 재개. 중복 setInterval 방지.
   closeModal(wr);
@@ -658,9 +660,13 @@ function enterTrapZone(special, wr){
 function rollEscapeDice(){
   const tz = S.trapZone;
   if(!tz) return;
+  if((tz.diceCharges||0) <= 0){ showSt('탈출 기회 없음 — 50km 더 달리면 다시 던질 수 있어요'); return; }
+  tz.diceCharges -= 1; // 기회 1회 소진(무제한 재시도 방지)
   diceAnim = 60;
   diceVal = Math.ceil(Math.random()*6);
+  update(); // 남은 기회 즉시 버튼에 반영
   setTimeout(()=>{
+    if(!S.trapZone){ return; } // 이미 탈출/이동한 경우 방어
     if(diceVal===6){
       addLog('good','🎲 주사위 6! 탈출 성공!');
       S.trapZone = null;
@@ -668,7 +674,7 @@ function rollEscapeDice(){
       // 3번: 탈출 팝업 — 다른 목적지 선택
       showEscapeDestModal();
     } else {
-      addLog('bad','🎲 주사위 '+diceVal+'... 탈출 실패. 계속 달려야 한다.');
+      addLog('bad','🎲 주사위 '+diceVal+'... 탈출 실패. (기회 '+ (S.trapZone.diceCharges||0) +'회 남음, 50km마다 +1)');
       update();
     }
   }, 800);
@@ -2775,10 +2781,10 @@ function update(){
   // 3번: 탈출 주사위 버튼 (함정 도시 + 50km 누적 시)
   const trapBtn = document.getElementById('trapDiceBtn');
   if(trapBtn){
-    if(S.trapZone && S.trapZone.lastDiceAt > 0){
+    if(S.trapZone && (S.trapZone.diceCharges||0) > 0){
       trapBtn.style.display = 'block';
       const remaining = 200 - Math.floor(S.trapZone.kmIn);
-      trapBtn.innerHTML = '🎲 탈출 주사위! ('+remaining+'km 남음)';
+      trapBtn.innerHTML = '🎲 탈출 주사위 x'+S.trapZone.diceCharges+' ('+remaining+'km 남음)';
     } else {
       trapBtn.style.display = 'none';
     }
