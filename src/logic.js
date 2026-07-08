@@ -956,6 +956,7 @@ function acceptNpc(id,wr){
   closeModal(wr);
 }
 function openFood(){
+  if(modalOpen()){showSt('진행 중인 선택을 먼저 마쳐주세요');return;} // 부산 페리 등 열린 모달 보호
   const food=FOODS.find(f=>f.c===S.city);if(!food){addLog('neutral','등록된 맛집 없음');return;}if(S.foodDone.includes(S.city)){addLog('neutral','이미 방문!');return;}
   const wr=S.riding;if(S.riding){S.riding=false;isResting=false;clearInterval(tickIv);tickIv=null;}
   if(food.type==='timing')showTimingGame(food,wr);
@@ -1056,6 +1057,11 @@ function foodFail(food,wr){
   addLog('bad',food.e+' 아쉽... ₩2,000');
   evAnim='food_fail';evTimer=80;
   closeModal(wr);
+}
+// 모달(팝업)이 열려 있는지 — 메인 화면 버튼이 열린 모달을 덮어쓰는 사고 방지용
+function modalOpen(){
+  const m=document.getElementById('modal-area');
+  return !!(m && m.innerHTML.trim()!=='');
 }
 function closeModal(wr){
   document.getElementById('modal-area').innerHTML='';
@@ -1917,6 +1923,7 @@ function _decodeSave(code){
   try{return decodeURIComponent(escape(atob(t.slice(7))));}catch(e){return null;}
 }
 function openBackup(){
+  if(modalOpen()){showSt('진행 중인 선택을 먼저 마쳐주세요');return;}
   const wr=S.riding;
   if(S.riding){S.riding=false;isResting=false;clearInterval(tickIv);tickIv=null;}
   doSave(false); // 최신 상태를 코드에 반영
@@ -1956,6 +1963,7 @@ function importBackupCode(){
   if(doLoad(d)){showSt('📥 저장코드 복원 완료!');addLog('good','🔑 저장코드로 복원 완료');}
 }
 function load(){
+  if(modalOpen()){showSt('진행 중인 선택을 먼저 마쳐주세요');return;}
   const raw=localStorage.getItem('bkdng_v45');
   if(!raw){
     showConfirmModal({title:'📂 저장 없음',message:'저장된 데이터가 없습니다.',okText:'확인',cancelText:'닫기',color:'#8B6340'});
@@ -2094,6 +2102,7 @@ function closeModalAndLaunch(wr){
   setTimeout(launchRocket,100);
 }
 function resetGame(){
+  if(modalOpen()){showSt('진행 중인 선택을 먼저 마쳐주세요');return;}
   if(!confirm('초기화?'))return;localStorage.removeItem('bkdng_v45');saveReady=true; // 초기화 확정 → 새 상태로 자동저장 재개
   S={city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],achievements:[],boostCount:0,offlineCount:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
   // 2번 fix: 시작 시 보유 탈것/장비 갯수로 seenTabs 초기화 (시작부터 빨간점 안 뜨게)
