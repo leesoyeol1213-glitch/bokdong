@@ -177,7 +177,7 @@ function tick(){
       S.prideNextCity = false;
       addLog('bad','🦚 교만의 가오지훈의 저주! 도착 보상 -90%');
     }
-    S.city=S.dest;S.dest=null;S.sgKm=0;S.money+=arriveMoney;
+    S.city=S.dest;S.dest=null;S.sgKm=0;S.money+=arriveMoney;S._jinchonForkShown=false;
     const ci=CITIES.find(c=>c.n===S.city)||CITIES[0];
     // 일본 도착 완료 → 페리 플래그 해제 (이후 일본 내 이동은 currentInJapan 로직이 담당)
     if(ci.region==='일본') S.onFerryToJapan = false;
@@ -216,6 +216,15 @@ function tick(){
     }
   }
   S.ecool--;if(S.ecool<=0&&Math.random()<.06){fireRandEvent();S.ecool=18;}
+  // #5 진천 갈림길 표지판 (태양열 부스터 미획득 + 라이딩 중 + 한국 + 도착 임박 아닐 때)
+  if(S.riding && S.dest && S.dest!=='진천' && !S.solarBoost && !S.trapZone && S.city!=='달'
+     && !S._jinchonForkShown && S.sgKm < S.sgTot*0.8
+     && document.getElementById('modal-area').innerHTML===''){
+    const inJapan=(CITIES.find(c=>c.n===S.city)||{}).region==='일본';
+    // 완주형 플레이어(6곳+ 방문했지만 진천 미방문)에겐 확률 상향, 그 외 기본 0.8%/초
+    const p = (S.visited.length>=6 && !S.visited.includes('진천')) ? 0.02 : 0.008;
+    if(!inJapan && Math.random()<p){ S._jinchonForkShown=true; offerJinchonFork(); }
+  }
   checkAchievements();update();
 }
 
@@ -1063,6 +1072,22 @@ function autoPickNextDestination(){
   } else {
     addLog('neutral','🎲 충동! '+S.city+'→'+pick.n+' ('+S.sgTot+'km)');
   }
+}
+
+// #5 진천 갈림길 표지판 — 라이딩 중 진천 태양광단지 우회를 제안(유일한 진천 진입 경로).
+//  "충동 여행(목적지 랜덤)" 컨셉을 지키면서 딱 하나의 선택권을 준다. 태양열 부스터 획득 후엔 안 뜸.
+function offerJinchonFork(){
+  const dist=getCityDist(S.city,'진천');
+  showConfirmModal({
+    title:'🛤 갈림길 발견!',
+    message:`'진천 태양광단지 →' 표지판이 보인다.\n닥터 오 박사가 사과즙을 태양열 부스터로\n강화해준다는데... 들러볼까? (${dist}km)`,
+    okText:'☀️ 진천으로', cancelText:'그냥 지나친다', color:'#E65100',
+    onOk:()=>{
+      S.dest='진천'; S.sgKm=0; S.sgTot=dist; S._jinchonForkShown=true;
+      addLog('good','🛤 샛길로! 진천 태양광단지로 향한다 ('+dist+'km)');
+      update();
+    }
+  });
 }
 
 // ── 1번: 일일/주간/월간 미션 시스템 ────────────────────
