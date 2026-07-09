@@ -2400,15 +2400,43 @@ function renderGachaResultBox(){
     <div style="${fs(7)};color:#3D2510;text-align:center;">[${rarity.label}] ${getSlotIcon(item.slot)} ${item.name}</div>
   </div>`;
 }
+// ── #9: 긴 스크롤 탭(탈것/업적/NPC) 카테고리 필터 ──────────
+var tabFilter = { npc:'all', veh:'all', ach:'all' };
+function setTabFilter(tab, val){
+  tabFilter[tab] = val;
+  if(tab==='npc') renderNpcs();
+  else if(tab==='veh') renderVehs();
+  else if(tab==='ach') renderAch();
+}
+// 필터 칩 행 HTML (선택된 칩 강조)
+function filterChipRow(tab, opts){
+  const cur = tabFilter[tab] || 'all';
+  const chips = opts.map(o=>{
+    const on = cur===o.v;
+    return `<button onclick="setTabFilter('${tab}','${o.v}')" style="font-size:calc(9px * var(--u));padding:calc(4px * var(--u)) calc(9px * var(--u));border-radius:calc(8px * var(--u));border:1px solid ${on?'#43A047':'#C9B487'};background:${on?'#43A047':'#EFE2C6'};color:${on?'#FFF':'#5C3D1E'};white-space:nowrap;cursor:pointer;">${o.label}</button>`;
+  }).join('');
+  return `<div style="display:flex;flex-wrap:wrap;gap:calc(4px * var(--u));margin:0 6px calc(6px * var(--u));">${chips}</div>`;
+}
+
 function renderNpcs(){
   const metCount=S.npcs.filter(n=>n.met&&!n.locked).length;
   const totalVisible=S.npcs.filter(n=>!n.locked).length;
   const gradeOrder=['normal','rare','unique','legend','disaster','epic','god'];
   const gradeLabel={normal:'일반',rare:'🔵 레어',unique:'🟢 유니크',legend:'🟡 전설',disaster:'☠️ 재앙',epic:'🟣 에픽',god:'✨ 신'};
-  let html=`<div class="px-panel" style="font-size:calc(9px * var(--u));color:#8B6340;margin-bottom:5px;">${metCount}/${totalVisible}명 만남</div>`;
+  const f = tabFilter.npc;
+  const chips = filterChipRow('npc', [
+    {v:'all',label:'전체'},{v:'unmet',label:'못만남'},
+    {v:'normal',label:'일반'},{v:'rare',label:'레어'},{v:'unique',label:'유니크'},
+    {v:'legend',label:'전설'},{v:'disaster',label:'재앙'},{v:'epic',label:'에픽'},{v:'god',label:'신'}
+  ]);
+  let html=`<div class="px-panel" style="font-size:calc(9px * var(--u));color:#8B6340;margin-bottom:5px;">${metCount}/${totalVisible}명 만남</div>`+chips;
+  let shown=0;
   gradeOrder.forEach(grade=>{
-    const grpNpcs=S.npcs.filter(n=>n.grade===grade);
+    if(gradeOrder.includes(f) && f!==grade) return;   // 특정 등급만 보기
+    let grpNpcs=S.npcs.filter(n=>n.grade===grade);
+    if(f==='unmet') grpNpcs=grpNpcs.filter(n=>!n.met && !n.locked);
     if(!grpNpcs.length)return;
+    shown += grpNpcs.length;
     const gc=GRADE_COLOR[grade]||'#5C3D1E';
     html+=`<div style="font-size:calc(9px * var(--u));color:${gc};margin:8px 6px 4px;padding-bottom:3px;border-bottom:2px solid ${gc};">${gradeLabel[grade]}</div>`;
     grpNpcs.forEach(n=>{
@@ -2428,6 +2456,7 @@ function renderNpcs(){
       }
     });
   });
+  if(!shown) html += `<div class="px-panel" style="font-size:calc(9px * var(--u));color:#8B6340;text-align:center;padding:calc(12px * var(--u));">해당하는 NPC가 없어요.</div>`;
   document.getElementById('npc-list').innerHTML=html;
 }
 
@@ -2437,12 +2466,30 @@ function renderVehs(){
     {key:'bike', label:'🚲 자전거 (30단계 업그레이드)'},
     {key:'rocket',label:'🚀 1회용 로켓'},
   ];
-  let html='';
+  const f = tabFilter.veh;
+  const chips = filterChipRow('veh', [
+    {v:'all',label:'전체'},{v:'owned',label:'보유'},{v:'buyable',label:'구매가능'},{v:'locked',label:'잠금'}
+  ]);
+  let html=chips;
+  let shown=0;
   cats.forEach(cat=>{
     let catVehs=VEHS.filter(v=>v.cat===cat.key);
     // 2번: 로켓은 보유 중일 때만 탈것 탭에 표시 (희소성)
     if(cat.key==='rocket') catVehs = catVehs.filter(v=>vehOwned(v.id));
+    // #9: 자전거 카테고리에 필터 적용 (로켓은 보유 시 항상)
+    if(cat.key==='bike' && f!=='all'){
+      catVehs = catVehs.filter(v=>{
+        const owned=vehOwned(v.id);
+        const locked=!owned && S.totKm < v.km;
+        const canBuy=!owned && !locked && S.money>=v.cost;
+        if(f==='owned') return owned;
+        if(f==='buyable') return canBuy;
+        if(f==='locked') return locked;
+        return true;
+      });
+    }
     if(!catVehs.length)return;
+    shown += catVehs.length;
     html+=`<div style="font-size:calc(9px * var(--u));color:#8B6340;margin:8px 6px 4px;padding-bottom:3px;border-bottom:2px solid #D4B483;">${cat.label}</div>`;
     catVehs.forEach(v=>{
       const cur=v.id===S.vId;
@@ -2476,6 +2523,7 @@ function renderVehs(){
       </div>`;
     });
   });
+  if(!shown) html += `<div class="px-panel" style="font-size:calc(9px * var(--u));color:#8B6340;text-align:center;padding:calc(12px * var(--u));">해당하는 탈것이 없어요.</div>`;
   document.getElementById('veh-list').innerHTML=html;
   VEHS.forEach(v=>{
     const el=document.getElementById('vc-'+v.id);
@@ -2724,10 +2772,19 @@ function renderStat(){
 function renderAch(){
   const done=S.achievements.length;
   const groups=[...new Set(ACHIEVEMENTS.map(a=>a.grp))];
-  let html=`<div class="px-panel" style="margin-bottom:5px;font-size:calc(9px * var(--u));color:#8B6340;">달성: ${done}/${ACHIEVEMENTS.length}</div>`;
+  const f = tabFilter.ach;
+  const chipOpts = [{v:'all',label:'전체'},{v:'undone',label:'미달성'}].concat(groups.map(g=>({v:'grp:'+g,label:g})));
+  const chips = filterChipRow('ach', chipOpts);
+  let html=`<div class="px-panel" style="margin-bottom:5px;font-size:calc(9px * var(--u));color:#8B6340;">달성: ${done}/${ACHIEVEMENTS.length}</div>`+chips;
+  let shown=0;
   groups.forEach(grp=>{
+    if(f && f.indexOf('grp:')===0 && f!=='grp:'+grp) return;   // 특정 그룹만
+    let list=ACHIEVEMENTS.filter(a=>a.grp===grp);
+    if(f==='undone') list=list.filter(a=>!S.achievements.includes(a.id));
+    if(!list.length)return;
+    shown+=list.length;
     html+=`<div style="font-size:calc(9px * var(--u));color:#8B6340;margin:8px 6px 4px;padding-bottom:3px;border-bottom:2px solid #D4B483;">${grp}</div>`;
-    ACHIEVEMENTS.filter(a=>a.grp===grp).forEach(ach=>{
+    list.forEach(ach=>{
       const isDone=S.achievements.includes(ach.id);
       const rw=Object.entries(ach.rw).map(([k,v2])=>{if(k==='money')return'₩'+v2.toLocaleString();if(k==='xp')return'XP+'+v2;if(k==='sp')return'SP+'+v2;if(k==='jc')return'🧃+'+v2;return k+':'+v2;}).join(', ');
       html+=`<div class="ach-item ${isDone?'ach-done':''}">
@@ -2738,6 +2795,7 @@ function renderAch(){
       </div>`;
     });
   });
+  if(!shown) html += `<div class="px-panel" style="font-size:calc(9px * var(--u));color:#8B6340;text-align:center;padding:calc(12px * var(--u));">해당하는 업적이 없어요.</div>`;
   document.getElementById('ach-panel').innerHTML=html;
 }
 
