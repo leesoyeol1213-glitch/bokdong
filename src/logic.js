@@ -2738,6 +2738,22 @@ function buyAp(){
   if(S.money<3000){addLog('bad','돈 부족!');return;}
   S.money-=3000;S.ap++;addLog('good','🍎 사과 +1');renderItems();update();
 }
+// #1·#8: 사과박스 — 크로스바이크(v9) 보유 시 메인 사과 버튼이 이걸로 전환됨(대량 구매).
+function ownsVeh(id){ return (S.vehs||[]).some(v=>v.id===id && v.owned); }
+function buyAppleBox(){
+  const N=20, price=45000;                 // 20개 ₩45,000 (개당 2,250 · 단품 대비 25%↓)
+  const room=99-(S.ap||0);
+  if(room<=0){ addLog('bad','🍎 사과 보유 한도! (최대 99개)'); return; }
+  const add=Math.min(N, room);
+  const cost=Math.round(price/N*add);      // 한도 근처면 들어가는 만큼만 비례 결제
+  if(S.money<cost){ addLog('bad','돈 부족! (₩'+cost.toLocaleString()+' 필요)'); return; }
+  S.money-=cost; S.ap+=add;
+  addLog('good','📦 사과박스! 🍎 +'+add+' (₩'+cost.toLocaleString()+')');
+  playSfx('apple');
+  update(); if(curTab==='item') renderItems();
+}
+// 메인 사과 버튼: v9 이후엔 사과박스 구매, 그 전엔 사과 먹기
+function appleBtnAction(){ if(ownsVeh('v9')) buyAppleBox(); else useApple(); }
 function buyJc(){
   if(S.jc>=99){addLog('bad','🧃 사과즙 보유 한도 초과! (최대 99개)');return;}
   if(S.money<8000){addLog('bad','돈 부족!');return;}
@@ -2766,6 +2782,9 @@ function update(){
   document.getElementById('veh-lbl').textContent=v.n;document.getElementById('loc-lbl').textContent=S.city+(S.dest?'→'+S.dest:'');
   document.getElementById('lv').textContent=S.lv;document.getElementById('mon').textContent=Math.round(S.money).toLocaleString();
   document.getElementById('apN').textContent=S.ap;document.getElementById('jcN').textContent=S.jc;
+  // #8: 크로스바이크(v9) 보유 후 메인 사과 버튼을 사과박스 구매로 전환
+  const _apBtn=document.getElementById('apple-btn');
+  if(_apBtn){ const _box=ownsVeh('v9'); const _html=_box?'📦<br>사과박스':'🍎<br>사과'; if(_apBtn.innerHTML!==_html)_apBtn.innerHTML=_html; }
   document.getElementById('hp-v').textContent=Math.round(S.hp)+'/'+S.mhp;document.getElementById('hp-b').style.width=Math.round(S.hp/S.mhp*100)+'%';
   document.getElementById('xp-v').textContent=Math.round(S.xp)+'/'+S.xpMax;document.getElementById('xp-b').style.width=Math.round(S.xp/S.xpMax*100)+'%';
   document.getElementById('dop-v').textContent=S.dopT>0?S.dopT+'s':'OFF';document.getElementById('dop-b').style.width=Math.round(S.dopT/40*100)+'%';
