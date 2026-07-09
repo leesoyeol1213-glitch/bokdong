@@ -365,7 +365,11 @@ function showNpcReunion(npc){
 function acceptReunion(id,money,xp,wr){
   const n=S.npcs.find(x=>x.id===id);
   S.money+=money;S.xp+=xp;
-  if(n){evAnimNpc=n;evAnim='npc_reward';evTimer=100;addLog('good','🔄 '+(NPC_EMOJI[id]||'👤')+' '+n.n+' 재회! ₩'+money.toLocaleString()+', XP+'+xp);
+  if(n){
+    n._resultText = '+₩'+money.toLocaleString()+' +XP'+xp;
+    evAnimNpc=n;evAnim='npc_reward';evTimer=100;
+    addLog('good','🔄 '+(NPC_EMOJI[id]||'👤')+' '+n.n+' 재회! '+n._resultText);
+    showSt('🔄 '+(NPC_EMOJI[id]||'👤')+' '+n.n+' 재회! '+n._resultText);
     awardMythicIfLucky(n.grade); // 전설·에픽·신 재회 시에도 신화 드롭 가능(월간 미션 달성 경로)
   }
   closeModal(wr);
@@ -942,8 +946,10 @@ function showNpcModal(npc){
 function acceptNpc(id,wr){
   const n=S.npcs.find(x=>x.id===id);
   if(n&&!n.locked){
+    const snap={money:S.money,xp:S.xp,hp:S.hp,jc:S.jc,ap:S.ap};  // #1: 랜덤 보상 실수령액 즉시 표시용
     n.eff(S);n.met=true;
-    addLog(n.grade==='disaster'?'bad':'good',(NPC_EMOJI[n.id]||'👤')+' '+n.n+(n.grade==='disaster'?' 의 저주!':' 만남! ')+n.reward);
+    n._resultText = rewardDeltaText(snap) || n.reward;
+    addLog(n.grade==='disaster'?'bad':'good',(NPC_EMOJI[n.id]||'👤')+' '+n.n+(n.grade==='disaster'?' 의 저주! ':' 만남! ')+n._resultText);
     // 재앙 NPC는 보상 애니 대신 빨간 화면 효과
     if(n.grade==='disaster'){
       evAnim='disaster_aftermath'; evTimer=120;
@@ -951,9 +957,20 @@ function acceptNpc(id,wr){
       evAnimNpc=n;evAnim='npc_reward';evTimer=100;
       trackMission('npc');
     }
+    showSt((NPC_EMOJI[n.id]||'👤')+' '+n.n+': '+n._resultText);  // 화면에 결과값 바로
     awardMythicIfLucky(n.grade);
   }
   closeModal(wr);
+}
+// eff 전후 상태 변화를 사람이 읽는 보상 문자열로 (없으면 '' 반환 → 정적 reward로 폴백)
+function rewardDeltaText(snap){
+  const parts=[];
+  const dm=Math.round(S.money-snap.money); if(dm) parts.push((dm>0?'+₩':'-₩')+Math.abs(dm).toLocaleString());
+  const dx=Math.round(S.xp-snap.xp);       if(dx) parts.push((dx>0?'+':'')+'XP'+dx);
+  const dh=Math.round(S.hp-snap.hp);       if(dh) parts.push((dh>0?'+':'')+'체력'+dh);
+  const dj=(S.jc||0)-(snap.jc||0);         if(dj) parts.push((dj>0?'+':'')+'🧃'+dj);
+  const da=(S.ap||0)-(snap.ap||0);         if(da) parts.push((da>0?'+':'')+'🍎'+da);
+  return parts.join(' ');
 }
 // 전설·에픽·신 NPC(첫 만남/재회 공용)에서 확률적으로 신화 장비 지급. 월간 '신화 장비' 미션의 반복 획득 경로.
 function awardMythicIfLucky(grade){
@@ -2807,14 +2824,17 @@ function buyAp(){
 // #1·#8: 사과박스 — 크로스바이크(v9) 보유 시 메인 사과 버튼이 이걸로 전환됨(대량 구매).
 function ownsVeh(id){ return (S.vehs||[]).some(v=>v.id===id && v.owned); }
 function buyAppleBox(){
-  const N=20, price=45000;                 // 20개 ₩45,000 (개당 2,250 · 단품 대비 25%↓)
+  const N=20, unit=2250;                    // 개당 ₩2,250 (단품 3,000 대비 25%↓), 박스 20개 = ₩45,000
   const room=99-(S.ap||0);
-  if(room<=0){ addLog('bad','🍎 사과 보유 한도! (최대 99개)'); return; }
-  const add=Math.min(N, room);
-  const cost=Math.round(price/N*add);      // 한도 근처면 들어가는 만큼만 비례 결제
-  if(S.money<cost){ addLog('bad','돈 부족! (₩'+cost.toLocaleString()+' 필요)'); return; }
+  if(room<=0){ showSt('🍎 사과가 이미 가득해요 (최대 99개)'); return; }
+  let add=Math.min(N, room);
+  if(S.money < unit*add) add=Math.floor((S.money||0)/unit);   // 돈 부족하면 살 수 있는 만큼만
+  add=Math.min(add, room);
+  if(add<=0){ showSt('돈 부족! 사과 1개 ₩'+unit.toLocaleString()+'부터'); return; }
+  const cost=unit*add;
   S.money-=cost; S.ap+=add;
   addLog('good','📦 사과박스! 🍎 +'+add+' (₩'+cost.toLocaleString()+')');
+  showSt('📦 사과 +'+add+' 구매! (₩'+cost.toLocaleString()+')');
   playSfx('apple');
   update(); if(curTab==='item') renderItems();
 }

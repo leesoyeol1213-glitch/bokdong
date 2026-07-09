@@ -593,7 +593,7 @@ function drawNpcRewardAnim(){
   ctx.font='bold 8px Galmuri11, monospace';ctx.fillStyle=gc;ctx.textBaseline='alphabetic';ctx.textAlign='left';
   ctx.fillText(npc.n,-24,-8);
   ctx.font='bold 6px Galmuri11, monospace';ctx.fillStyle='#5C3D1E';
-  ctx.fillText(npc.reward,-24,12);
+  ctx.fillText(npc._resultText||npc.reward,-24,12);  // #1: 랜덤 보상은 실제 결과값 표시
   // 등급 배지
   ctx.fillStyle=gc;ctx.beginPath();ctx.roundRect(-90,30,80,18,6);ctx.fill();
   ctx.fillStyle='#FFF';ctx.font='bold 6px Galmuri11, monospace';ctx.textAlign='center';
