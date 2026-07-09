@@ -44,7 +44,7 @@ function tick(){
     playSfx('bad');
     // 7번 fix: 체력 고갈 시 강제 모달로 알림 (놓치지 않게)
     const u = 'var(--u)';
-    const fs = px => `font-size:calc(${px}px * ${u})`;
+    const fs = px => `font-size:calc(${px<11?px+2:px}px * ${u})`;
     const hasApple = (S.ap||0) > 0;
     const hasJuice = (S.jc||0) > 0;
     const modalArea = document.getElementById('modal-area');
@@ -354,15 +354,15 @@ function showNpcReunion(npc){
     : `<div style="width:44px;height:44px;background:${gb};border:3px solid ${gc};border-radius:8px;box-shadow:2px 2px 0 ${gc};display:flex;align-items:center;justify-content:center;font-size:calc(22px * var(--u));flex-shrink:0;">${em}</div>`;
   document.getElementById('modal-area').innerHTML=`
   <div class="px-panel" style="border-color:${gc};margin-bottom:5px;">
-    <div style="text-align:center;font-size:calc(6px * var(--u));color:#8B6340;margin-bottom:5px;">🔄 다시 만난 인연</div>
+    <div style="text-align:center;font-size:calc(8px * var(--u));color:#8B6340;margin-bottom:5px;">🔄 다시 만난 인연</div>
     <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
       ${portrait}
-      <div><div style="font-size:calc(7px * var(--u));color:#3D2510;">${npc.n}</div>
-      <div style="font-size:calc(6px * var(--u));color:#8B6340;">${npc.role}</div></div>
+      <div><div style="font-size:calc(9px * var(--u));color:#3D2510;">${npc.n}</div>
+      <div style="font-size:calc(8px * var(--u));color:#8B6340;">${npc.role}</div></div>
     </div>
-    <div style="font-size:calc(7px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid #D4B483;border-left:4px solid ${gc};border-radius:0 6px 6px 0;padding:7px 9px;margin-bottom:8px;line-height:2;">"${line}"</div>
-    <div style="font-size:calc(6px * var(--u));color:#8B6340;margin-bottom:10px;">재회 선물: <span style="color:#3D2510;">₩${money.toLocaleString()} · XP+${xp}</span></div>
-    <button class="px-btn px-btn-green" style="width:100%;font-size:calc(7px * var(--u));" onclick="acceptReunion('${npc.id}',${money},${xp},${wr})">반가워! 계속 달리자 ▶</button>
+    <div style="font-size:calc(9px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid #D4B483;border-left:4px solid ${gc};border-radius:0 6px 6px 0;padding:7px 9px;margin-bottom:8px;line-height:2;">"${line}"</div>
+    <div style="font-size:calc(8px * var(--u));color:#8B6340;margin-bottom:10px;">재회 선물: <span style="color:#3D2510;">₩${money.toLocaleString()} · XP+${xp}</span></div>
+    <button class="px-btn px-btn-green" style="width:100%;font-size:calc(9px * var(--u));" onclick="acceptReunion('${npc.id}',${money},${xp},${wr})">반가워! 계속 달리자 ▶</button>
   </div>`;
 }
 function acceptReunion(id,money,xp,wr){
@@ -483,7 +483,7 @@ function showTravelLog(info){
     body=`<div style="font-size:${S6};color:#5C3D1E;line-height:2;text-align:center;">
       💤 <b>${info.timeStr}</b> 동안 자리를 비웠어요.<br>
       ${info.hpRec>0?`❤️ 체력 +${info.hpRec} 회복`:'푹 쉬었어요.'}
-      ${info.capped?'<br><span style="color:#8B6340;font-size:calc(5px * var(--u));">(최대 8시간까지 반영)</span>':''}
+      ${info.capped?'<br><span style="color:#8B6340;font-size:calc(7px * var(--u));">(최대 8시간까지 반영)</span>':''}
     </div>`;
   }else{
     const row=(label,val)=>`<div style="display:flex;justify-content:space-between;padding:calc(2px * var(--u)) 0;border-bottom:1px dashed #E0C9A6;"><span style="color:#8B6340;">${label}</span><b style="color:#5C3D1E;">${val}</b></div>`;
@@ -494,19 +494,19 @@ function showTravelLog(info){
       <div style="text-align:center;margin-bottom:calc(6px * var(--u));">🌏 <b>${info.timeStr}</b> 동안의 여정</div>
       ${row('🚴 이동 거리', info.dist.toLocaleString()+'km')}
       ${row('📍 도착', info.arrivedCount+'곳')}
-      ${info.arrivedCount>0?`<div style="font-size:calc(5px * var(--u));color:#8B6340;padding:calc(3px * var(--u)) 0;text-align:center;">${cities}</div>`:''}
+      ${info.arrivedCount>0?`<div style="font-size:calc(7px * var(--u));color:#8B6340;padding:calc(3px * var(--u)) 0;text-align:center;">${cities}</div>`:''}
       ${row('💰 벌이', '₩'+info.moneyGain.toLocaleString())}
       ${row('⭐ 경험치', 'XP +'+info.xpGain.toLocaleString()+(info.levelsUp>0?` (Lv +${info.levelsUp})`:''))}
       ${row('🍎 사과 사용', info.applesUsed+'개')}
-      ${info.stoppedNoApple?`<div style="color:#B71C1C;font-size:calc(5px * var(--u));text-align:center;padding-top:calc(4px * var(--u));">🍎 사과가 떨어져 도중에 멈췄어요! 출발 전 넉넉히 챙겨가세요.</div>`:''}
-      ${info.capped?`<div style="color:#8B6340;font-size:calc(5px * var(--u));text-align:center;">(최대 8시간까지 반영)</div>`:''}
+      ${info.stoppedNoApple?`<div style="color:#B71C1C;font-size:calc(7px * var(--u));text-align:center;padding-top:calc(4px * var(--u));">🍎 사과가 떨어져 도중에 멈췄어요! 출발 전 넉넉히 챙겨가세요.</div>`:''}
+      ${info.capped?`<div style="color:#8B6340;font-size:calc(7px * var(--u));text-align:center;">(최대 8시간까지 반영)</div>`:''}
     </div>`;
   }
   document.getElementById('modal-area').innerHTML=`
   <div class="px-panel" style="border-color:#1976D2;margin-bottom:5px;box-shadow:0 0 calc(10px * var(--u)) #64B5F6;">
     <div style="font-size:${T};color:#1976D2;text-align:center;margin-bottom:calc(8px * var(--u));">📖 여행 일지</div>
     <div style="background:#FFF8DC;border:2px solid #D4B483;border-radius:6px;padding:calc(8px * var(--u));margin-bottom:calc(8px * var(--u));">${body}</div>
-    <button class="px-btn px-btn-green" style="width:100%;font-size:calc(7px * var(--u));padding:calc(10px * var(--u));" onclick="document.getElementById('modal-area').innerHTML='';if(typeof update==='function')update();">확인 ▶</button>
+    <button class="px-btn px-btn-green" style="width:100%;font-size:calc(9px * var(--u));padding:calc(10px * var(--u));" onclick="document.getElementById('modal-area').innerHTML='';if(typeof update==='function')update();">확인 ▶</button>
   </div>`;
 }
 
@@ -527,17 +527,17 @@ function showHistModal(ci){
     const canAfford = S.money >= ferryPrice;
     document.getElementById('modal-area').innerHTML=`
     <div class="px-panel" style="border-color:#0277BD;background:linear-gradient(135deg,#E1F5FE,#FFF8E1);margin-bottom:5px;box-shadow:0 0 calc(12px * var(--u)) #29B6F6;">
-      <div style="font-size:calc(9px * var(--u));color:#01579B;text-align:center;margin-bottom:6px;">⛴️ 부산 도착!</div>
-      <div style="font-size:calc(6px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid #0277BD;border-radius:5px;padding:6px;margin-bottom:8px;line-height:2;">📜 ${ci.hist}</div>
-      <div style="font-size:calc(7px * var(--u));color:#01579B;background:linear-gradient(135deg,#E1F5FE,#B3E5FC);border:3px dashed #0277BD;border-radius:8px;padding:10px;margin-bottom:8px;text-align:center;line-height:2;">
+      <div style="font-size:calc(11px * var(--u));color:#01579B;text-align:center;margin-bottom:6px;">⛴️ 부산 도착!</div>
+      <div style="font-size:calc(8px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid #0277BD;border-radius:5px;padding:6px;margin-bottom:8px;line-height:2;">📜 ${ci.hist}</div>
+      <div style="font-size:calc(9px * var(--u));color:#01579B;background:linear-gradient(135deg,#E1F5FE,#B3E5FC);border:3px dashed #0277BD;border-radius:8px;padding:10px;margin-bottom:8px;text-align:center;line-height:2;">
         🇯🇵 <b>일본행 페리 출항 가능!</b><br>
-        <span style="font-size:calc(8px * var(--u));color:#B71C1C;">₩${ferryPrice.toLocaleString()}</span><br>
-        <span style="font-size:calc(5px * var(--u));color:#8B6340;line-height:1.6;">⛴️ 부산 ↔ 후쿠오카 페리<br>🍣 5개 일본 도시 탐험 가능<br>🛒 부산에서만 구매 가능!</span>
+        <span style="font-size:calc(10px * var(--u));color:#B71C1C;">₩${ferryPrice.toLocaleString()}</span><br>
+        <span style="font-size:calc(7px * var(--u));color:#8B6340;line-height:1.6;">⛴️ 부산 ↔ 후쿠오카 페리<br>🍣 5개 일본 도시 탐험 가능<br>🛒 부산에서만 구매 가능!</span>
       </div>
       ${canAfford
-        ? `<button class="px-btn" style="width:100%;font-size:calc(8px * var(--u));padding:calc(10px * var(--u));background:#0277BD;border-color:#01579B;margin-bottom:6px;box-shadow:calc(3px * var(--u)) calc(3px * var(--u)) 0 #002F5F;color:#FFF;" onclick="buyFerryFromModal(${wr})">⛴️ 구매하시겠습니까? (₩${ferryPrice.toLocaleString()})</button>`
-        : `<div style="font-size:calc(7px * var(--u));color:#B71C1C;background:#FFE0E0;border:2px solid #E53935;border-radius:6px;padding:8px;text-align:center;margin-bottom:6px;line-height:1.8;">자금 부족!<br>보유: ₩${S.money.toLocaleString()} / 필요: ₩${ferryPrice.toLocaleString()}</div>`}
-      <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(7px * var(--u));" onclick="closeModal(${wr})">다음 기회에... ▶</button>
+        ? `<button class="px-btn" style="width:100%;font-size:calc(10px * var(--u));padding:calc(10px * var(--u));background:#0277BD;border-color:#01579B;margin-bottom:6px;box-shadow:calc(3px * var(--u)) calc(3px * var(--u)) 0 #002F5F;color:#FFF;" onclick="buyFerryFromModal(${wr})">⛴️ 구매하시겠습니까? (₩${ferryPrice.toLocaleString()})</button>`
+        : `<div style="font-size:calc(9px * var(--u));color:#B71C1C;background:#FFE0E0;border:2px solid #E53935;border-radius:6px;padding:8px;text-align:center;margin-bottom:6px;line-height:1.8;">자금 부족!<br>보유: ₩${S.money.toLocaleString()} / 필요: ₩${ferryPrice.toLocaleString()}</div>`}
+      <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(9px * var(--u));" onclick="closeModal(${wr})">다음 기회에... ▶</button>
     </div>`;
     return;
     }
@@ -549,20 +549,20 @@ function showHistModal(ci){
     const canAfford=S.money>=80000;
     document.getElementById('modal-area').innerHTML=`
     <div class="px-panel" style="border-color:#FF6D00;background:linear-gradient(135deg,#FFF3E0,#E3F2FD);margin-bottom:5px;box-shadow:0 0 calc(12px * var(--u)) #FFCC02;">
-      <div style="font-size:calc(9px * var(--u));color:#E65100;text-align:center;margin-bottom:6px;">🚀 나로호발사센터 도착!</div>
-      <div style="font-size:calc(6px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid #FF6D00;border-radius:5px;padding:6px;margin-bottom:8px;line-height:2;">📜 ${ci.hist}</div>
-      <div style="font-size:calc(7px * var(--u));color:#E65100;background:linear-gradient(135deg,#FFF8E1,#FFE082);border:3px dashed #FFCC02;border-radius:8px;padding:10px;margin-bottom:8px;text-align:center;line-height:2;">
+      <div style="font-size:calc(11px * var(--u));color:#E65100;text-align:center;margin-bottom:6px;">🚀 나로호발사센터 도착!</div>
+      <div style="font-size:calc(8px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid #FF6D00;border-radius:5px;padding:6px;margin-bottom:8px;line-height:2;">📜 ${ci.hist}</div>
+      <div style="font-size:calc(9px * var(--u));color:#E65100;background:linear-gradient(135deg,#FFF8E1,#FFE082);border:3px dashed #FFCC02;border-radius:8px;padding:10px;margin-bottom:8px;text-align:center;line-height:2;">
         ${hasRocket
           ? '🚀 <b>임복동1호 보유 중!</b><br>발사하시겠어요?'
-          : `✨ <b>임복동1호 구매 기회!</b><br><span style="font-size:calc(8px * var(--u));color:#B71C1C;">₩80,000</span><br><span style="font-size:calc(5px * var(--u));color:#8B6340;line-height:1.6;">⚠️ 1회용 · 5% 폭발 확률<br>🌕 발사 성공 시 달 도착<br>🛒 이곳에서만 구매 가능!</span>`}
+          : `✨ <b>임복동1호 구매 기회!</b><br><span style="font-size:calc(10px * var(--u));color:#B71C1C;">₩80,000</span><br><span style="font-size:calc(7px * var(--u));color:#8B6340;line-height:1.6;">⚠️ 1회용 · 5% 폭발 확률<br>🌕 발사 성공 시 달 도착<br>🛒 이곳에서만 구매 가능!</span>`}
       </div>
       ${hasRocket
-        ? `<button class="px-btn" style="width:100%;font-size:calc(8px * var(--u));padding:calc(10px * var(--u));background:#E53935;border-color:#B71C1C;margin-bottom:6px;box-shadow:calc(3px * var(--u)) calc(3px * var(--u)) 0 #6D0000;" onclick="closeModalAndLaunch(${wr})">🚀 지금 발사!</button>`
+        ? `<button class="px-btn" style="width:100%;font-size:calc(10px * var(--u));padding:calc(10px * var(--u));background:#E53935;border-color:#B71C1C;margin-bottom:6px;box-shadow:calc(3px * var(--u)) calc(3px * var(--u)) 0 #6D0000;" onclick="closeModalAndLaunch(${wr})">🚀 지금 발사!</button>`
         : (canAfford
-          ? `<button class="px-btn px-btn-green" style="width:100%;font-size:calc(8px * var(--u));padding:calc(10px * var(--u));margin-bottom:6px;" onclick="buyRocketFromModal(${wr})">💰 구매하시겠습니까? (₩80,000)</button>`
-          : `<div style="font-size:calc(7px * var(--u));color:#B71C1C;background:#FFE0E0;border:2px solid #E53935;border-radius:6px;padding:8px;text-align:center;margin-bottom:6px;line-height:1.8;">자금 부족!<br>보유: ₩${S.money.toLocaleString()} / 필요: ₩80,000</div>`)
+          ? `<button class="px-btn px-btn-green" style="width:100%;font-size:calc(10px * var(--u));padding:calc(10px * var(--u));margin-bottom:6px;" onclick="buyRocketFromModal(${wr})">💰 구매하시겠습니까? (₩80,000)</button>`
+          : `<div style="font-size:calc(9px * var(--u));color:#B71C1C;background:#FFE0E0;border:2px solid #E53935;border-radius:6px;padding:8px;text-align:center;margin-bottom:6px;line-height:1.8;">자금 부족!<br>보유: ₩${S.money.toLocaleString()} / 필요: ₩80,000</div>`)
       }
-      <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(7px * var(--u));" onclick="closeModal(${wr})">${hasRocket?'나중에 발사':'다음 기회에...'} ▶</button>
+      <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(9px * var(--u));" onclick="closeModal(${wr})">${hasRocket?'나중에 발사':'다음 기회에...'} ▶</button>
     </div>`;
     return;
   }
@@ -571,15 +571,15 @@ function showHistModal(ci){
   if(ci.special==='moon'){
     document.getElementById('modal-area').innerHTML=`
     <div class="px-panel" style="border-color:#FFD700;background:linear-gradient(135deg,#0A0A2E,#1A1A4E);margin-bottom:5px;">
-      <div style="font-size:calc(9px * var(--u));color:#FFD700;text-align:center;margin-bottom:8px;">🌕 달 도착!!</div>
-      <div style="font-size:calc(6px * var(--u));color:#E0E0FF;background:rgba(255,255,255,.08);border:2px solid #FFD700;border-radius:6px;padding:8px;margin-bottom:8px;line-height:2.2;text-align:center;">
+      <div style="font-size:calc(11px * var(--u));color:#FFD700;text-align:center;margin-bottom:8px;">🌕 달 도착!!</div>
+      <div style="font-size:calc(8px * var(--u));color:#E0E0FF;background:rgba(255,255,255,.08);border:2px solid #FFD700;border-radius:6px;padding:8px;margin-bottom:8px;line-height:2.2;text-align:center;">
         히든스페이스 발견!<br>🐰 토끼가 반겨준다<br>
-        <span style="font-size:calc(5px * var(--u));color:#AAAAFF;">달에서 200km를 달리면<br>충주로 귀환합니다</span>
+        <span style="font-size:calc(7px * var(--u));color:#AAAAFF;">달에서 200km를 달리면<br>충주로 귀환합니다</span>
       </div>
-      <div style="font-size:calc(6px * var(--u));color:#FFD700;background:rgba(255,215,0,.12);border:2px solid #FFD700;border-radius:6px;padding:6px;text-align:center;margin-bottom:8px;">
+      <div style="font-size:calc(8px * var(--u));color:#FFD700;background:rgba(255,215,0,.12);border:2px solid #FFD700;border-radius:6px;padding:6px;text-align:center;margin-bottom:8px;">
         🎉 달 도착 보상: ₩500,000
       </div>
-      <button class="px-btn" style="width:100%;font-size:calc(7px * var(--u));background:#FFD700;border-color:#B8860B;color:#1A0A00;" onclick="closeModal(${wr})">달 라이딩 시작! 🌕</button>
+      <button class="px-btn" style="width:100%;font-size:calc(9px * var(--u));background:#FFD700;border-color:#B8860B;color:#1A0A00;" onclick="closeModal(${wr})">달 라이딩 시작! 🌕</button>
     </div>`;
     return;
   }
@@ -596,13 +596,13 @@ function showHistModal(ci){
       : '⛰️ 갓을 쓴 훈장님이 회초리를 들고 다가온다.<br><span style="color:#B71C1C;">"교통법규 교육 시간이다. 200km 강행군!"</span>';
     document.getElementById('modal-area').innerHTML=`
     <div class="px-panel" style="border-color:${titleColor};background:${bgGradient};margin-bottom:5px;">
-      <div style="font-size:calc(8px * var(--u));color:${titleColor};text-align:center;margin-bottom:6px;">⚠️ ${ci.n} 도착!! ⚠️</div>
-      <div style="font-size:calc(6px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid ${titleColor};border-radius:6px;padding:7px;margin-bottom:8px;line-height:2;">📜 ${ci.hist}</div>
-      <div style="font-size:calc(6px * var(--u));color:#3D2510;background:#FFF8DC;border:2px solid #D4B483;border-radius:6px;padding:8px;margin-bottom:8px;line-height:2;text-align:center;">${subText}</div>
-      <div style="font-size:calc(6px * var(--u));color:#B71C1C;background:#FFE0E0;border:2px solid #B71C1C;border-radius:6px;padding:6px;margin-bottom:8px;text-align:center;line-height:1.8;">
+      <div style="font-size:calc(10px * var(--u));color:${titleColor};text-align:center;margin-bottom:6px;">⚠️ ${ci.n} 도착!! ⚠️</div>
+      <div style="font-size:calc(8px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid ${titleColor};border-radius:6px;padding:7px;margin-bottom:8px;line-height:2;">📜 ${ci.hist}</div>
+      <div style="font-size:calc(8px * var(--u));color:#3D2510;background:#FFF8DC;border:2px solid #D4B483;border-radius:6px;padding:8px;margin-bottom:8px;line-height:2;text-align:center;">${subText}</div>
+      <div style="font-size:calc(8px * var(--u));color:#B71C1C;background:#FFE0E0;border:2px solid #B71C1C;border-radius:6px;padding:6px;margin-bottom:8px;text-align:center;line-height:1.8;">
         🚷 무의미한 라이딩 200km 진행<br>50km마다 주사위 6 나오면 탈출 가능
       </div>
-      <button class="px-btn px-btn-red" style="width:100%;font-size:calc(7px * var(--u));" onclick="enterTrapZone('${ci.special}',${wr})">탈출 시도 시작...</button>
+      <button class="px-btn px-btn-red" style="width:100%;font-size:calc(9px * var(--u));" onclick="enterTrapZone('${ci.special}',${wr})">탈출 시도 시작...</button>
     </div>`;
     return;
   }
@@ -613,16 +613,16 @@ function showHistModal(ci){
   if(ci.special==='jinchon'){
     document.getElementById('modal-area').innerHTML=`
     <div class="px-panel" style="border-color:#FF8F00;background:linear-gradient(135deg,#FFF8E1,#FFECB3);margin-bottom:5px;">
-      <div style="font-size:calc(8px * var(--u));color:#E65100;text-align:center;margin-bottom:6px;">☀️ 진천 도착!</div>
-      <div style="font-size:calc(6px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid #FF8F00;border-radius:5px;padding:6px;margin-bottom:8px;line-height:2;">📜 ${ci.hist}</div>
-      <div style="font-size:calc(6px * var(--u));color:#3D2510;background:#FFF;border:2px solid #FFD54F;border-radius:6px;padding:8px;margin-bottom:8px;line-height:2;text-align:center;">
+      <div style="font-size:calc(10px * var(--u));color:#E65100;text-align:center;margin-bottom:6px;">☀️ 진천 도착!</div>
+      <div style="font-size:calc(8px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid #FF8F00;border-radius:5px;padding:6px;margin-bottom:8px;line-height:2;">📜 ${ci.hist}</div>
+      <div style="font-size:calc(8px * var(--u));color:#3D2510;background:#FFF;border:2px solid #FFD54F;border-radius:6px;padding:8px;margin-bottom:8px;line-height:2;text-align:center;">
         👩‍🔬 <b>닥터 오</b>: "어서 오세요!<br>퀴즈 3문제를 맞추면 사과즙을<br><b style="color:#E65100;">태양열 부스터</b>로 업그레이드해드릴게요!"
         ${S.solarBoost?'<br><br><span style="color:#1B5E20;">✅ 이미 업그레이드 완료!</span>':''}
       </div>
       ${S.solarBoost
-        ? `<button class="px-btn" style="width:100%;font-size:calc(7px * var(--u));" onclick="closeModal(${wr})">계속 달리자 ▶</button>`
-        : `<button class="px-btn px-btn-orange" style="width:100%;font-size:calc(7px * var(--u));margin-bottom:5px;" onclick="startDrOQuiz(${wr})">퀴즈 도전!</button>
-           <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(7px * var(--u));" onclick="closeModal(${wr})">나중에</button>`}
+        ? `<button class="px-btn" style="width:100%;font-size:calc(9px * var(--u));" onclick="closeModal(${wr})">계속 달리자 ▶</button>`
+        : `<button class="px-btn px-btn-orange" style="width:100%;font-size:calc(9px * var(--u));margin-bottom:5px;" onclick="startDrOQuiz(${wr})">퀴즈 도전!</button>
+           <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(9px * var(--u));" onclick="closeModal(${wr})">나중에</button>`}
     </div>`;
     return;
   }
@@ -632,15 +632,15 @@ function showHistModal(ci){
   const q=cityQs[Math.floor(Math.random()*cityQs.length)];
   document.getElementById('modal-area').innerHTML=`
   <div class="px-panel" style="border-color:#C0A060;background:#FFF8DC;margin-bottom:5px;">
-    <div style="font-size:calc(7px * var(--u));color:#5C3D1E;text-align:center;margin-bottom:5px;">🎉 ${ci.n} 도착!</div>
-    <div style="font-size:calc(7px * var(--u));color:#8B6340;background:#F5E6C8;border:2px solid #C0A060;border-radius:5px;padding:6px;margin-bottom:8px;line-height:1.9;">📜 ${ci.hist}</div>
-    <div style="font-size:calc(7px * var(--u));color:#5C3D1E;margin-bottom:6px;">역사 OX 퀴즈!</div>
-    <div style="font-size:calc(7px * var(--u));color:#3D2510;background:#FFF8DC;border:2px solid #D4B483;border-radius:6px;padding:7px;margin-bottom:10px;line-height:1.9;">${q.q}</div>
+    <div style="font-size:calc(9px * var(--u));color:#5C3D1E;text-align:center;margin-bottom:5px;">🎉 ${ci.n} 도착!</div>
+    <div style="font-size:calc(9px * var(--u));color:#8B6340;background:#F5E6C8;border:2px solid #C0A060;border-radius:5px;padding:6px;margin-bottom:8px;line-height:1.9;">📜 ${ci.hist}</div>
+    <div style="font-size:calc(9px * var(--u));color:#5C3D1E;margin-bottom:6px;">역사 OX 퀴즈!</div>
+    <div style="font-size:calc(9px * var(--u));color:#3D2510;background:#FFF8DC;border:2px solid #D4B483;border-radius:6px;padding:7px;margin-bottom:10px;line-height:1.9;">${q.q}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;">
-      <button class="px-btn px-btn-gray" style="font-size:calc(7px * var(--u));padding:12px;" onclick="ansOX(true,${q.a},\`${q.ex}\`,${wr})">O</button>
-      <button class="px-btn px-btn-red" style="font-size:calc(7px * var(--u));padding:12px;" onclick="ansOX(false,${q.a},\`${q.ex}\`,${wr})">X</button>
+      <button class="px-btn px-btn-gray" style="font-size:calc(9px * var(--u));padding:12px;" onclick="ansOX(true,${q.a},\`${q.ex}\`,${wr})">O</button>
+      <button class="px-btn px-btn-red" style="font-size:calc(9px * var(--u));padding:12px;" onclick="ansOX(false,${q.a},\`${q.ex}\`,${wr})">X</button>
     </div>
-    <div style="font-size:calc(7px * var(--u));color:#8B6340;text-align:center;">정답시 ₩5,000 + XP+20</div>
+    <div style="font-size:calc(9px * var(--u));color:#8B6340;text-align:center;">정답시 ₩5,000 + XP+20</div>
   </div>`;
 }
 
@@ -701,7 +701,7 @@ function showEscapeDestModal(){
     picked.push(pool.splice(idx, 1)[0]);
   }
   const u = 'var(--u)';
-  const fs = px => `font-size:calc(${px}px * ${u})`;
+  const fs = px => `font-size:calc(${px<11?px+2:px}px * ${u})`;
   const btnsHtml = picked.map(c =>
     `<button class="px-btn" style="${fs(7)};padding:calc(8px * ${u});background:#43A047;border-color:#1B5E20;color:#FFF;width:100%;margin-bottom:calc(4px * ${u});" onclick="selectEscapeDest('${c.n}',${wr})">📍 ${c.n} <span style="${fs(5)};opacity:.85;">(${c.region})</span></button>`
   ).join('');
@@ -758,10 +758,10 @@ function showDrOQuestion(){
   const q = DR_O_QUIZ[S.drOQuiz.step];
   document.getElementById('modal-area').innerHTML = `
   <div class="px-panel" style="border-color:#FF8F00;background:#FFF8E1;margin-bottom:5px;">
-    <div style="font-size:calc(7px * var(--u));color:#E65100;text-align:center;margin-bottom:5px;">👩‍🔬 닥터 오 퀴즈 (${S.drOQuiz.step+1}/3)</div>
-    <div style="font-size:calc(6px * var(--u));color:#8B6340;text-align:center;margin-bottom:6px;">맞춘 개수: ${S.drOQuiz.correct}</div>
-    <div style="font-size:calc(7px * var(--u));color:#3D2510;background:#FFF;border:2px solid #FFD54F;border-radius:6px;padding:8px;margin-bottom:9px;line-height:1.9;">${q.q}</div>
-    ${q.opts.map((o,i)=>`<button class="px-btn px-btn-sm" style="width:100%;margin-bottom:4px;text-align:left;font-size:calc(6px * var(--u));" onclick="answerDrO(${i})">${i+1}. ${o}</button>`).join('')}
+    <div style="font-size:calc(9px * var(--u));color:#E65100;text-align:center;margin-bottom:5px;">👩‍🔬 닥터 오 퀴즈 (${S.drOQuiz.step+1}/3)</div>
+    <div style="font-size:calc(8px * var(--u));color:#8B6340;text-align:center;margin-bottom:6px;">맞춘 개수: ${S.drOQuiz.correct}</div>
+    <div style="font-size:calc(9px * var(--u));color:#3D2510;background:#FFF;border:2px solid #FFD54F;border-radius:6px;padding:8px;margin-bottom:9px;line-height:1.9;">${q.q}</div>
+    ${q.opts.map((o,i)=>`<button class="px-btn px-btn-sm" style="width:100%;margin-bottom:4px;text-align:left;font-size:calc(8px * var(--u));" onclick="answerDrO(${i})">${i+1}. ${o}</button>`).join('')}
   </div>`;
 }
 function answerDrO(sel){
@@ -783,22 +783,22 @@ function answerDrO(sel){
       addLog('good','☀️ 태양열 부스터 업그레이드 완료! 부스터 속도 +5 영구 강화!');
       document.getElementById('modal-area').innerHTML = `
       <div class="px-panel" style="border-color:#FFD700;background:linear-gradient(135deg,#FFF8E1,#FFE082);margin-bottom:5px;">
-        <div style="font-size:calc(9px * var(--u));color:#E65100;text-align:center;margin-bottom:8px;">☀️ 태양열 부스터 획득!</div>
-        <div style="font-size:calc(6px * var(--u));color:#3D2510;text-align:center;margin-bottom:8px;line-height:2;">
+        <div style="font-size:calc(11px * var(--u));color:#E65100;text-align:center;margin-bottom:8px;">☀️ 태양열 부스터 획득!</div>
+        <div style="font-size:calc(8px * var(--u));color:#3D2510;text-align:center;margin-bottom:8px;line-height:2;">
           닥터 오: "축하해요!<br>이제 부스터가 태양에너지로 강화됐어요."<br>
           <span style="color:#E65100;font-weight:bold;">부스터 속도 +5 영구!</span>
         </div>
-        <button class="px-btn" style="width:100%;font-size:calc(7px * var(--u));" onclick="closeModal(${wr})">감사합니다!</button>
+        <button class="px-btn" style="width:100%;font-size:calc(9px * var(--u));" onclick="closeModal(${wr})">감사합니다!</button>
       </div>`;
     } else {
       addLog('bad','퀴즈 통과 실패... ('+S.drOQuiz.correct+'/3) 다음에 다시 도전!');
       document.getElementById('modal-area').innerHTML = `
       <div class="px-panel" style="border-color:#B71C1C;margin-bottom:5px;">
-        <div style="font-size:calc(8px * var(--u));color:#B71C1C;text-align:center;margin-bottom:8px;">😔 퀴즈 실패</div>
-        <div style="font-size:calc(6px * var(--u));color:#3D2510;text-align:center;margin-bottom:8px;line-height:2;">
+        <div style="font-size:calc(10px * var(--u));color:#B71C1C;text-align:center;margin-bottom:8px;">😔 퀴즈 실패</div>
+        <div style="font-size:calc(8px * var(--u));color:#3D2510;text-align:center;margin-bottom:8px;line-height:2;">
           닥터 오: "아쉽네요... ${S.drOQuiz.correct}/3<br>다음에 다시 와주세요!"
         </div>
-        <button class="px-btn" style="width:100%;font-size:calc(7px * var(--u));" onclick="closeModal(${wr})">아쉽다...</button>
+        <button class="px-btn" style="width:100%;font-size:calc(9px * var(--u));" onclick="closeModal(${wr})">아쉽다...</button>
       </div>`;
     }
     S.drOQuiz = null;
@@ -817,13 +817,13 @@ function showDisasterNpcModal(npc){
   const em = NPC_EMOJI[npc.id]||'☠️';
   document.getElementById('modal-area').innerHTML=`
   <div class="px-panel" style="border-color:#5D0303;background:linear-gradient(135deg,#3D0000,#7B1FA2);margin-bottom:5px;">
-    <div style="font-size:calc(8px * var(--u));color:#FFE082;text-align:center;margin-bottom:6px;">☠️ 재앙 NPC 출현 ☠️</div>
+    <div style="font-size:calc(10px * var(--u));color:#FFE082;text-align:center;margin-bottom:6px;">☠️ 재앙 NPC 출현 ☠️</div>
     <div style="text-align:center;font-size:calc(28px * var(--u));margin-bottom:8px;">${em}</div>
-    <div style="font-size:calc(8px * var(--u));color:#FFCDD2;text-align:center;margin-bottom:4px;">${npc.n}</div>
-    <div style="font-size:calc(6px * var(--u));color:#FFAB91;text-align:center;margin-bottom:8px;">${npc.role}</div>
-    <div style="font-size:calc(6px * var(--u));color:#3D2510;background:#FFF8DC;border:2px solid #5D0303;border-radius:5px;padding:7px;margin-bottom:8px;line-height:2;">"${line}"</div>
-    <div style="font-size:calc(6px * var(--u));color:#FFE082;background:rgba(255,255,255,.1);border:2px solid #FFE082;border-radius:6px;padding:6px;margin-bottom:8px;text-align:center;">⚠️ ${npc.reward}</div>
-    <button class="px-btn px-btn-red" style="width:100%;font-size:calc(7px * var(--u));" onclick="acceptNpc('${npc.id}',${wr})">…피할 수 없다</button>
+    <div style="font-size:calc(10px * var(--u));color:#FFCDD2;text-align:center;margin-bottom:4px;">${npc.n}</div>
+    <div style="font-size:calc(8px * var(--u));color:#FFAB91;text-align:center;margin-bottom:8px;">${npc.role}</div>
+    <div style="font-size:calc(8px * var(--u));color:#3D2510;background:#FFF8DC;border:2px solid #5D0303;border-radius:5px;padding:7px;margin-bottom:8px;line-height:2;">"${line}"</div>
+    <div style="font-size:calc(8px * var(--u));color:#FFE082;background:rgba(255,255,255,.1);border:2px solid #FFE082;border-radius:6px;padding:6px;margin-bottom:8px;text-align:center;">⚠️ ${npc.reward}</div>
+    <button class="px-btn px-btn-red" style="width:100%;font-size:calc(9px * var(--u));" onclick="acceptNpc('${npc.id}',${wr})">…피할 수 없다</button>
   </div>`;
 }
 
@@ -863,7 +863,7 @@ function showJuiceBoxResult(type){
     S.blackMoneyTrigger = S.totKm + (1 + Math.floor(Math.random()*50));
     title = '💰 비자금 사과박스!';
     color = '#E65100'; bg = 'linear-gradient(135deg,#FFF3E0,#FFD54F)';
-    msg = `<span style="color:#3D2510;">박스 안에 빳빳한 만원권이 가득!</span><br><b style="color:#E65100;">₩1,000,000 즉시 입금!</b><br><span style="font-size:calc(5px * var(--u));color:#B71C1C;">⚠️ ${Math.round(S.blackMoneyTrigger - S.totKm)}km 후 경찰 환수 예정...</span>`;
+    msg = `<span style="color:#3D2510;">박스 안에 빳빳한 만원권이 가득!</span><br><b style="color:#E65100;">₩1,000,000 즉시 입금!</b><br><span style="font-size:calc(7px * var(--u));color:#B71C1C;">⚠️ ${Math.round(S.blackMoneyTrigger - S.totKm)}km 후 경찰 환수 예정...</span>`;
     logMsg = '💰 비자금 박스! ₩1,000,000 입금 (곧 경찰...)';
     logKind = 'good';
   }
@@ -920,15 +920,15 @@ function showNpcModal(npc){
     <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;">
       ${portraitHtml}
       <div>
-        <div style="font-size:calc(7px * var(--u));color:#3D2510;margin-bottom:3px;">${npc.n}</div>
-        <div style="font-size:calc(7px * var(--u));color:#8B6340;margin-bottom:4px;">${npc.role}</div>
-        <span style="background:${gc};color:#FFF;font-size:calc(7px * var(--u));padding:2px 5px;border-radius:3px;">[${gl}]</span>
+        <div style="font-size:calc(9px * var(--u));color:#3D2510;margin-bottom:3px;">${npc.n}</div>
+        <div style="font-size:calc(9px * var(--u));color:#8B6340;margin-bottom:4px;">${npc.role}</div>
+        <span style="background:${gc};color:#FFF;font-size:calc(9px * var(--u));padding:2px 5px;border-radius:3px;">[${gl}]</span>
       </div>
     </div>
-    ${isCV?`<div style="font-size:calc(7px * var(--u));color:#1565C0;background:#E3F2FD;border-radius:6px;padding:5px 8px;margin-bottom:8px;font-style:italic;">${npc.special||''}</div>`:''}
-    <div style="font-size:calc(7px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid #D4B483;border-left:4px solid ${gc};border-radius:0 6px 6px 0;padding:7px 9px;margin-bottom:8px;line-height:2;">"${line}"</div>
-    <div style="font-size:calc(7px * var(--u));color:#8B6340;margin-bottom:10px;">보상: <span style="color:#3D2510;">${npc.reward}</span></div>
-    <button class="px-btn" style="width:100%;font-size:calc(7px * var(--u));" onclick="acceptNpc('${npc.id}',${wr})">${isCV?'...잘 가. (음료를 받는다)':'고마워! 계속 달리자! ▶'}</button>
+    ${isCV?`<div style="font-size:calc(9px * var(--u));color:#1565C0;background:#E3F2FD;border-radius:6px;padding:5px 8px;margin-bottom:8px;font-style:italic;">${npc.special||''}</div>`:''}
+    <div style="font-size:calc(9px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid #D4B483;border-left:4px solid ${gc};border-radius:0 6px 6px 0;padding:7px 9px;margin-bottom:8px;line-height:2;">"${line}"</div>
+    <div style="font-size:calc(9px * var(--u));color:#8B6340;margin-bottom:10px;">보상: <span style="color:#3D2510;">${npc.reward}</span></div>
+    <button class="px-btn" style="width:100%;font-size:calc(9px * var(--u));" onclick="acceptNpc('${npc.id}',${wr})">${isCV?'...잘 가. (음료를 받는다)':'고마워! 계속 달리자! ▶'}</button>
   </div>`;
 }
 function acceptNpc(id,wr){
@@ -993,15 +993,15 @@ function showRpsGame(food,wr){
   const headerBg = isMoon ? 'background:linear-gradient(135deg,#FFE0F0,#FFF8DC);' : 'background:linear-gradient(135deg,#FFE0CC,#FFF8DC);';
   document.getElementById('modal-area').innerHTML = `
   <div class="px-panel" style="${headerBg}border-color:${isMoon?'#FFB6C1':'#FF6D00'};margin-bottom:5px;">
-    <div style="text-align:center;font-size:calc(8px * var(--u));margin-bottom:5px;">${food.e}</div>
-    <div style="font-size:calc(7px * var(--u));color:#3D2510;text-align:center;margin-bottom:3px;">${food.n}</div>
-    <div style="font-size:calc(6px * var(--u));color:#8B6340;text-align:center;margin-bottom:6px;">${npcName} — ${intro}</div>
-    <div id="rps-score" style="font-size:calc(7px * var(--u));color:#5C3D1E;text-align:center;margin-bottom:8px;background:#FFF8DC;border:2px solid #D4B483;border-radius:6px;padding:5px;">나 0 : 0 ${isMoon?'토끼':'두목'} (3판 2선승)</div>
-    <div id="rps-result" style="font-size:calc(7px * var(--u));color:#5C3D1E;text-align:center;margin-bottom:8px;min-height:calc(30px * var(--u));">선택해 주세요!</div>
+    <div style="text-align:center;font-size:calc(10px * var(--u));margin-bottom:5px;">${food.e}</div>
+    <div style="font-size:calc(9px * var(--u));color:#3D2510;text-align:center;margin-bottom:3px;">${food.n}</div>
+    <div style="font-size:calc(8px * var(--u));color:#8B6340;text-align:center;margin-bottom:6px;">${npcName} — ${intro}</div>
+    <div id="rps-score" style="font-size:calc(9px * var(--u));color:#5C3D1E;text-align:center;margin-bottom:8px;background:#FFF8DC;border:2px solid #D4B483;border-radius:6px;padding:5px;">나 0 : 0 ${isMoon?'토끼':'두목'} (3판 2선승)</div>
+    <div id="rps-result" style="font-size:calc(9px * var(--u));color:#5C3D1E;text-align:center;margin-bottom:8px;min-height:calc(30px * var(--u));">선택해 주세요!</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:calc(5px * var(--u));">
-      <button class="px-btn" style="font-size:calc(8px * var(--u));padding:calc(10px * var(--u));" onclick="doRps('rock')">✊<br>바위</button>
-      <button class="px-btn" style="font-size:calc(8px * var(--u));padding:calc(10px * var(--u));" onclick="doRps('paper')">🖐️<br>보</button>
-      <button class="px-btn" style="font-size:calc(8px * var(--u));padding:calc(10px * var(--u));" onclick="doRps('scissor')">✌️<br>가위</button>
+      <button class="px-btn" style="font-size:calc(10px * var(--u));padding:calc(10px * var(--u));" onclick="doRps('rock')">✊<br>바위</button>
+      <button class="px-btn" style="font-size:calc(10px * var(--u));padding:calc(10px * var(--u));" onclick="doRps('paper')">🖐️<br>보</button>
+      <button class="px-btn" style="font-size:calc(10px * var(--u));padding:calc(10px * var(--u));" onclick="doRps('scissor')">✌️<br>가위</button>
     </div>
   </div>`;
   rpsState = {food, wr, my:0, op:0, finished:false};
@@ -1030,7 +1030,7 @@ function doRps(myPick){
   document.getElementById('rps-score').textContent = `나 ${rpsState.my} : ${rpsState.op} ${opName}`;
   document.getElementById('rps-result').innerHTML =
     `<div style="font-size:calc(13px * var(--u));margin:3px 0;">${RPS_EMOJI[myPick]} VS ${RPS_EMOJI[opPick]}</div>`+
-    `<div style="font-size:calc(7px * var(--u));color:${outcome==='win'?'#1B5E20':outcome==='lose'?'#B71C1C':'#5C3D1E'};">`+
+    `<div style="font-size:calc(9px * var(--u));color:${outcome==='win'?'#1B5E20':outcome==='lose'?'#B71C1C':'#5C3D1E'};">`+
     (outcome==='win'?'🎉 이겼다!':outcome==='lose'?'😢 졌다':'🤝 비김')+`</div>`;
 
   // 2선승 결과 처리
@@ -1045,19 +1045,19 @@ function doRps(myPick){
 }
 function showTimingGame(food,wr){
   let pos=0,dir=1,spd=2.8,running=true,iv;
-  document.getElementById('modal-area').innerHTML=`<div class="px-panel" style="margin-bottom:5px;"><div style="text-align:center;font-size:calc(7px * var(--u));margin-bottom:4px;">${food.e}</div><div style="font-size:calc(7px * var(--u));color:#3D2510;text-align:center;margin-bottom:2px;">${food.n}</div><div style="font-size:calc(7px * var(--u));color:#8B6340;text-align:center;margin-bottom:9px;">초록 구간에서 클릭!</div><div style="position:relative;background:#5C3D1E;border:3px solid #3D2510;border-radius:3px;height:20px;margin-bottom:11px;overflow:hidden;"><div style="position:absolute;top:3px;bottom:3px;left:38%;width:24%;background:#4CAF50;border-radius:2px;"></div><div id="t-ind" style="position:absolute;top:2px;bottom:2px;width:14px;background:#E53935;border-radius:2px;left:0%;transition:none;"></div></div><button class="px-btn px-btn-blue" style="width:100%;font-size:calc(7px * var(--u));padding:12px;" onclick="doTiming()">지금!</button></div>`;
+  document.getElementById('modal-area').innerHTML=`<div class="px-panel" style="margin-bottom:5px;"><div style="text-align:center;font-size:calc(9px * var(--u));margin-bottom:4px;">${food.e}</div><div style="font-size:calc(9px * var(--u));color:#3D2510;text-align:center;margin-bottom:2px;">${food.n}</div><div style="font-size:calc(9px * var(--u));color:#8B6340;text-align:center;margin-bottom:9px;">초록 구간에서 클릭!</div><div style="position:relative;background:#5C3D1E;border:3px solid #3D2510;border-radius:3px;height:20px;margin-bottom:11px;overflow:hidden;"><div style="position:absolute;top:3px;bottom:3px;left:38%;width:24%;background:#4CAF50;border-radius:2px;"></div><div id="t-ind" style="position:absolute;top:2px;bottom:2px;width:14px;background:#E53935;border-radius:2px;left:0%;transition:none;"></div></div><button class="px-btn px-btn-blue" style="width:100%;font-size:calc(9px * var(--u));padding:12px;" onclick="doTiming()">지금!</button></div>`;
   window.doTiming=()=>{running=false;clearInterval(iv);if(pos>=37&&pos<=63)foodOk(food,wr,800);else foodFail(food,wr);};
   iv=setInterval(()=>{if(!running)return;pos+=dir*spd;if(pos>=95){pos=95;dir=-1;}else if(pos<=0){pos=0;dir=1;}const el=document.getElementById('t-ind');if(el)el.style.left=pos+'%';},40);
 }
 function showTapGame(food,wr){
   let cnt=0,alive=true;
-  document.getElementById('modal-area').innerHTML=`<div class="px-panel" style="margin-bottom:5px;"><div style="text-align:center;font-size:calc(7px * var(--u));margin-bottom:4px;">${food.e}</div><div style="font-size:calc(7px * var(--u));color:#3D2510;text-align:center;margin-bottom:2px;">${food.n}</div><div style="font-size:calc(7px * var(--u));color:#8B6340;text-align:center;margin-bottom:8px;">5초 안에 12번!</div><div style="font-size:calc(7px * var(--u));color:#3D2510;text-align:center;margin:6px 0;" id="tap-cnt">0 / 12</div><div style="font-size:calc(7px * var(--u));color:#8B6340;text-align:center;margin-bottom:9px;" id="tap-t">5초</div><button class="px-btn px-btn-green" style="width:100%;font-size:calc(7px * var(--u));padding:13px;" onclick="doTap()">먹어! 🍴</button></div>`;
+  document.getElementById('modal-area').innerHTML=`<div class="px-panel" style="margin-bottom:5px;"><div style="text-align:center;font-size:calc(9px * var(--u));margin-bottom:4px;">${food.e}</div><div style="font-size:calc(9px * var(--u));color:#3D2510;text-align:center;margin-bottom:2px;">${food.n}</div><div style="font-size:calc(9px * var(--u));color:#8B6340;text-align:center;margin-bottom:8px;">5초 안에 12번!</div><div style="font-size:calc(9px * var(--u));color:#3D2510;text-align:center;margin:6px 0;" id="tap-cnt">0 / 12</div><div style="font-size:calc(9px * var(--u));color:#8B6340;text-align:center;margin-bottom:9px;" id="tap-t">5초</div><button class="px-btn px-btn-green" style="width:100%;font-size:calc(9px * var(--u));padding:13px;" onclick="doTap()">먹어! 🍴</button></div>`;
   let t=5;const iv=setInterval(()=>{t--;const el=document.getElementById('tap-t');if(el)el.textContent=t+'초';if(t<=0){clearInterval(iv);alive=false;if(cnt<12)foodFail(food,wr);}},1000);
   window.doTap=()=>{if(!alive)return;cnt++;const el=document.getElementById('tap-cnt');if(el)el.textContent=cnt+' / 12';if(cnt>=12){clearInterval(iv);alive=false;foodOk(food,wr,800);}};
 }
 function showFoodQuiz(food,wr){
   const qd=FOOD_QUIZ[food.c]||{q:'퀴즈!',opts:['A','B','C','D'],ans:0};
-  document.getElementById('modal-area').innerHTML=`<div class="px-panel" style="margin-bottom:5px;"><div style="text-align:center;font-size:calc(7px * var(--u));margin-bottom:4px;">${food.e}</div><div style="font-size:calc(7px * var(--u));color:#3D2510;text-align:center;margin-bottom:8px;">${food.n} 퀴즈!</div><div style="font-size:calc(7px * var(--u));color:#3D2510;background:#FFF8DC;border:2px solid #D4B483;border-radius:5px;padding:7px;margin-bottom:9px;line-height:1.9;">${qd.q}</div>${qd.opts.map((o,i)=>`<button class="px-btn px-btn-sm" style="width:100%;margin-bottom:4px;text-align:left;font-size:calc(7px * var(--u));" onclick="checkFoodQ(${i},${qd.ans},'${food.c}',${wr})">${i+1}. ${o}</button>`).join('')}</div>`;
+  document.getElementById('modal-area').innerHTML=`<div class="px-panel" style="margin-bottom:5px;"><div style="text-align:center;font-size:calc(9px * var(--u));margin-bottom:4px;">${food.e}</div><div style="font-size:calc(9px * var(--u));color:#3D2510;text-align:center;margin-bottom:8px;">${food.n} 퀴즈!</div><div style="font-size:calc(9px * var(--u));color:#3D2510;background:#FFF8DC;border:2px solid #D4B483;border-radius:5px;padding:7px;margin-bottom:9px;line-height:1.9;">${qd.q}</div>${qd.opts.map((o,i)=>`<button class="px-btn px-btn-sm" style="width:100%;margin-bottom:4px;text-align:left;font-size:calc(9px * var(--u));" onclick="checkFoodQ(${i},${qd.ans},'${food.c}',${wr})">${i+1}. ${o}</button>`).join('')}</div>`;
 }
 function checkFoodQ(sel,ans,city,wr){const food=FOODS.find(f=>f.c===city);if(sel===ans)foodOk(food,wr,800);else foodFail(food,wr);}
 function foodOk(food,wr,bonus){
@@ -1284,7 +1284,7 @@ function claimMission(id){
 function renderMission(){
   ensureMissions();
   const u='var(--u)';
-  const fs=(px)=>`font-size:calc(${px}px * ${u})`;
+  const fs=(px)=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
   const sectionTitles = {daily:'📅 일일 미션', weekly:'🗓️ 주간 미션', monthly:'📆 월간 미션'};
   const resetKeys = {daily:'dailyResetAt', weekly:'weeklyResetAt', monthly:'monthlyResetAt'};
   let html = '';
@@ -1600,7 +1600,7 @@ function renderGear(){
   S.inventory = S.inventory || [];
   S.gearDust = S.gearDust || 0;
   const u='var(--u)';
-  const fs=(px)=>`font-size:calc(${px}px * ${u})`;
+  const fs=(px)=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
   const bonus = getEquippedBonus();
 
   let html = `<div class="px-panel" style="margin-bottom:5px;">
@@ -1670,7 +1670,7 @@ function renderGear(){
 // ── 2번: 도감(컬렉션) ─────────────────────────────────
 function renderCodex(){
   const u='var(--u)';
-  const fs=(px)=>`font-size:calc(${px}px * ${u})`;
+  const fs=(px)=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
   const visited = S.visited || [];
   const foodDone = S.foodDone || [];
   const npcMet = S.npcs.filter(n=>n.met&&!n.locked).length;
@@ -1894,13 +1894,13 @@ function showConfirmModal(opts){
   const color = opts.color || '#5C3D1E';
   document.getElementById('modal-area').innerHTML = `
   <div class="px-panel" style="border-color:${color};margin-bottom:5px;">
-    <div style="font-size:calc(8px * var(--u));color:${color};text-align:center;margin-bottom:8px;">${opts.title}</div>
-    <div style="font-size:calc(7px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid #D4B483;border-radius:6px;padding:calc(8px * var(--u));margin-bottom:calc(10px * var(--u));line-height:2;text-align:center;">
+    <div style="font-size:calc(10px * var(--u));color:${color};text-align:center;margin-bottom:8px;">${opts.title}</div>
+    <div style="font-size:calc(9px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid #D4B483;border-radius:6px;padding:calc(8px * var(--u));margin-bottom:calc(10px * var(--u));line-height:2;text-align:center;">
       ${opts.message.replace(/\n/g,'<br>')}
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:calc(6px * var(--u));">
-      <button class="px-btn px-btn-gray" style="font-size:calc(7px * var(--u));padding:calc(10px * var(--u));" onclick="_confirmCancel()">${opts.cancelText||'취소'}</button>
-      <button class="px-btn px-btn-green" style="font-size:calc(7px * var(--u));padding:calc(10px * var(--u));" onclick="_confirmOk()">${opts.okText||'확인'}</button>
+      <button class="px-btn px-btn-gray" style="font-size:calc(9px * var(--u));padding:calc(10px * var(--u));" onclick="_confirmCancel()">${opts.cancelText||'취소'}</button>
+      <button class="px-btn px-btn-green" style="font-size:calc(9px * var(--u));padding:calc(10px * var(--u));" onclick="_confirmOk()">${opts.okText||'확인'}</button>
     </div>
   </div>`;
   window._pendingConfirm = {ok: opts.onOk, cancel: opts.onCancel, wr};
@@ -1959,14 +1959,14 @@ function openBackup(){
   try{const raw=localStorage.getItem('bkdng_v45');if(raw)code=_encodeSave(raw);}catch(e){}
   document.getElementById('modal-area').innerHTML=`
   <div class="px-panel" style="border-color:#1976D2;margin-bottom:5px;">
-    <div style="font-size:calc(8px * var(--u));color:#1976D2;text-align:center;margin-bottom:6px;">🔑 저장코드 백업/복원</div>
-    <div style="font-size:calc(6px * var(--u));color:#5C3D1E;margin-bottom:4px;">📤 내 저장코드 — 복사해서 메모장·카톡(나에게) 등에 보관:</div>
-    <textarea id="bk-out" readonly style="width:100%;height:calc(40px * var(--u));font-size:calc(5px * var(--u));border:2px solid #D4B483;border-radius:5px;padding:4px;box-sizing:border-box;resize:none;word-break:break-all;">${code}</textarea>
-    <button class="px-btn px-btn-blue" style="width:100%;font-size:calc(7px * var(--u));margin:4px 0 10px;" onclick="copyBackupCode()">📋 코드 복사</button>
-    <div style="font-size:calc(6px * var(--u));color:#5C3D1E;margin-bottom:4px;">📥 코드를 붙여넣어 복원 — <b style="color:#B71C1C;">현재 진행은 사라져요!</b></div>
-    <textarea id="bk-in" placeholder="BKDNG1. 로 시작하는 코드 붙여넣기" style="width:100%;height:calc(30px * var(--u));font-size:calc(5px * var(--u));border:2px solid #D4B483;border-radius:5px;padding:4px;box-sizing:border-box;resize:none;word-break:break-all;"></textarea>
-    <button class="px-btn px-btn-green" style="width:100%;font-size:calc(7px * var(--u));margin-top:4px;" onclick="importBackupCode()">📥 복원하기</button>
-    <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(7px * var(--u));margin-top:6px;" onclick="closeModal(${wr})">닫기 ▶</button>
+    <div style="font-size:calc(10px * var(--u));color:#1976D2;text-align:center;margin-bottom:6px;">🔑 저장코드 백업/복원</div>
+    <div style="font-size:calc(8px * var(--u));color:#5C3D1E;margin-bottom:4px;">📤 내 저장코드 — 복사해서 메모장·카톡(나에게) 등에 보관:</div>
+    <textarea id="bk-out" readonly style="width:100%;height:calc(40px * var(--u));font-size:calc(7px * var(--u));border:2px solid #D4B483;border-radius:5px;padding:4px;box-sizing:border-box;resize:none;word-break:break-all;">${code}</textarea>
+    <button class="px-btn px-btn-blue" style="width:100%;font-size:calc(9px * var(--u));margin:4px 0 10px;" onclick="copyBackupCode()">📋 코드 복사</button>
+    <div style="font-size:calc(8px * var(--u));color:#5C3D1E;margin-bottom:4px;">📥 코드를 붙여넣어 복원 — <b style="color:#B71C1C;">현재 진행은 사라져요!</b></div>
+    <textarea id="bk-in" placeholder="BKDNG1. 로 시작하는 코드 붙여넣기" style="width:100%;height:calc(30px * var(--u));font-size:calc(7px * var(--u));border:2px solid #D4B483;border-radius:5px;padding:4px;box-sizing:border-box;resize:none;word-break:break-all;"></textarea>
+    <button class="px-btn px-btn-green" style="width:100%;font-size:calc(9px * var(--u));margin-top:4px;" onclick="importBackupCode()">📥 복원하기</button>
+    <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(9px * var(--u));margin-top:6px;" onclick="closeModal(${wr})">닫기 ▶</button>
   </div>`;
 }
 function copyBackupCode(){
@@ -2165,14 +2165,14 @@ function renderPostcards(){
   const el=document.getElementById('postcard-panel'); if(!el) return;
   const list=S.postcards||[];
   if(list.length===0){
-    el.innerHTML=`<div class="px-panel" style="text-align:center;"><div style="font-size:calc(10px * var(--u));color:#5C3D1E;line-height:1.9;">아직 모은 엽서가 없어요.<br>도시에 도착하면 여행 엽서가<br>한 장씩 수집됩니다 📮</div></div>`;
+    el.innerHTML=`<div class="px-panel" style="text-align:center;"><div style="font-size:calc(12px * var(--u));color:#5C3D1E;line-height:1.9;">아직 모은 엽서가 없어요.<br>도시에 도착하면 여행 엽서가<br>한 장씩 수집됩니다 📮</div></div>`;
     return;
   }
   const cards=list.map((p,i)=>`<div style="cursor:pointer;" onclick="showPostcardBig(${i})"><canvas class="pc-thumb" data-i="${i}" width="200" height="130" style="width:100%;height:auto;border-radius:6px;display:block;image-rendering:pixelated;box-shadow:0 3px 8px rgba(0,0,0,.4);"></canvas></div>`).join('');
   el.innerHTML=`
     <div class="px-panel" style="margin-bottom:5px;">
       <div style="font-size:calc(12px * var(--u));color:#3D2510;text-align:center;margin-bottom:3px;">📮 여행 엽서 (${list.length})</div>
-      <div style="font-size:calc(8px * var(--u));color:#8B6340;text-align:center;">도시 도착마다 한 장 · 눌러서 크게 보고 저장</div>
+      <div style="font-size:calc(10px * var(--u));color:#8B6340;text-align:center;">도시 도착마다 한 장 · 눌러서 크게 보고 저장</div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:calc(7px * var(--u));padding-bottom:calc(10px * var(--u));">${cards}</div>`;
   el.querySelectorAll('canvas.pc-thumb').forEach(cv=>{
@@ -2186,8 +2186,8 @@ function showPostcardBig(i){
   el.innerHTML=`
     <div class="px-panel" style="margin-bottom:5px;">
       <canvas id="pc-big" width="360" height="234" style="width:100%;height:auto;border-radius:8px;image-rendering:pixelated;display:block;margin-bottom:9px;"></canvas>
-      <button class="px-btn px-btn-blue" style="width:100%;font-size:calc(10px * var(--u));margin-bottom:6px;" onclick="savePostcardImage(${i})">🖼 이미지 저장</button>
-      <button class="px-btn" style="width:100%;font-size:calc(10px * var(--u));" onclick="renderPostcards()">◀ 앨범으로</button>
+      <button class="px-btn px-btn-blue" style="width:100%;font-size:calc(12px * var(--u));margin-bottom:6px;" onclick="savePostcardImage(${i})">🖼 이미지 저장</button>
+      <button class="px-btn" style="width:100%;font-size:calc(12px * var(--u));" onclick="renderPostcards()">◀ 앨범으로</button>
     </div>`;
   const cv=document.getElementById('pc-big');
   renderPostcardTo(cv.getContext('2d'), cv.width, cv.height, p.city, p.date);
@@ -2334,12 +2334,12 @@ function ST(tab){
   if(tab==='npc')renderNpcs();if(tab==='veh')renderVehs();if(tab==='gear')renderGear();if(tab==='item')renderItems();if(tab==='stat')renderStat();if(tab==='ach')renderAch();if(tab==='postcard')renderPostcards();if(tab==='log')renderLog();
 }
 
-function renderLog(){const el=document.getElementById('ev-log');if(!logs.length){el.innerHTML='<div class="px-panel" style="font-size:calc(7px * var(--u));text-align:center;color:#8B6340;">아직 이벤트 없음</div>';return;}el.innerHTML=logs.map(e=>`<div class="ev-item ev-${e.type}">${e.msg}</div>`).join('');}
+function renderLog(){const el=document.getElementById('ev-log');if(!logs.length){el.innerHTML='<div class="px-panel" style="font-size:calc(9px * var(--u));text-align:center;color:#8B6340;">아직 이벤트 없음</div>';return;}el.innerHTML=logs.map(e=>`<div class="ev-item ev-${e.type}">${e.msg}</div>`).join('');}
 
 // 2번: 가챠 탭 — 페인트 + 장비 가챠
 function renderGachaShop(){
   const u='var(--u)';
-  const fs=(px)=>`font-size:calc(${px}px * ${u})`;
+  const fs=(px)=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
   const gachaCnt = S.gachaCount || 0;
   const pityLeft = 50 - gachaCnt;
 
@@ -2370,7 +2370,7 @@ function renderGachaShop(){
 function renderGachaResultBox(){
   if(!gachaResult) return '';
   const u='var(--u)';
-  const fs=(px)=>`font-size:calc(${px}px * ${u})`;
+  const fs=(px)=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
   const r = gachaResult;
   // 장비 가챠 결과만 (페인트 제거)
   const item = r.item;
@@ -2388,24 +2388,24 @@ function renderNpcs(){
   const totalVisible=S.npcs.filter(n=>!n.locked).length;
   const gradeOrder=['normal','rare','unique','legend','disaster','epic','god'];
   const gradeLabel={normal:'일반',rare:'🔵 레어',unique:'🟢 유니크',legend:'🟡 전설',disaster:'☠️ 재앙',epic:'🟣 에픽',god:'✨ 신'};
-  let html=`<div class="px-panel" style="font-size:calc(7px * var(--u));color:#8B6340;margin-bottom:5px;">${metCount}/${totalVisible}명 만남</div>`;
+  let html=`<div class="px-panel" style="font-size:calc(9px * var(--u));color:#8B6340;margin-bottom:5px;">${metCount}/${totalVisible}명 만남</div>`;
   gradeOrder.forEach(grade=>{
     const grpNpcs=S.npcs.filter(n=>n.grade===grade);
     if(!grpNpcs.length)return;
     const gc=GRADE_COLOR[grade]||'#5C3D1E';
-    html+=`<div style="font-size:calc(7px * var(--u));color:${gc};margin:8px 6px 4px;padding-bottom:3px;border-bottom:2px solid ${gc};">${gradeLabel[grade]}</div>`;
+    html+=`<div style="font-size:calc(9px * var(--u));color:${gc};margin:8px 6px 4px;padding-bottom:3px;border-bottom:2px solid ${gc};">${gradeLabel[grade]}</div>`;
     grpNpcs.forEach(n=>{
       const em=NPC_EMOJI[n.id]||'👤';
       const gb=GRADE_BG[n.grade]||'#F5E6C8';
       if(n.locked){
-        html+=`<div class="px-panel" style="margin-bottom:5px;opacity:.45;display:flex;align-items:center;gap:8px;"><div style="font-size:calc(18px * var(--u));">❓</div><div><div style="font-size:calc(7px * var(--u));color:#8B6340;">??? (${GRADE_LABEL[n.grade]})</div><div style="font-size:calc(7px * var(--u));color:#8B6340;margin-top:2px;">미개방 NPC</div></div></div>`;
+        html+=`<div class="px-panel" style="margin-bottom:5px;opacity:.45;display:flex;align-items:center;gap:8px;"><div style="font-size:calc(18px * var(--u));">❓</div><div><div style="font-size:calc(9px * var(--u));color:#8B6340;">??? (${GRADE_LABEL[n.grade]})</div><div style="font-size:calc(9px * var(--u));color:#8B6340;margin-top:2px;">미개방 NPC</div></div></div>`;
       }else{
         html+=`<div class="px-panel" style="margin-bottom:5px;background:${n.met?gb:'#F5E6C8'};border-color:${n.met?gc:'#8B6340'};display:flex;align-items:center;gap:8px;">
           <div style="font-size:calc(18px * var(--u));">${em}</div>
           <div>
-            <div style="font-size:calc(7px * var(--u));color:#3D2510;">${n.n}${n.met?' ✓':''}</div>
-            <div style="font-size:calc(7px * var(--u));color:${gc};margin-top:1px;">[${GRADE_LABEL[n.grade]}]</div>
-            <div style="font-size:calc(7px * var(--u));color:#8B6340;margin-top:1px;">${n.met?n.lines[0]:'???'}</div>
+            <div style="font-size:calc(9px * var(--u));color:#3D2510;">${n.n}${n.met?' ✓':''}</div>
+            <div style="font-size:calc(9px * var(--u));color:${gc};margin-top:1px;">[${GRADE_LABEL[n.grade]}]</div>
+            <div style="font-size:calc(9px * var(--u));color:#8B6340;margin-top:1px;">${n.met?n.lines[0]:'???'}</div>
           </div>
         </div>`;
       }
@@ -2426,7 +2426,7 @@ function renderVehs(){
     // 2번: 로켓은 보유 중일 때만 탈것 탭에 표시 (희소성)
     if(cat.key==='rocket') catVehs = catVehs.filter(v=>vehOwned(v.id));
     if(!catVehs.length)return;
-    html+=`<div style="font-size:calc(7px * var(--u));color:#8B6340;margin:8px 6px 4px;padding-bottom:3px;border-bottom:2px solid #D4B483;">${cat.label}</div>`;
+    html+=`<div style="font-size:calc(9px * var(--u));color:#8B6340;margin:8px 6px 4px;padding-bottom:3px;border-bottom:2px solid #D4B483;">${cat.label}</div>`;
     catVehs.forEach(v=>{
       const cur=v.id===S.vId;
       const owned=vehOwned(v.id);
@@ -2435,24 +2435,24 @@ function renderVehs(){
       let btn='';
       // 로켓: 보유 중일 때만 여기 도달 → 발사 버튼만 표시
       if(v.cat==='rocket'){
-        btn=`<button class="px-btn px-btn-sm px-btn-red" onclick="launchRocket()" style="font-size:calc(7px * var(--u));">🚀발사!</button>`;
+        btn=`<button class="px-btn px-btn-sm px-btn-red" onclick="launchRocket()" style="font-size:calc(9px * var(--u));">🚀발사!</button>`;
       } else {
-        if(cur)btn=`<span style="color:#4CAF50;font-size:calc(7px * var(--u));white-space:nowrap;">[현재]</span>`;
+        if(cur)btn=`<span style="color:#4CAF50;font-size:calc(9px * var(--u));white-space:nowrap;">[현재]</span>`;
         else if(owned)btn=`<button class="px-btn px-btn-sm px-btn-green" onclick="switchVeh('${v.id}')">변경</button>`;
         else if(canBuy)btn=`<button class="px-btn px-btn-sm px-btn-green" onclick="buyVeh('${v.id}')">₩${v.cost.toLocaleString()}</button>`;
-        else if(!owned&&!locked)btn=`<div style="font-size:calc(7px * var(--u));color:#8B6340;">₩${v.cost.toLocaleString()}<br>(돈부족)</div>`;
-        else btn=`<div style="font-size:calc(7px * var(--u));color:#8B6340;">🔒<br>${v.km.toLocaleString()}km</div>`;
+        else if(!owned&&!locked)btn=`<div style="font-size:calc(9px * var(--u));color:#8B6340;">₩${v.cost.toLocaleString()}<br>(돈부족)</div>`;
+        else btn=`<div style="font-size:calc(9px * var(--u));color:#8B6340;">🔒<br>${v.km.toLocaleString()}km</div>`;
       }
       const canvasId='vc-'+v.id;
-      const rocketNote=v.cat==='rocket'?`<div style="font-size:calc(5px * var(--u));color:#E53935;margin-top:2px;">1회용 · 5% 폭발확률</div><div style="font-size:calc(5px * var(--u));color:#8B6340;margin-top:1px;">🔒 나로호발사센터에서만 구매 가능</div>`:'';
+      const rocketNote=v.cat==='rocket'?`<div style="font-size:calc(7px * var(--u));color:#E53935;margin-top:2px;">1회용 · 5% 폭발확률</div><div style="font-size:calc(7px * var(--u));color:#8B6340;margin-top:1px;">🔒 나로호발사센터에서만 구매 가능</div>`:'';
       html+=`<div class="px-panel" style="margin-bottom:5px;${cur?'border-color:#4CAF50;':''}${v.cat==='rocket'&&owned?'border-color:#FF6D00;background:#FFF3E0;':''}${locked?'opacity:.5':''}">
         <div style="display:flex;align-items:center;gap:10px;">
           <canvas id="${canvasId}" width="80" height="50" class="veh-canvas"></canvas>
           <div style="flex:1;">
-            <div style="font-size:calc(7px * var(--u));color:#3D2510;">${v.n}${owned&&!cur&&v.cat!=='rocket'?' <span style="font-size:calc(7px * var(--u));color:#1976D2;">[보유]</span>':''}</div>
-            <div style="font-size:calc(7px * var(--u));color:#8B6340;margin-top:2px;">🏎️ ${v.sp}km/h &nbsp; ❤️+${v.hb} &nbsp; <span style="color:#B71C1C;">💔${(0.30 * (v.sp/6)).toFixed(2)}/s</span></div>
+            <div style="font-size:calc(9px * var(--u));color:#3D2510;">${v.n}${owned&&!cur&&v.cat!=='rocket'?' <span style="font-size:calc(9px * var(--u));color:#1976D2;">[보유]</span>':''}</div>
+            <div style="font-size:calc(9px * var(--u));color:#8B6340;margin-top:2px;">🏎️ ${v.sp}km/h &nbsp; ❤️+${v.hb} &nbsp; <span style="color:#B71C1C;">💔${(0.30 * (v.sp/6)).toFixed(2)}/s</span></div>
             ${rocketNote}
-            ${locked?`<div style="font-size:calc(7px * var(--u));color:#8B6340;">🔒 ${v.km.toLocaleString()}km 필요</div>`:''}
+            ${locked?`<div style="font-size:calc(9px * var(--u));color:#8B6340;">🔒 ${v.km.toLocaleString()}km 필요</div>`:''}
           </div>
           ${btn}
         </div>
@@ -2518,7 +2518,7 @@ function refreshMhpFromHelmet(){
 
 function renderItems(){
   const u='var(--u)';
-  const fs=(px)=>`font-size:calc(${px}px * ${u})`;
+  const fs=(px)=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
   document.getElementById('item-panel').innerHTML = `
   <div class="px-panel" style="margin-bottom:5px;">
     <div style="${fs(7)};color:#8B6340;margin-bottom:calc(8px * ${u});">과수원집 아들의 특산품</div>
@@ -2579,7 +2579,7 @@ function renderItems(){
 function renderStat(){
   const v=cv2(),metNpc=S.npcs.filter(n=>n.met&&!n.locked).length;
   const u='var(--u)';
-  const fs=(px)=>`font-size:calc(${px}px * ${u})`;
+  const fs=(px)=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
   // 5번: 펫 정보
   const pet = getPetStage();
   // 1번 fix: nextThresholds를 getPetStage와 동일한 기준으로 통일 (2K/10K/30K)
@@ -2707,17 +2707,17 @@ function renderStat(){
 function renderAch(){
   const done=S.achievements.length;
   const groups=[...new Set(ACHIEVEMENTS.map(a=>a.grp))];
-  let html=`<div class="px-panel" style="margin-bottom:5px;font-size:calc(7px * var(--u));color:#8B6340;">달성: ${done}/${ACHIEVEMENTS.length}</div>`;
+  let html=`<div class="px-panel" style="margin-bottom:5px;font-size:calc(9px * var(--u));color:#8B6340;">달성: ${done}/${ACHIEVEMENTS.length}</div>`;
   groups.forEach(grp=>{
-    html+=`<div style="font-size:calc(7px * var(--u));color:#8B6340;margin:8px 6px 4px;padding-bottom:3px;border-bottom:2px solid #D4B483;">${grp}</div>`;
+    html+=`<div style="font-size:calc(9px * var(--u));color:#8B6340;margin:8px 6px 4px;padding-bottom:3px;border-bottom:2px solid #D4B483;">${grp}</div>`;
     ACHIEVEMENTS.filter(a=>a.grp===grp).forEach(ach=>{
       const isDone=S.achievements.includes(ach.id);
       const rw=Object.entries(ach.rw).map(([k,v2])=>{if(k==='money')return'₩'+v2.toLocaleString();if(k==='xp')return'XP+'+v2;if(k==='sp')return'SP+'+v2;if(k==='jc')return'🧃+'+v2;return k+':'+v2;}).join(', ');
       html+=`<div class="ach-item ${isDone?'ach-done':''}">
-        <div style="font-size:calc(7px * var(--u));flex-shrink:0;">${ach.emoji}</div>
-        <div><div style="font-size:calc(7px * var(--u));color:${isDone?'#1B5E20':'#3D2510'};">${ach.name}${isDone?' ✓':''}</div>
-        <div style="font-size:calc(7px * var(--u));color:#8B6340;margin-top:2px;">${ach.desc}</div>
-        <div style="font-size:calc(7px * var(--u));color:${isDone?'#4CAF50':'#8B6340'};margin-top:1px;">보상: ${rw}</div></div>
+        <div style="font-size:calc(9px * var(--u));flex-shrink:0;">${ach.emoji}</div>
+        <div><div style="font-size:calc(9px * var(--u));color:${isDone?'#1B5E20':'#3D2510'};">${ach.name}${isDone?' ✓':''}</div>
+        <div style="font-size:calc(9px * var(--u));color:#8B6340;margin-top:2px;">${ach.desc}</div>
+        <div style="font-size:calc(9px * var(--u));color:${isDone?'#4CAF50':'#8B6340'};margin-top:1px;">보상: ${rw}</div></div>
       </div>`;
     });
   });
