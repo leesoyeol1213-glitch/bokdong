@@ -85,11 +85,11 @@ function tick(){
     S.poisonUntil = 0;
     addLog('neutral','☠️ 독 효과가 사라졌다.');
   }
-  // 5번: 비자금 환수 — 1~50km 후 경찰
-  if(S.blackMoneyTrigger && S.totKm >= S.blackMoneyTrigger){
+  // 5번(재설계): 비자금 환수 — 거리 무관·시간 기반(고속 자전거에서도 반응/사용 시간 보장)
+  if(S.blackMoneyUntil && Date.now() >= S.blackMoneyUntil){
     S.money -= 1000000;
-    S.blackMoneyTrigger = 0;
     S.blackMoneyUntil = 0;
+    S.blackMoneyTrigger = 0;
     addLog('bad','🚓 경찰: "비자금 환수합니다!" ₩1,000,000 회수');
   }
   if(S.riding&&!isResting)tyBuff();
@@ -202,24 +202,21 @@ function tick(){
       showHistModal(CITIES.find(c=>c.n==='충주')||CITIES[0]);
     }
   }
-  // 3번: 함정 도시 (신한/청학동) — 200km 무의미 라이딩
+  // 3번(재설계): 함정 도시(신한/청학동) — 거리 무관·시간 기반 탈출 주사위(천장 있음)
+  // 자전거 속도가 빨라도 자동으로 안 풀림 → 주사위가 실제로 의미 있음. 실패할수록 쉬워짐(rollEscapeDice).
   if(S.trapZone){
-    S.trapZone.kmIn += km;
-    // 50km 단위로 탈출 주사위 '기회 1회' 지급(무제한 재시도 방지 — 마일스톤당 딱 1번)
-    const reachedDice = Math.floor(S.trapZone.kmIn / 50);
-    if(reachedDice > S.trapZone.lastDiceAt){
-      const gained = reachedDice - S.trapZone.lastDiceAt;
-      S.trapZone.lastDiceAt = reachedDice;
-      S.trapZone.diceCharges = (S.trapZone.diceCharges||0) + gained;
-      addLog('neutral','🎲 50km 도달! 탈출 주사위 기회 +'+gained+' (메인 화면)');
+    const tz = S.trapZone;
+    tz.secIn = (tz.secIn||0) + 1;   // tick = 1초
+    tz.kmIn = (tz.kmIn||0) + km;     // 표시용(헛바퀴 누적 거리)
+    // 8초마다 탈출 주사위 기회 +1 (속도 무관하게 일정)
+    const reached = Math.floor(tz.secIn / 8);
+    if(reached > (tz.lastChargeAt||0)){
+      const gained = reached - (tz.lastChargeAt||0);
+      tz.lastChargeAt = reached;
+      tz.diceCharges = (tz.diceCharges||0) + gained;
+      addLog('neutral','🎲 탈출 주사위 기회 +'+gained+' (메인 화면에서 굴리기!)');
     }
-    // 200km 달성 시 자동 탈출
-    if(S.trapZone.kmIn >= 200){
-      addLog('good','😅 200km 완주... 겨우 탈출!');
-      S.trapZone = null;
-      S.money += 50000;
-      showEscapeDestModal();
-    }
+    // 자동 탈출 없음 — 오직 주사위로만 탈출
   }
   S.ecool--;if(S.ecool<=0&&Math.random()<.06){fireRandEvent();S.ecool=18;}
   // #5 진천 갈림길 표지판 (태양열 부스터 미획득 + 라이딩 중 + 한국 + 도착 임박 아닐 때)
@@ -644,9 +641,10 @@ function showHistModal(ci){
   </div>`;
 }
 
-// ── 3번: 함정 도시 — 200km 무의미 라이딩 + 50km마다 주사위 ─────
+// ── 3번(재설계): 함정 도시 — 시간 기반 탈출 주사위 + 천장(실패할수록 쉬워짐) ─────
 function enterTrapZone(special, wr){
-  S.trapZone = {special, totalKm: 200, kmIn: 0, lastDiceAt: 0, diceCharges: 0};
+  // secIn: 갇힌 초, lastChargeAt: 마지막 기회 지급 시점(8초 단위), tries: 실패 횟수(천장용)
+  S.trapZone = {special, secIn: 0, kmIn: 0, lastChargeAt: 0, diceCharges: 1, tries: 0};
   S.dest = null; S.sgKm = 0;
   // closeModal이 wr이면 자동으로 riding 재개. 중복 setInterval 방지.
   closeModal(wr);
@@ -655,26 +653,30 @@ function enterTrapZone(special, wr){
     document.getElementById('ride-btn').textContent='■ 정지';
     if(!tickIv){tickIv=setInterval(tick,1000);startNpcTimer();}
   }
-  addLog('bad', special==='trap_shinhan' ? '🏖️ 신한 탈출 시작! 50km마다 주사위 6이 나오면 탈출!' : '⛰️ 청학동 탈출 시작! 50km마다 주사위 6이 나오면 탈출!');
+  addLog('bad', special==='trap_shinhan' ? '🏖️ 신한 탈출 시작! 주사위 6이면 탈출 — 실패할수록 쉬워져요! (8초마다 기회+1)' : '⛰️ 청학동 탈출 시작! 주사위 6이면 탈출 — 실패할수록 쉬워져요! (8초마다 기회+1)');
 }
+// 필요 눈금: 실패 없을 땐 6, 1번 실패마다 -1 → 6번째엔 무조건 성공(천장)
+function escapeNeed(tries){ return Math.max(1, 6 - (tries||0)); }
 function rollEscapeDice(){
   const tz = S.trapZone;
   if(!tz) return;
-  if((tz.diceCharges||0) <= 0){ showSt('탈출 기회 없음 — 50km 더 달리면 다시 던질 수 있어요'); return; }
-  tz.diceCharges -= 1; // 기회 1회 소진(무제한 재시도 방지)
+  if((tz.diceCharges||0) <= 0){ showSt('탈출 기회 없음 — 잠시 뒤 기회가 생겨요 (8초마다 +1)'); return; }
+  tz.diceCharges -= 1; // 기회 1회 소진
+  const need = escapeNeed(tz.tries);
   diceAnim = 60;
   diceVal = Math.ceil(Math.random()*6);
   update(); // 남은 기회 즉시 버튼에 반영
   setTimeout(()=>{
     if(!S.trapZone){ return; } // 이미 탈출/이동한 경우 방어
-    if(diceVal===6){
-      addLog('good','🎲 주사위 6! 탈출 성공!');
+    if(diceVal >= need){
+      addLog('good','🎲 '+diceVal+'! (필요 '+need+'↑) 탈출 성공!');
       S.trapZone = null;
       S.money += 100000;
-      // 3번: 탈출 팝업 — 다른 목적지 선택
       showEscapeDestModal();
     } else {
-      addLog('bad','🎲 주사위 '+diceVal+'... 탈출 실패. (기회 '+ (S.trapZone.diceCharges||0) +'회 남음, 50km마다 +1)');
+      S.trapZone.tries = (S.trapZone.tries||0) + 1;
+      const nextNeed = escapeNeed(S.trapZone.tries);
+      addLog('bad','🎲 '+diceVal+'... (필요 '+need+'↑) 실패! 다음엔 '+nextNeed+'↑면 성공 (기회 '+(S.trapZone.diceCharges||0)+'회 남음)');
       update();
     }
   }, 800);
@@ -693,18 +695,25 @@ function showEscapeDestModal(){
     c.region !== '함정' &&
     !isJapan(c)
   );
-  // 랜덤 4개 추첨
+  // #4: 안 가본 도시를 최소 1곳 보장(도시 컬렉션 유도), 나머지는 랜덤
+  const visited = S.visited || [];
+  const unvisited = candidates.filter(c => !visited.includes(c.n));
   const picked = [];
-  const pool = [...candidates];
+  if(unvisited.length){
+    picked.push(unvisited[Math.floor(Math.random() * unvisited.length)]);
+  }
+  const pool = candidates.filter(c => !picked.includes(c));
   while(picked.length < 4 && pool.length > 0){
     const idx = Math.floor(Math.random() * pool.length);
     picked.push(pool.splice(idx, 1)[0]);
   }
   const u = 'var(--u)';
   const fs = px => `font-size:calc(${px<11?px+2:px}px * ${u})`;
-  const btnsHtml = picked.map(c =>
-    `<button class="px-btn" style="${fs(7)};padding:calc(8px * ${u});background:#43A047;border-color:#1B5E20;color:#FFF;width:100%;margin-bottom:calc(4px * ${u});" onclick="selectEscapeDest('${c.n}',${wr})">📍 ${c.n} <span style="${fs(5)};opacity:.85;">(${c.region})</span></button>`
-  ).join('');
+  const btnsHtml = picked.map(c => {
+    const isNew = !visited.includes(c.n);
+    const badge = isNew ? ` <span style="${fs(5)};background:#FFEB3B;color:#5D4037;border-radius:4px;padding:0 calc(3px * ${u});">NEW</span>` : '';
+    return `<button class="px-btn" style="${fs(7)};padding:calc(8px * ${u});background:#43A047;border-color:#1B5E20;color:#FFF;width:100%;margin-bottom:calc(4px * ${u});" onclick="selectEscapeDest('${c.n}',${wr})">📍 ${c.n} <span style="${fs(5)};opacity:.85;">(${c.region})</span>${badge}</button>`;
+  }).join('');
   document.getElementById('modal-area').innerHTML = `
   <div class="px-panel" style="border-color:#43A047;background:linear-gradient(135deg,#E8F5E9,#FFFDE7);box-shadow:0 0 calc(10px * ${u}) #66BB6A;margin-bottom:5px;">
     <div style="${fs(9)};color:#1B5E20;text-align:center;margin-bottom:6px;">🎉 탈출 성공!</div>
@@ -859,11 +868,10 @@ function showJuiceBoxResult(type){
     logKind = 'bad';
   } else {
     S.money += 1000000;
-    S.blackMoneyKm = S.totKm;
-    S.blackMoneyTrigger = S.totKm + (1 + Math.floor(Math.random()*50));
+    S.blackMoneyUntil = Date.now() + 40000;   // 40초 뒤 경찰 환수(속도 무관, 그 안에 쓰면 이득)
     title = '💰 비자금 사과박스!';
     color = '#E65100'; bg = 'linear-gradient(135deg,#FFF3E0,#FFD54F)';
-    msg = `<span style="color:#3D2510;">박스 안에 빳빳한 만원권이 가득!</span><br><b style="color:#E65100;">₩1,000,000 즉시 입금!</b><br><span style="font-size:calc(7px * var(--u));color:#B71C1C;">⚠️ ${Math.round(S.blackMoneyTrigger - S.totKm)}km 후 경찰 환수 예정...</span>`;
+    msg = `<span style="color:#3D2510;">박스 안에 빳빳한 만원권이 가득!</span><br><b style="color:#E65100;">₩1,000,000 즉시 입금!</b><br><span style="font-size:calc(7px * var(--u));color:#B71C1C;">⚠️ 약 40초 후 경찰 환수 — 그 전에 쓰면 이득!</span>`;
     logMsg = '💰 비자금 박스! ₩1,000,000 입금 (곧 경찰...)';
     logKind = 'good';
   }
@@ -2812,10 +2820,13 @@ function update(){
   // 3번: 탈출 주사위 버튼 (함정 도시 + 50km 누적 시)
   const trapBtn = document.getElementById('trapDiceBtn');
   if(trapBtn){
-    if(S.trapZone && (S.trapZone.diceCharges||0) > 0){
+    if(S.trapZone){
       trapBtn.style.display = 'block';
-      const remaining = 200 - Math.floor(S.trapZone.kmIn);
-      trapBtn.innerHTML = '🎲 탈출 주사위 x'+S.trapZone.diceCharges+' ('+remaining+'km 남음)';
+      const need = escapeNeed(S.trapZone.tries);
+      const ch = S.trapZone.diceCharges||0;
+      trapBtn.innerHTML = ch>0
+        ? '🎲 탈출 주사위 x'+ch+' ('+need+'↑면 탈출!)'
+        : '⏳ 다음 주사위 기회 준비 중...';
     } else {
       trapBtn.style.display = 'none';
     }
