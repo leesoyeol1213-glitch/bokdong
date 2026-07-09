@@ -5,7 +5,12 @@
 // ── 캔버스 ─────────────────────────────────────────────
 const cv=document.getElementById('cv');
 const ctx=cv.getContext('2d');
-cv.width=420;cv.height=210;
+// 논리 캔버스 크기(모든 그리기 좌표의 기준). 백킹은 이 크기의 SS배로 슈퍼샘플링.
+const CV_W=420, CV_H=210;
+// 슈퍼샘플링 배율 — 백킹 해상도를 논리 크기의 SS배로 키워 화면 확대 시 글씨 깨짐 방지.
+// (스프라이트는 imageSmoothingEnabled=false로 선명 유지, 텍스트는 고해상도로 매끄럽게)
+const SS=Math.max(2, Math.min(4, Math.ceil(window.devicePixelRatio||1)+1));
+cv.width=Math.round(CV_W*SS); cv.height=Math.round(CV_H*SS);
 ctx.imageSmoothingEnabled=false;
 function p(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),w,h);}
 
@@ -20,6 +25,9 @@ const PALETTES={
 
 // ── 씬 ─────────────────────────────────────────────────
 function drawScene(){
+  // 슈퍼샘플링: 매 프레임 논리좌표(420×) → SS배 백킹으로. 이후 모든 좌표는 논리 픽셀 그대로 사용.
+  ctx.setTransform(SS,0,0,SS,0,0);
+  ctx.imageSmoothingEnabled=false; // 스프라이트 선명 유지(텍스트는 항상 매끄럽게 렌더)
   // 옵션 B v2: 캔버스 420x236 (16:9)
   ctx.clearRect(0,0,420,236);
   // 텍스트 정렬 상태 초기화 — 이전 프레임/함수의 textAlign·baseline 누수로 대사가 쏠리는 것 방지

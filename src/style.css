@@ -23,8 +23,9 @@
   box-sizing: border-box;
   margin: 0; padding: 0;
 }
-/* 픽셀화는 픽셀 아트(캔버스/스프라이트 이미지)에만 — 텍스트엔 적용 X(한글 깨짐 방지) */
-#cv, .veh-canvas, img {
+/* 픽셀화는 보조 픽셀 이미지(탈것 미리보기·초상화)에만.
+   메인 게임 #cv는 SS배 슈퍼샘플링 후 매끄럽게 다운스케일하므로 pixelated 제외(글씨 선명) */
+.veh-canvas, img {
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
@@ -60,9 +61,7 @@ body {
   display: block;
   width: 100%;
   height: auto;
-  image-rendering: pixelated;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: crisp-edges;
+  image-rendering: auto;   /* SS 슈퍼샘플링 → 매끄러운 다운스케일(글씨 또렷) */
 }
 
 /* ── 패널(카드) ── */
