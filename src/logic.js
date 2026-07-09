@@ -1531,12 +1531,15 @@ function drawGearDropAnim(){
   // 아이콘 + 이름
   ctx.font = '18px Galmuri11, monospace';
   ctx.fillText(getSlotIcon(item.slot), -70, 12);
+  // 이름·효과는 아이콘 오른쪽에 왼쪽정렬 (위 라벨의 center가 남아 길이별로 쏠리던 버그 수정)
+  ctx.textAlign = 'left';
   ctx.fillStyle = '#3D2510';
   ctx.font = 'bold 8px Galmuri11, monospace';
-  ctx.fillText(item.name, 8, 6);
+  ctx.fillText(item.name, -52, 6);
   ctx.font = '6px Galmuri11, monospace';
   ctx.fillStyle = r.color;
-  ctx.fillText(effectText(item.slot, item.mult, item), 8, 20);
+  ctx.fillText(effectText(item.slot, item.mult, item), -52, 20);
+  ctx.textAlign = 'center';
   // 파티클 (rare 이상)
   if(item.rarity!=='common'){
     for(let i=0;i<6;i++){
