@@ -699,11 +699,11 @@ function drawTY(){
     const goRight = clampedTx + bw + 26 < 420;
     const bx = goRight ? clampedTx+18 : clampedTx-bw-18;
     const by = ty-40;
-    // 풍선 본체
-    ctx.fillStyle='#FFF9C4';ctx.strokeStyle='#F48FB1';ctx.lineWidth=2;
+    // 풍선 본체 (배경 아트가 비치도록 반투명, 글자는 아래에서 불투명하게)
+    ctx.fillStyle='rgba(255,249,196,0.72)';ctx.strokeStyle='#F48FB1';ctx.lineWidth=2;
     ctx.beginPath();ctx.roundRect(bx,by,bw,22,6);ctx.fill();ctx.stroke();
     // 꼬리 (TY 쪽을 향해)
-    ctx.fillStyle='#FFF9C4';
+    ctx.fillStyle='rgba(255,249,196,0.72)';
     if(goRight){
       ctx.beginPath();ctx.moveTo(bx,by+12);ctx.lineTo(bx-8,by+18);ctx.lineTo(bx,by+18);ctx.fill();
       ctx.strokeStyle='#F48FB1';ctx.lineWidth=2;
@@ -910,14 +910,16 @@ function drawNpcAnim(){
   const bw=Math.min(170,npc.n.length*9+46);
   const half=Math.max(bw/2, 34); // 말풍선/배지 중 넓은 쪽 절반
   const lx=Math.max(half+4, Math.min(420-half-4, nx+7));
+  // 배경(말풍선·꼬리·배지)은 반투명 — 도시/해안 아트가 비치게. 글자는 아래에서 불투명하게.
+  const tx=Math.max(lx-bw/2+6, Math.min(lx+bw/2-14, nx+3));
+  ctx.save();ctx.globalAlpha*=0.72;
   ctx.fillStyle=gb;ctx.strokeStyle=gc;ctx.lineWidth=3;
   ctx.beginPath();ctx.roundRect(lx-bw/2,ny-80,bw,22,6);ctx.fill();ctx.stroke();
-  // 말풍선 꼬리는 캐릭터(nx) 쪽을 가리키되 말풍선 폭 안에 머물게
-  const tx=Math.max(lx-bw/2+6, Math.min(lx+bw/2-14, nx+3));
   ctx.fillStyle=gb;ctx.beginPath();ctx.moveTo(tx,ny-58);ctx.lineTo(tx+5,ny-50);ctx.lineTo(tx+10,ny-58);ctx.fill();ctx.fillRect(tx-1,ny-60,14,5);
+  p(lx-30,ny-44,60,14,gc); // 등급 배지 배경
+  ctx.restore();
+  // 글자(이름·등급)는 또렷하게
   ctx.fillStyle=gc;ctx.font='bold 7px Galmuri11, monospace';ctx.textAlign='center';ctx.fillText(npc.n,lx,ny-65);ctx.textAlign='left';
-  // 등급 배지
-  p(lx-30,ny-44,60,14,gc);
   ctx.fillStyle='#FFF';ctx.font='bold 5px Galmuri11, monospace';ctx.textAlign='center';
   ctx.fillText('['+GRADE_LABEL[npc.grade]+']',lx,ny-33);ctx.textAlign='left';
 }
