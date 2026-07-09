@@ -974,7 +974,8 @@ let pendingSpecial=null; // 맛집 후 다시 띄울 특수 이벤트 도시(부
 function openFood(){
   const food=FOODS.find(f=>f.c===S.city);
   if(!food){ if(!modalOpen())addLog('neutral','등록된 맛집 없음'); return; }
-  if(S.foodDone.includes(S.city)){ if(!modalOpen())addLog('neutral','이미 방문!'); return; }
+  ensureMissions();  // 자정 지났으면 오늘 방문 기록(foodToday) 리셋
+  if((S.foodToday||[]).includes(S.city)){ if(!modalOpen())addLog('neutral','오늘 이미 방문! (자정에 초기화돼요)'); return; }
   // 특수 이벤트 모달이 열린 채 맛집을 누르면, 맛집이 끝난 뒤 그 이벤트를 다시 띄운다(이벤트 손실 방지)
   const ci=CITIES.find(c=>c.n===S.city);
   if(modalOpen() && ci && ci.special && !['moon','trap_shinhan','trap_cheonghak'].includes(ci.special)){
@@ -1061,7 +1062,8 @@ function showFoodQuiz(food,wr){
 }
 function checkFoodQ(sel,ans,city,wr){const food=FOODS.find(f=>f.c===city);if(sel===ans)foodOk(food,wr,800);else foodFail(food,wr);}
 function foodOk(food,wr,bonus){
-  S.foodDone.push(food.c);
+  if(!S.foodDone.includes(food.c)) S.foodDone.push(food.c);   // 도감용 영구 기록
+  S.foodToday = S.foodToday || []; if(!S.foodToday.includes(food.c)) S.foodToday.push(food.c); // 오늘 방문(자정 리셋)
   S.foodStreak = (S.foodStreak||0) + 1;
   const reward=bonus*10;
   S.money+=reward;S.xp+=500;S.hp=Math.min(S.mhp,S.hp+20);
@@ -1187,6 +1189,7 @@ function ensureMissions(){
   // 일일 리셋
   if(!S.missions.dailyResetAt || now > S.missions.dailyResetAt){
     MISSIONS.daily.forEach(m=>{S.missions.progress[m.id]=0; S.missions.claimed = S.missions.claimed.filter(id=>id!==m.id);});
+    S.foodToday = [];  // #2: 맛집 오늘 방문 기록 자정 리셋 → 매일 재방문 가능
     const next = new Date(); next.setHours(24,0,0,0); S.missions.dailyResetAt = next.getTime();
   }
   // 주간 리셋 (월요일 00:00)
@@ -1780,6 +1783,8 @@ function getTimeOfDay(){
 // ── 장비 분해 / 강화 / 가방 용량 ────────────────────────
 var BAG_CAPACITY = 30;
 var RARITY_DUST = {common:1, rare:3, unique:8, legend:20, epic:50, mythic:200};
+// #3: 분해 시 강화석과 함께 지급하는 골드(고렙 골드 수급처 보강). +강화 수치에 비례.
+var RARITY_GOLD = {common:2000, rare:6000, unique:15000, legend:40000, epic:100000, mythic:400000};
 
 // ❌ 페인트 시스템 제거 — 자전거는 PNG 스프라이트로 그려져서 색상 변경 의미 없음
 // 호환성을 위해 빈 함수만 남김
@@ -1856,9 +1861,13 @@ function dismantleGear(itemId){
     return;
   }
   S.inventory.splice(idx,1);
-  const dust = RARITY_DUST[item.rarity] * (1 + (item.plus||0));
+  const mult = (1 + (item.plus||0));
+  const dust = RARITY_DUST[item.rarity] * mult;
+  const gold = (RARITY_GOLD[item.rarity]||0) * mult;
   S.gearDust = (S.gearDust||0) + dust;
-  addLog('neutral','🔨 '+item.name+' 분해 → 강화석 +'+dust);
+  S.money = (S.money||0) + gold;
+  addLog('neutral','🔨 '+item.name+' 분해 → 강화석 +'+dust+' · ₩'+gold.toLocaleString());
+  playSfx('good');
   renderGear();update();
 }
 function enhanceGear(itemId){
@@ -2133,7 +2142,7 @@ function closeModalAndLaunch(wr){
 }
 // 새 게임 초기 상태(공통). resetGame·doPrestige가 공유한다.
 function freshState(){
-  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
+  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
 }
 // 초기화 후 공통 뒷정리(뱃지·애니메이션·루프)
 function afterReset(){
@@ -2821,6 +2830,7 @@ function refreshTabBadges(){
   setTabBadge('veh',  buyable > seenBuyable);   // 새로 살 수 있는 게 생기면 파란점
   setTabBadge('ach',  achGot > (S.seenTabs.ach||0));
   setTabBadge('gear', gearOwn > (S.seenTabs.gear||0));
+  setTabBadge('stat', (S.sp||0) > 0);           // #6: 미사용 스탯포인트 있으면 알림(다 쓰면 자동 해제)
 }
 function setTabBadge(tab, on){
   const btn = document.querySelector(`button[onclick*="ST('${tab}')"]`);
