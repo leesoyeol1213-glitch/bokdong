@@ -1441,6 +1441,63 @@ function renderCourseWidget(){
   </div>`;
 }
 
+// ── 주간 전국 레이드 (비동기 협동) — 클라 스캐폴딩 ─────────
+// Supabase 연결 전엔 오프라인 미리보기. RAID_BACKEND 설정 + syncRaid/submitRaid 구현부만 채우면 실연결.
+var RAID_GOAL = 1000000;    // 주간 전국 합산 목표(km)
+var RAID_BACKEND = null;    // 실연결 시 {url, anonKey} 지정 (anon=공개키. service_role 비밀키는 절대 클라에 X)
+var raidState = { goal:RAID_GOAL, total:0, myKm:0, week:'', top:[], connected:false };
+function ensurePlayerId(){
+  if(!S.playerId) S.playerId = 'bd_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
+  if(typeof S.nickname!=='string') S.nickname='';
+}
+function setNickname(v){
+  ensurePlayerId();
+  S.nickname=(v||'').trim().slice(0,12);
+  showSt('닉네임 저장: '+(S.nickname||'(없음)'));
+  submitRaid(); if(curTab==='mission') renderMission();
+}
+// 동기화(목업). 실연결 시: 서버에서 이번 주 전국 합산·랭킹 수신.
+function syncRaid(){
+  ensureCourse(); ensurePlayerId();
+  raidState.week=getWeekKey();
+  raidState.goal=RAID_GOAL;
+  raidState.myKm=Math.floor(S.course.week.km||0);
+  if(RAID_BACKEND){ /* TODO(실연결): fetch로 전국 합산·top 수신 → raidState 갱신 */ }
+  else {
+    raidState.connected=false;
+    raidState.total=raidState.myKm;           // 오프라인: 전국=내 기여만(실연결 시 대체)
+    raidState.top=[{name:(S.nickname||'나'), km:raidState.myKm}];
+  }
+}
+// 내 진행 제출(목업 no-op). 실연결 시: 서버에 {playerId,nickname,week,km} upsert.
+function submitRaid(){
+  ensurePlayerId();
+  if(RAID_BACKEND){ /* TODO(실연결): POST/upsert */ }
+}
+function renderRaidHTML(){
+  syncRaid();
+  const u='var(--u)'; const fs=(px)=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
+  const pct=Math.min(100, Math.floor(raidState.total/raidState.goal*100));
+  const nick=(S.nickname||'').replace(/"/g,'&quot;');
+  const lead=raidState.top.map((r,i)=>`<div style="display:flex;justify-content:space-between;${fs(6)};color:#3D2510;padding:calc(2px * ${u}) 0;"><span>${i+1}. ${r.name}</span><span>${r.km.toLocaleString()}km</span></div>`).join('');
+  return `<div class="px-panel" style="margin-bottom:calc(6px * ${u});border-color:#0284c7;">
+    <div style="${fs(9)};color:#0284c7;text-align:center;margin-bottom:calc(3px * ${u});">🌏 주간 전국 레이드 ${raidState.connected?'':`<span style="${fs(5)};color:#8B6340;">(연결 준비중·오프라인)</span>`}</div>
+    <div style="${fs(6)};color:#8B6340;text-align:center;margin-bottom:calc(5px * ${u});">전국의 임복동이 함께 ${raidState.goal.toLocaleString()}km! 달성 시 모두 보상</div>
+    <div style="display:flex;align-items:center;gap:calc(5px * ${u});margin-bottom:calc(5px * ${u});">
+      <div class="px-bar-bg" style="flex:1;height:calc(10px * ${u});"><div class="px-bar-fill" style="width:${pct}%;background:#0ea5e9;"></div></div>
+      <div style="${fs(6)};color:#3D2510;white-space:nowrap;">${raidState.total.toLocaleString()}/${Math.floor(raidState.goal/1000).toLocaleString()}k</div>
+    </div>
+    <div style="${fs(6)};color:#3D2510;margin-bottom:calc(5px * ${u});">내 이번 주 기여: <b>${raidState.myKm.toLocaleString()}km</b></div>
+    <div style="display:flex;gap:calc(5px * ${u});align-items:center;margin-bottom:calc(6px * ${u});">
+      <input value="${nick}" placeholder="닉네임(최대 12자)" onchange="setNickname(this.value)" style="flex:1;${fs(6)};padding:calc(5px * ${u});border:2px solid #C0A060;border-radius:calc(6px * ${u});background:#FFF8DC;color:#3D2510;">
+    </div>
+    <div style="border-top:1px dashed #D4B483;padding-top:calc(4px * ${u});">
+      <div style="${fs(6)};color:#8B6340;margin-bottom:calc(2px * ${u});">🏅 이번 주 톱 라이더</div>
+      ${lead||`<div style="${fs(5)};color:#8B6340;">아직 기록 없음</div>`}
+    </div>
+  </div>`;
+}
+
 // ── 주간 7대죄 보스 러시 (주사위 정화, 전투 없이) ─────────
 var SIN_RUSH_IDS=['fred','wrath','sloth','envy','gluttony','pride','lust'];
 function ensureSinRush(){
@@ -1508,7 +1565,7 @@ function renderMission(){
   const fs=(px)=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
   const sectionTitles = {daily:'📅 일일 미션', weekly:'🗓️ 주간 미션', monthly:'📆 월간 미션'};
   const resetKeys = {daily:'dailyResetAt', weekly:'weeklyResetAt', monthly:'monthlyResetAt'};
-  let html = renderCoursesHTML() + renderSinRushHTML();   // 🎯 특별코스 + 😈 7대죄 보스 러시
+  let html = renderCoursesHTML() + renderRaidHTML() + renderSinRushHTML();   // 🎯 특별코스 + 🌏 전국 레이드 + 😈 7대죄
   ['daily','weekly','monthly'].forEach(period=>{
     const resetAt = S.missions[resetKeys[period]];
     const left = resetAt ? Math.max(0, resetAt - Date.now()) : 0;
@@ -2393,7 +2450,7 @@ function closeModalAndLaunch(wr){
 }
 // 새 게임 초기 상태(공통). resetGame·doPrestige가 공유한다.
 function freshState(){
-  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[]},postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
+  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[]},playerId:'',nickname:'',postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
 }
 // 초기화 후 공통 뒷정리(뱃지·애니메이션·루프)
 function afterReset(){
