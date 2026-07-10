@@ -2092,19 +2092,23 @@ function doLoad(parsedD){
         // 탈것 전격교체 마이그레이션: 옛 id(t/a2/avant/ninja 등) → 새 자전거 체계(v1~v30)
         // 옛 데이터면 보유했던 탈것 수만큼 v1부터 순서대로 보유 처리 (진행도 보존)
         const _validIds = VEHS.map(v=>v.id);
+        const _bikeIds = VEHS.filter(v=>v.cat==='bike').map(v=>v.id);   // 새 체계(15개)
         const _hasOldVeh = (S.vehs||[]).some(sv=>!_validIds.includes(sv.id));
         if(_hasOldVeh || !S.vehs){
-          const ownedCount = (S.vehs||[]).filter(v=>v.owned && v.id!=='rocket').length || 1;
+          const oldOwned = (S.vehs||[]).filter(v=>v.owned && v.id!=='rocket').length || 1;
           const hadRocket = (S.vehs||[]).some(v=>v.id==='rocket' && v.owned);
-          // v1부터 보유했던 개수만큼 보유 처리 (최소 1개 = 세발자전거)
+          // 옛 30단계 체계(v16~v30 존재)면 비례 축소(÷2), 그 외(고대 id)는 개수 그대로 최대 15
+          const was30 = (S.vehs||[]).some(sv=>/^v(1[6-9]|2\d|30)$/.test(sv.id));
+          let newOwned = was30 ? Math.round(oldOwned / 30 * _bikeIds.length) : oldOwned;
+          newOwned = Math.max(1, Math.min(_bikeIds.length, newOwned));
           S.vehs = VEHS.map((v,i)=>({
             id: v.id,
-            owned: v.id==='rocket' ? hadRocket : (i < Math.max(1, ownedCount))
+            owned: v.id==='rocket' ? hadRocket : (i < newOwned)
           }));
-          // 현재 타던 탈것도 보유 범위의 최고 단계로
-          const topBike = VEHS.filter(v=>v.cat==='bike')[Math.max(0, Math.min(29, ownedCount-1))];
-          if(!_validIds.includes(S.vId)) S.vId = topBike ? topBike.id : 'v1';
-          addLog('neutral','🚲 탈것 시스템 개편! 자전거 '+Math.max(1,ownedCount)+'단계로 이전됨');
+          // 현재 타던 탈것을 보유 최고 단계로, 속도도 맞춤
+          if(!_bikeIds.includes(S.vId)) S.vId = _bikeIds[newOwned-1] || 'v1';
+          const _cv = VEHS.find(v=>v.id===S.vId); if(_cv) S.speed = _cv.sp;
+          addLog('neutral','🚲 탈것 체계 정비(15단계)! 자전거 '+newOwned+'단계로 이전됐어요');
         }
         if(!S.achievements)S.achievements=[];if(!S.boostCount)S.boostCount=0;if(!S.offlineCount)S.offlineCount=0;if(typeof S.autoApple!=='boolean')S.autoApple=false;if(typeof S.prestige!=='number')S.prestige=0;
         // #6 엽서 마이그레이션: 없으면 이미 방문한 도시들로 소급 생성
@@ -2285,7 +2289,7 @@ function savePostcardImage(i){
 // ── 프레스티지(2회차 세계일주) — 콘텐츠 소진 해결. 진행 리셋 + 영구 배수 ──
 function prestigeMult(){ return 1 + 0.25*(S.prestige||0); } // 속도·수입 +25%/회차
 function canPrestige(){
-  if(vehOwned('v30')) return true; // 전설의 서퍼티지(₩2억) 보유 = 사실상 완주
+  if(vehOwned('v15')) return true; // 전설의 서퍼티지(₩2억) 보유 = 사실상 완주
   return CITIES.filter(c=>c.region!=='우주').every(c=>S.visited.includes(c.n)); // 또는 전 도시 방문
 }
 function doPrestige(){
@@ -2521,7 +2525,7 @@ function renderNpcs(){
 // 탈것 탭 — 카테고리별 + 미니 픽셀 이미지
 function renderVehs(){
   const cats=[
-    {key:'bike', label:'🚲 자전거 (30단계 업그레이드)'},
+    {key:'bike', label:'🚲 자전거 (15단계 업그레이드)'},
     {key:'rocket',label:'🚀 1회용 로켓'},
   ];
   const f = tabFilter.veh;
@@ -2721,7 +2725,7 @@ function renderStat(){
     ${pv>0?`<div style="${fs(6)};color:#DDD6FE;text-align:center;margin-bottom:6px;">여행 노하우: 속도·수입 <b>+${Math.round((prestigeMult()-1)*100)}%</b> (영구)</div>`:''}
     ${canP
       ? `<button class="px-btn" style="width:100%;${fs(7)};background:linear-gradient(180deg,#a78bfa,#7c3aed);border-color:#6d28d9;color:#fff;" onclick="doPrestige()">🌏 ${pv+1}회차 출발! (속도·수입 +25% 획득)</button>`
-      : `<div style="${fs(5)};color:#C4B5FD;text-align:center;">v30(전설의 서퍼티지) 보유 또는 전 도시 방문 시 2회차 가능</div>`}
+      : `<div style="${fs(5)};color:#C4B5FD;text-align:center;">v15(전설의 서퍼티지) 보유 또는 전 도시 방문 시 2회차 가능</div>`}
   </div>
   <div class="px-panel" style="margin-bottom:5px;background:linear-gradient(135deg,#FFF8E1,#FFFDE7);border-color:${pet.textColor};">
     <div style="${fs(7)};color:${pet.textColor};margin-bottom:6px;text-align:center;font-weight:bold;text-shadow:1px 1px 0 #FFF;">${pet.name} (${pet.stage}/4 단계)</div>
@@ -2862,10 +2866,10 @@ function buyAp(){
   if(S.money<3000){addLog('bad','돈 부족!');return;}
   S.money-=3000;S.ap++;addLog('good','🍎 사과 +1');renderItems();update();
 }
-// #1·#8: 사과박스 — 크로스바이크(v9) 보유 시 메인 사과 버튼이 이걸로 전환됨(대량 구매).
+// #1·#8: 사과박스 — 크로스바이크(v6) 보유 시 메인 사과 버튼이 이걸로 전환됨(대량 구매).
 function ownsVeh(id){ return (S.vehs||[]).some(v=>v.id===id && v.owned); }
-// 메인 사과 버튼: 크로스바이크(v9) 이후엔 아이템 탭의 '📦 사과박스(랜덤)'과 동일 동작(buyJuiceBox), 그 전엔 사과 먹기
-function appleBtnAction(){ if(ownsVeh('v9')) buyJuiceBox(); else useApple(); }
+// 메인 사과 버튼: 크로스바이크(v6) 이후엔 아이템 탭의 '📦 사과박스(랜덤)'과 동일 동작(buyJuiceBox), 그 전엔 사과 먹기
+function appleBtnAction(){ if(ownsVeh('v6')) buyJuiceBox(); else useApple(); }
 function buyJc(){
   if(S.jc>=99){addLog('bad','🧃 사과즙 보유 한도 초과! (최대 99개)');return;}
   if(S.money<8000){addLog('bad','돈 부족!');return;}
@@ -2894,9 +2898,9 @@ function update(){
   document.getElementById('veh-lbl').textContent=v.n;document.getElementById('loc-lbl').textContent=S.city+(S.dest?'→'+S.dest:'');
   document.getElementById('lv').textContent=S.lv;document.getElementById('mon').textContent=Math.round(S.money).toLocaleString();
   document.getElementById('apN').textContent=S.ap;document.getElementById('jcN').textContent=S.jc;
-  // #8: 크로스바이크(v9) 보유 후 메인 사과 버튼을 사과박스 구매로 전환
+  // #8: 크로스바이크(v6) 보유 후 메인 사과 버튼을 사과박스 구매로 전환
   const _apBtn=document.getElementById('apple-btn');
-  if(_apBtn){ const _box=ownsVeh('v9'); const _html=_box?'📦<br>사과박스':'🍎<br>사과'; if(_apBtn.innerHTML!==_html)_apBtn.innerHTML=_html; }
+  if(_apBtn){ const _box=ownsVeh('v6'); const _html=_box?'📦<br>사과박스':'🍎<br>사과'; if(_apBtn.innerHTML!==_html)_apBtn.innerHTML=_html; }
   document.getElementById('hp-v').textContent=Math.round(S.hp)+'/'+S.mhp;document.getElementById('hp-b').style.width=Math.round(S.hp/S.mhp*100)+'%';
   document.getElementById('xp-v').textContent=Math.round(S.xp)+'/'+S.xpMax;document.getElementById('xp-b').style.width=Math.round(S.xp/S.xpMax*100)+'%';
   document.getElementById('dop-v').textContent=S.dopT>0?S.dopT+'s':'OFF';document.getElementById('dop-b').style.width=Math.round(S.dopT/40*100)+'%';

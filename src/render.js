@@ -1386,13 +1386,13 @@ var BOKDONG_LOADED = false;
 // 페달 디버그용 — 콘솔에서 window.bokdongDebug=true 입력하면 자세 로그 출력
 window.bokdongDebug = false;
 var _lastPhaseLog = '';
-// 부스트 단계 판정: 현재 자전거(v1~v30)가 5구간 중 몇 단계인지 (1~5)
+// 부스트 단계 판정: 현재 자전거가 5구간 중 몇 단계인지 (1~5). 자전거 총수에 자동 적응.
 function getBoostTier(){
   const bikes = VEHS.filter(v=>v.cat==='bike');
   const idx = bikes.findIndex(v=>v.id===S.vId);
   if(idx < 0) return 1;
-  // 30개를 6개씩 5구간으로: 0~5→1, 6~11→2, 12~17→3, 18~23→4, 24~29→5
-  return Math.min(5, Math.floor(idx / 6) + 1);
+  const per = Math.max(1, Math.ceil(bikes.length / 5)); // 15개면 3개씩 5구간
+  return Math.min(5, Math.floor(idx / per) + 1);
 }
 function drawBokdongSprite(ctx2, cx, cy, scale, isRiding){
   const isBoost = (S.dopT||0) > 0;
