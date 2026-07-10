@@ -416,6 +416,7 @@ function useJuice(){
   const dur=Math.round(40+(S.end||0)*0.5);
   S.dopT=dur;
   boosterBubble=110;S.boostCount=(S.boostCount||0)+1;
+  bumpCourse('boost', 1);   // 특별코스(부스터데이) 누적
   addLog('good','⚡ 부스터 ON! '+dur+'초 (기본 40 + 지구력 보너스)');
   playSfx('boost');
   update();
@@ -1251,6 +1252,11 @@ function ensureMissions(){
 function trackMission(type, amount){
   ensureMissions();
   amount = amount || 1;
+  // 특별코스 누적(일일/주간) — km/도착/맛집/만남
+  if(type==='km') bumpCourse('km', amount);
+  else if(type==='arrive') bumpCourse('arrive', 1);
+  else if(type==='food') bumpCourse('food', 1);
+  else if(type==='npc') bumpCourse('npc', 1);
   // 6번 fix: 미션 달성 감지용 — 진행도 변경 전 상태 저장
   function bumpProgress(m, add){
     const before = S.missions.progress[m.id] || 0;
@@ -1326,13 +1332,90 @@ function claimMission(id){
   addLog('good','🎯 '+m.name+' 보상 수령! +₩'+(m.rw.money||0).toLocaleString()+(m.rw.sp?' SP+'+m.rw.sp:'')+(m.rw.xp?' XP+'+m.rw.xp:'')+(m.rw.jc?' 🧃+'+m.rw.jc:''));
   renderMission();update();
 }
+// ── 특별코스 (일일/주간) ─────────────────────────────
+function getWeekKey(){ const d=new Date(); const oj=new Date(d.getFullYear(),0,1); const wn=Math.ceil((((d-oj)/86400000)+oj.getDay()+1)/7); return d.getFullYear()+'-'+wn; }
+function getDailyCourse(){ return DAILY_COURSES[new Date().getDay()] || DAILY_COURSES[0]; }
+function getWeeklyCourse(){ const wn=parseInt((getWeekKey().split('-')[1])||'0',10); return WEEKLY_COURSES[((wn%WEEKLY_COURSES.length)+WEEKLY_COURSES.length)%WEEKLY_COURSES.length]; }
+function ensureCourse(){
+  if(!S.course) S.course={dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false};
+  const dk=new Date().toDateString();
+  if(S.course.dayKey!==dk){ S.course.dayKey=dk; S.course.day={}; S.course.dayClaimed=false; }
+  const wk=getWeekKey();
+  if(S.course.weekKey!==wk){ S.course.weekKey=wk; S.course.week={}; S.course.weekClaimed=false; }
+}
+function bumpCourse(metric, amt){
+  ensureCourse();
+  S.course.day[metric]=(S.course.day[metric]||0)+amt;
+  S.course.week[metric]=(S.course.week[metric]||0)+amt;
+}
+function courseClaimable(){
+  ensureCourse();
+  const d=getDailyCourse(), w=getWeeklyCourse();
+  const dOk=(S.course.day[d.metric]||0)>=d.target && !S.course.dayClaimed;
+  const wOk=(S.course.week[w.metric]||0)>=w.target && !S.course.weekClaimed;
+  return dOk||wOk;
+}
+function claimCourse(period){
+  ensureCourse();
+  const c = period==='week' ? getWeeklyCourse() : getDailyCourse();
+  const store = period==='week' ? S.course.week : S.course.day;
+  const claimedKey = period==='week' ? 'weekClaimed' : 'dayClaimed';
+  if(S.course[claimedKey]){ showSt('이미 수령했어요'); return; }
+  if((store[c.metric]||0) < c.target){ showSt('아직 목표 미달성'); return; }
+  const rw=c.rw;
+  if(rw.money) S.money+=rw.money;
+  if(rw.xp) S.xp+=rw.xp;
+  if(rw.sp) S.sp+=rw.sp;
+  if(rw.jc) S.jc=Math.min(99,(S.jc||0)+rw.jc);
+  S.course[claimedKey]=true;
+  const rwTxt=(rw.money?'₩'+rw.money.toLocaleString():'')+(rw.sp?' SP+'+rw.sp:'')+(rw.xp?' XP+'+rw.xp:'')+(rw.jc?' 🧃+'+rw.jc:'');
+  addLog('good','🎯 '+(period==='week'?'주간':'오늘의')+' 특별코스 완료! '+c.name+' — '+rwTxt);
+  showSt('🎯 특별코스 보상! '+rwTxt);
+  playSfx('levelup');
+  renderMission(); update(); refreshTabBadges();
+}
+// 특별코스 카드 HTML (미션 탭 최상단)
+function renderCoursesHTML(){
+  ensureCourse();
+  const u='var(--u)';
+  const fs=(px)=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
+  function card(period, c){
+    const store = period==='week' ? S.course.week : S.course.day;
+    const claimed = period==='week' ? S.course.weekClaimed : S.course.dayClaimed;
+    const prog = Math.min(c.target, Math.floor(store[c.metric]||0));
+    const pct = Math.min(100, Math.floor(prog/c.target*100));
+    const done = prog>=c.target;
+    const rwTxt=(c.rw.money?'₩'+c.rw.money.toLocaleString():'')+(c.rw.sp?' SP+'+c.rw.sp:'')+(c.rw.xp?' XP+'+c.rw.xp:'')+(c.rw.jc?' 🧃'+c.rw.jc:'');
+    const tag = period==='week'?'이번 주':'오늘';
+    return `<div style="border:2px solid ${claimed?'#8B6340':done?'#E65100':'#C0A060'};background:${claimed?'#EFE8DC':'linear-gradient(135deg,#FFF3E0,#FFECB3)'};border-radius:calc(8px * ${u});padding:calc(7px * ${u});margin-bottom:calc(5px * ${u});">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:calc(3px * ${u});">
+        <div style="${fs(8)};color:#5C3D1E;">${c.icon} ${tag}의 특별코스 · <b>${c.name}</b></div>
+        <div style="${fs(5)};color:#E65100;">${rwTxt}</div>
+      </div>
+      <div style="${fs(6)};color:#8B6340;margin-bottom:calc(4px * ${u});">${c.desc}</div>
+      <div style="display:flex;align-items:center;gap:calc(5px * ${u});">
+        <div class="px-bar-bg" style="flex:1;height:calc(9px * ${u});"><div class="px-bar-fill" style="width:${pct}%;background:${done?'#E65100':'#FB8C00'};"></div></div>
+        <div style="${fs(6)};color:#3D2510;min-width:calc(50px * ${u});text-align:right;">${prog}/${c.target}</div>
+        ${done && !claimed
+          ? `<button class="px-btn px-btn-sm px-btn-orange" style="${fs(6)};" onclick="claimCourse('${period}')">수령</button>`
+          : claimed ? `<span style="${fs(5)};color:#8B6340;padding:0 calc(6px * ${u});">완료 ✓</span>` : ''}
+      </div>
+    </div>`;
+  }
+  return `<div class="px-panel" style="margin-bottom:calc(6px * ${u});border-color:#E65100;">
+    <div style="${fs(9)};color:#E65100;text-align:center;margin-bottom:calc(6px * ${u});">🎯 특별코스 <span style="${fs(5)};color:#8B6340;">매일·매주 갱신</span></div>
+    ${card('day', getDailyCourse())}
+    ${card('week', getWeeklyCourse())}
+  </div>`;
+}
+
 function renderMission(){
   ensureMissions();
   const u='var(--u)';
   const fs=(px)=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
   const sectionTitles = {daily:'📅 일일 미션', weekly:'🗓️ 주간 미션', monthly:'📆 월간 미션'};
   const resetKeys = {daily:'dailyResetAt', weekly:'weeklyResetAt', monthly:'monthlyResetAt'};
-  let html = '';
+  let html = renderCoursesHTML();   // 🎯 특별코스(일일/주간)를 최상단에
   ['daily','weekly','monthly'].forEach(period=>{
     const resetAt = S.missions[resetKeys[period]];
     const left = resetAt ? Math.max(0, resetAt - Date.now()) : 0;
@@ -2217,7 +2300,7 @@ function closeModalAndLaunch(wr){
 }
 // 새 게임 초기 상태(공통). resetGame·doPrestige가 공유한다.
 function freshState(){
-  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
+  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
 }
 // 초기화 후 공통 뒷정리(뱃지·애니메이션·루프)
 function afterReset(){
@@ -2985,6 +3068,7 @@ function refreshTabBadges(){
   setTabBadge('ach',  achGot > (S.seenTabs.ach||0));
   setTabBadge('gear', gearOwn > (S.seenTabs.gear||0));
   setTabBadge('stat', (S.sp||0) > 0);           // #6: 미사용 스탯포인트 있으면 알림(다 쓰면 자동 해제)
+  setTabBadge('mission', courseClaimable());     // 🎯 특별코스 수령 가능하면 알림
 }
 function setTabBadge(tab, on){
   const btn = document.querySelector(`button[onclick*="ST('${tab}')"]`);

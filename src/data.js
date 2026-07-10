@@ -555,6 +555,24 @@ const FOOD_QUIZ={
   '인천':{q:'인천상륙작전 지휘관은?',opts:['아이젠하워','맥아더','패튼','리지웨이'],ans:1},
 };
 
+// ── 특별코스 (일일/주간) — 반복 콘텐츠·리텐션. 전투 없이 라이딩 정체성 유지 ──
+// metric: km(주행)·arrive(도착)·food(맛집)·npc(만남)·boost(부스터)
+const DAILY_COURSES=[  // 요일별(일=0 ~ 토=6)
+  {icon:'🌅',name:'일요 대장정',  metric:'km',    target:300, desc:'오늘 300km 주행',    rw:{money:80000, xp:400}},
+  {icon:'🏙️',name:'월요 출근길',  metric:'arrive',target:4,   desc:'오늘 도시 4곳 도착',  rw:{money:70000, jc:2}},
+  {icon:'🍜',name:'화요 미식투어',metric:'food',  target:3,   desc:'오늘 맛집 3곳 클리어',rw:{money:90000, xp:300}},
+  {icon:'👥',name:'수요 인맥왕',  metric:'npc',   target:3,   desc:'오늘 NPC 3명 만남',   rw:{money:80000, sp:1}},
+  {icon:'⚡',name:'목요 부스터데이',metric:'boost', target:6,   desc:'오늘 부스터 6회',     rw:{money:70000, jc:3}},
+  {icon:'🚴',name:'불금 라이딩',  metric:'km',    target:250, desc:'오늘 250km 주행',    rw:{money:90000, xp:400}},
+  {icon:'🎉',name:'주말 축제',    metric:'arrive',target:5,   desc:'오늘 도시 5곳 도착',  rw:{money:100000, sp:1}},
+];
+const WEEKLY_COURSES=[  // 주 단위 순환
+  {icon:'🏆',name:'전국 대장정',metric:'km',    target:1500, desc:'이번 주 1,500km 주행', rw:{money:500000, sp:3, jc:5}},
+  {icon:'🍱',name:'전국 미식회',metric:'food',  target:12,   desc:'이번 주 맛집 12곳',    rw:{money:600000, sp:2, jc:5}},
+  {icon:'🌏',name:'인맥 마스터',metric:'npc',   target:15,   desc:'이번 주 NPC 15명 만남', rw:{money:700000, sp:3}},
+  {icon:'🗺️',name:'방방곡곡',  metric:'arrive',target:20,   desc:'이번 주 도시 20곳 도착',rw:{money:550000, sp:2, jc:5}},
+];
+
 // ── 업적 (지역별 포함) ─────────────────────────────────
 const ACHIEVEMENTS=[
   // 거리
