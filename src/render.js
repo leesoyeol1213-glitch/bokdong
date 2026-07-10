@@ -9,7 +9,7 @@ const ctx=cv.getContext('2d');
 const CV_W=420, CV_H=210;
 // 슈퍼샘플링 배율 — 백킹 해상도를 논리 크기의 SS배로 키워 화면 확대 시 글씨 깨짐 방지.
 // (스프라이트는 imageSmoothingEnabled=false로 선명 유지, 텍스트는 고해상도로 매끄럽게)
-const SS=Math.max(2, Math.min(4, Math.ceil(window.devicePixelRatio||1)+1));
+const SS=Math.max(3, Math.min(4, Math.ceil(window.devicePixelRatio||1)+1));  // #5: 최소 3배로 상향(전체 선명도↑)
 cv.width=Math.round(CV_W*SS); cv.height=Math.round(CV_H*SS);
 ctx.imageSmoothingEnabled=false;
 function p(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),w,h);}
@@ -73,8 +73,21 @@ function drawScene(){
   const hasCityBg = !!bgKey;
 
   if(hasCityBg){
-    // 배경은 고정 (캐릭터가 화면을 가로질러 달림)
-    ctx.drawImage(ASSETS_IMG[bgKey], 0, -26, 420, 236);
+    // #5: 배경 패럴럭스 — 라이딩 시 좌측으로 흐름. 장면 이미지는 좌우 끝이 안 맞으므로
+    //     '미러 타일링'(홀수 구간 좌우반전)으로 이음새 없이 무한 스크롤.
+    if(S.riding && !isResting) bgScrollX = (bgScrollX + (0.7 + asp*0.9)) % 840;
+    const img = ASSETS_IMG[bgKey];
+    const sx = ((bgScrollX % 840) + 840) % 840;
+    const k0 = Math.floor(sx/420);
+    for(let k=k0; k*420 - sx < 420; k++){
+      const screenX = k*420 - sx;
+      if((k & 1)===0){
+        ctx.drawImage(img, screenX, -26, 420, 236);
+      } else {
+        ctx.save(); ctx.translate(screenX+420, -26); ctx.scale(-1,1);
+        ctx.drawImage(img, 0, 0, 420, 236); ctx.restore();
+      }
+    }
   } else {
     // 폴백: 기존 픽셀 그리기
     p(0,-26,420,90+26,pal.sky);p(0,90,420,25,pal.sky2);
@@ -1587,12 +1600,9 @@ function drawRestScene(){
 function animLoop(){
   drawScene();
   if(S.riding&&!isResting){
-    const asp = animSpeedMult();
-    // 캐릭터 가로 이동 속도 — 자전거 단계별 목표:
-    //   일반: v1≈15초, v30≈3초 / 부스트: v1≈8초, v30≈1.5초 (화면 횡단 기준)
-    const move = S.dopT>0 ? (0.362*asp + 0.902) : (0.178*asp + 0.489);
-    bikeX += move;
-    if(bikeX > 470){ bikeX = -50; }
+    // #5: 배경·도로가 흐르므로 캐릭터는 화면 중앙 부근에서 페달만(가로 횡단 제거)
+    const targetX = 185 + Math.sin(frame*0.12)*4;   // 중앙 + 살짝 앞뒤 흔들림(페달감)
+    bikeX += (targetX - bikeX) * 0.12;               // 부드럽게 추종(정착 시 스냅 없음)
   }
   // 정지 시엔 bikeX 그대로 유지 (멈춘 위치)
   requestAnimationFrame(animLoop);
