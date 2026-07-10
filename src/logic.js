@@ -164,7 +164,7 @@ function tick(){
   } else if(!S._petStage){
     S._petStage = curStage;
   }
-  if(S.xp>=S.xpMax){S.xp-=S.xpMax;S.lv++;S.xpMax=Math.floor(S.xpMax*1.35);S.sp++;S.money+=5000*S.lv;addLog('good','LEVEL UP! Lv.'+S.lv+' SP+1');playSfx('levelup');}
+  if(S.xp>=S.xpMax){S.xp-=S.xpMax;S.lv++;S.xpMax=Math.floor(S.xpMax*1.35);S.sp++;S.money+=5000*S.lv;addLog('good','LEVEL UP! Lv.'+S.lv+' SP+1');playSfx('levelup');levelUpFx=90;levelUpLv=S.lv;}
   if(S.dest&&S.sgKm>=S.sgTot){
     // 도착 보상에 장비 돈 보너스 + 컬렉션 보너스 + 날씨 돈 보너스 적용
     const total = Math.floor((S.visited.length/CITIES.length + S.foodDone.length/FOODS.length + S.npcs.filter(n=>n.met&&!n.locked).length/Math.max(1,S.npcs.filter(n=>!n.locked).length)) /3 * 100);
@@ -188,6 +188,7 @@ function tick(){
     }
     addLog('good','🎉 '+S.city+' 도착! ₩'+arriveMoney.toLocaleString());addLog('neutral','📜 '+ci.hist);
     playSfx('arrive');
+    arriveFx=100; arriveCity=S.city;   // ✨ 도착 컨페티 연출
     trackMission('arrive');
     if(S.city==='달') trackMission('moon');
     showHistModal(ci);
@@ -2265,6 +2266,7 @@ function doPrestige(){
       addLog('good','🌏✨ '+S.prestige+'회차 세계일주 시작! 여행 노하우: 속도·수입 +'+Math.round((prestigeMult()-1)*100)+'% (영구)');
       showSt('🌏 '+S.prestige+'회차 시작!');
       playSfx('levelup');
+      prestigeFx=150; prestigeRound=S.prestige;   // ✨ 회차 출발 축하 연출
       update();
     }
   });

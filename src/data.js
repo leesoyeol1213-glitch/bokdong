@@ -628,6 +628,10 @@ let evAnim=null,evTimer=0,evAnimNpc=null;
 let oxResult=null; // 'correct' | 'wrong' — OX 퀴즈 결과 애니
 // 주사위 애니메이션
 let diceAnim=0,diceVal=1,diceTarget=null;
+// ✨ 성취 순간 연출(오버레이) — evAnim과 별개로 겹쳐 표시
+let levelUpFx=0, levelUpLv=0;      // 레벨업 번쩍+팝업
+let arriveFx=0, arriveCity='';     // 도시 도착 컨페티
+let prestigeFx=0, prestigeRound=0; // 프레스티지 회차 출발 축하
 // TY 수호천사 (v4.4 그록 추가)
 let tyTalkTimer=1800+Math.floor(Math.random()*1200);
 

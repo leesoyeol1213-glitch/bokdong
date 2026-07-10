@@ -97,6 +97,8 @@ function drawScene(){
   if(evAnim==='uphill')   drawUphill();
   if(evAnim==='downhill') drawDownhill();
 
+  // ✨ 프레스티지 상시 오라 — 회차가 오를수록 화려해짐(캐릭터 뒤에 깔림)
+  if((S.prestige||0)>0 && !isResting) drawPrestigeAura(bikeX,145);
   if(isResting)drawRestScene();
   else         drawBokdong(bikeX,145,asp);
 
@@ -140,6 +142,11 @@ function drawScene(){
 
   // 장비 드롭 애니메이션
   drawGearDropAnim();
+
+  // ✨ 성취 순간 연출(레벨업·도착·프레스티지) — HUD 위에 겹쳐서
+  if(levelUpFx>0){ drawLevelUpFx(); levelUpFx--; }
+  if(arriveFx>0){ drawArriveFx(); arriveFx--; }
+  if(prestigeFx>0){ drawPrestigeFx(); prestigeFx--; }
 
   // 6번: 천재지변 — 번개/회오리
   drawDisasterEffect();
@@ -1042,6 +1049,112 @@ function drawMoonRabbit(){
     ctx.fillStyle='#5C3D1E';ctx.font='bold 5px Galmuri11, monospace';ctx.textAlign='center';
     ctx.fillText('어서 와요~🌕',rx,ry-55);ctx.textAlign='left';
   }
+}
+
+// ✨ 레벨업 연출 — 번쩍 + 팝업 + 상승 별 (levelUpFx: 90→0)
+function drawLevelUpFx(){
+  const t=levelUpFx, p=(90-t)/90;
+  const flashA=Math.max(0,(t-72)/18)*0.5;
+  if(flashA>0){ ctx.fillStyle='rgba(255,240,150,'+flashA.toFixed(3)+')'; ctx.fillRect(0,-26,420,236); }
+  for(let i=0;i<10;i++){
+    const seed=i*47, px=210+Math.sin(seed)*95, py=150-p*140-(i%3)*10;
+    const a=Math.max(0,1-p)*0.9;
+    ctx.fillStyle='rgba(255,215,0,'+a.toFixed(2)+')';
+    ctx.font='bold '+(8+(i%3)*3)+'px Galmuri11, monospace';ctx.textAlign='center';ctx.textBaseline='alphabetic';
+    ctx.fillText('★',px,py);
+  }
+  let sc, alpha;
+  if(t>70){ sc=0.4+(90-t)/20*0.75; alpha=(90-t)/20; }
+  else if(t>20){ sc=1.15-(70-t)/50*0.15; alpha=1; }
+  else { sc=1.0; alpha=t/20; }
+  ctx.save(); ctx.globalAlpha=Math.min(1,alpha);
+  ctx.translate(210,64); ctx.scale(sc,sc);
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillStyle='#7c3aed'; ctx.font='bold 20px Galmuri11, monospace'; ctx.fillText('LEVEL UP!',1.5,1.5);
+  ctx.fillStyle='#FFEB3B'; ctx.fillText('LEVEL UP!',0,0);
+  ctx.fillStyle='#FFF'; ctx.font='bold 12px Galmuri11, monospace'; ctx.fillText('Lv.'+levelUpLv,0,20);
+  ctx.restore();
+  ctx.textAlign='left';ctx.textBaseline='alphabetic';
+}
+
+// ✨ 도시 도착 연출 — 컨페티 + 도시명 배너 (arriveFx: 100→0)
+function drawArriveFx(){
+  const t=arriveFx, p=(100-t)/100;
+  const cols=['#ff5252','#ffd740','#40c4ff','#69f0ae','#e040fb'];
+  for(let i=0;i<24;i++){
+    const seed=i*97;
+    const x=(seed*7)%420;
+    const y=(((-20 + p*260 + (seed%50))%236)+236)%236 - 26;
+    ctx.save(); ctx.translate(x,y); ctx.rotate(frame*0.2+i);
+    ctx.fillStyle=cols[i%5]; ctx.fillRect(-2,-3,4,6); ctx.restore();
+  }
+  let by, alpha;
+  if(t>80){ by=-10+(100-t)/20*42; alpha=(100-t)/20; }
+  else if(t>25){ by=32; alpha=1; }
+  else { by=32; alpha=t/25; }
+  ctx.save(); ctx.globalAlpha=Math.min(1,alpha);
+  ctx.font='bold 14px Galmuri11, monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+  const label='🎉 '+arriveCity+' 도착!';
+  const w=ctx.measureText(label).width+28;
+  ctx.fillStyle='rgba(30,110,30,0.92)'; ctx.strokeStyle='#FFEB3B'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.roundRect(210-w/2,by-14,w,28,8); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#FFF'; ctx.fillText(label,210,by);
+  ctx.restore();
+  ctx.textAlign='left';ctx.textBaseline='alphabetic';
+}
+
+// ✨ 프레스티지 회차 출발 축하 — 보라 버스트 + 회전 지구 + 텍스트 (prestigeFx: 150→0)
+function drawPrestigeFx(){
+  const t=prestigeFx, p=(150-t)/150;
+  ctx.save(); ctx.globalAlpha=Math.max(0,1-p)*0.55;
+  const grd=ctx.createRadialGradient(210,80,0,210,80,190*Math.min(1,p*2.2));
+  grd.addColorStop(0,'rgba(167,139,250,0.7)'); grd.addColorStop(1,'rgba(124,58,237,0)');
+  ctx.fillStyle=grd; ctx.fillRect(0,-26,420,236); ctx.restore();
+  for(let i=0;i<12;i++){
+    const a=(i/12)*Math.PI*2+frame*0.08, r=62+Math.sin(frame*0.1+i)*10;
+    ctx.fillStyle='rgba(221,214,254,'+(Math.max(0,1-p)*0.9).toFixed(2)+')';
+    ctx.font='bold 10px Galmuri11, monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('✦',210+Math.cos(a)*r,70+Math.sin(a)*r*0.7);
+  }
+  ctx.save(); ctx.globalAlpha=Math.min(1, t>20?1:t/20);
+  ctx.translate(210,70);
+  const sc=t>120? (150-t)/30 : 1;
+  ctx.font=Math.round(40*Math.max(0.2,sc))+'px Galmuri11, monospace';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(['🌏','🌎','🌍'][Math.floor(frame/6)%3],0,0);
+  ctx.restore();
+  ctx.save(); ctx.globalAlpha=Math.min(1, t>20?1:t/20);
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillStyle='#4c1d95'; ctx.font='bold 16px Galmuri11, monospace'; ctx.fillText(prestigeRound+'회차 세계일주!',211,117);
+  ctx.fillStyle='#FFEB3B'; ctx.fillText(prestigeRound+'회차 세계일주!',210,116);
+  ctx.restore();
+  ctx.textAlign='left';ctx.textBaseline='alphabetic';
+}
+
+// ✨ 프레스티지 상시 오라 — 회차(1~6+)가 오를수록 화려해짐 (캐릭터 뒤)
+function drawPrestigeAura(cx,cy){
+  const pr=Math.min(6,S.prestige||0); if(pr<=0) return;
+  const y=cy-6, pulse=0.5+Math.sin(frame*0.1)*0.5;
+  const hue=(frame*2+pr*40)%360;
+  const col = pr>=4 ? 'hsla('+hue+',90%,65%,' : (pr>=2? 'rgba(167,139,250,' : 'rgba(255,215,0,');
+  const glowR=26+pr*4+pulse*4;
+  const grd=ctx.createRadialGradient(cx,cy+22,0,cx,cy+22,glowR);
+  grd.addColorStop(0, col+(0.22+pr*0.04)+')'); grd.addColorStop(1, col+'0)');
+  ctx.fillStyle=grd; ctx.beginPath(); ctx.ellipse(cx,cy+22,glowR,glowR*0.4,0,0,Math.PI*2); ctx.fill();
+  for(let i=0;i<pr;i++){
+    const a=(i/pr)*Math.PI*2+frame*0.06, r=28+pr*2;
+    const px=cx+Math.cos(a)*r, py=y-10+Math.sin(a)*r*0.5;
+    const hue2=(frame*3+i*60)%360;
+    ctx.fillStyle= pr>=4 ? 'hsl('+hue2+',90%,70%)' : (pr>=2?'#c4b5fd':'#FFD700');
+    ctx.font='bold 9px Galmuri11, monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(pr>=3?'✦':'✨',px,py);
+  }
+  if(pr>=3){
+    const bob=Math.sin(frame*0.15)*2;
+    ctx.font='12px Galmuri11, monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(pr>=5?'👑':'⭐', cx, y-48+bob);
+  }
+  ctx.textAlign='left';ctx.textBaseline='alphabetic';
 }
 
 function drawTree(x,y){
