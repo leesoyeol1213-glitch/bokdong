@@ -1441,13 +1441,74 @@ function renderCourseWidget(){
   </div>`;
 }
 
+// ── 주간 7대죄 보스 러시 (주사위 정화, 전투 없이) ─────────
+var SIN_RUSH_IDS=['fred','wrath','sloth','envy','gluttony','pride','lust'];
+function ensureSinRush(){
+  if(!S.sinRush) S.sinRush={weekKey:'',defeated:[]};
+  const wk=getWeekKey();
+  if(S.sinRush.weekKey!==wk){ S.sinRush.weekKey=wk; S.sinRush.defeated=[]; }
+}
+function challengeSin(id){
+  ensureSinRush();
+  if(modalOpen()){ showSt('진행 중인 선택을 먼저 마쳐주세요'); return; }
+  if(S.sinRush.defeated.includes(id)){ showSt('이미 정화했어요'); return; }
+  const npc=S.npcs.find(n=>n.id===id); if(!npc) return;
+  diceAnim=60; diceVal=Math.ceil(Math.random()*6);
+  const win = diceVal>=3;   // 3~6 정화(66%)
+  update();
+  setTimeout(()=>{
+    if(win){
+      if(!S.sinRush.defeated.includes(id)) S.sinRush.defeated.push(id);
+      const reward=50000; S.money+=reward; S.xp+=100;
+      addLog('good','😇 '+npc.n+' 정화! (🎲'+diceVal+') ₩'+reward.toLocaleString()+' XP+100');
+      showSt('😇 '+npc.n+' 정화! (+₩'+reward.toLocaleString()+')');
+      playSfx('good');
+      if(S.sinRush.defeated.length>=SIN_RUSH_IDS.length){
+        S.money+=1000000; S.sp+=2;
+        addLog('good','👑 7대죄 완전 정화! 그랜드 보상 ₩1,000,000 + SP+2');
+        showSt('👑 7대죄 완전 정화! ₩1,000,000 + SP+2');
+        playSfx('levelup');
+        awardMythicIfLucky('legend');
+      }
+    } else {
+      addLog('bad','😈 '+npc.n+'에게 당했다! (🎲'+diceVal+') '+npc.reward);
+      showSt('😈 '+npc.n+' 도전 실패… 저주!');
+      playSfx('bad');
+      if(typeof npc.eff==='function') npc.eff(S);   // 죄악의 저주(리스크)
+    }
+    if(curTab==='mission') renderMission();
+    update(); refreshTabBadges();
+  }, 800);
+}
+function renderSinRushHTML(){
+  ensureSinRush();
+  const u='var(--u)'; const fs=(px)=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
+  const done=S.sinRush.defeated.length, total=SIN_RUSH_IDS.length;
+  const allDone=done>=total;
+  let items='';
+  SIN_RUSH_IDS.forEach(id=>{
+    const npc=S.npcs.find(n=>n.id===id)||{n:id,reward:''};
+    const em=NPC_EMOJI[id]||'😈';
+    const cleared=S.sinRush.defeated.includes(id);
+    items+=`<div style="display:flex;justify-content:space-between;align-items:center;border:2px solid ${cleared?'#8B6340':'#B71C1C'};background:${cleared?'#EFE8DC':'#FFF3E0'};border-radius:calc(6px * ${u});padding:calc(5px * ${u});margin-bottom:calc(4px * ${u});">
+      <div><div style="${fs(7)};color:#3D2510;">${em} ${npc.n}</div><div style="${fs(5)};color:#B71C1C;">${cleared?'':'실패 시: '+npc.reward}</div></div>
+      ${cleared?`<span style="${fs(6)};color:#1B5E20;padding:0 calc(6px * ${u});">정화 ✓</span>`:`<button class="px-btn px-btn-sm px-btn-red" style="${fs(6)};" onclick="challengeSin('${id}')">🎲 도전</button>`}
+    </div>`;
+  });
+  return `<div class="px-panel" style="margin-bottom:calc(6px * ${u});border-color:#B71C1C;">
+    <div style="${fs(9)};color:#B71C1C;text-align:center;margin-bottom:calc(3px * ${u});">😈 주간 7대죄 보스 러시 <span style="${fs(5)};color:#8B6340;">(${done}/${total})</span></div>
+    <div style="${fs(5)};color:#8B6340;text-align:center;margin-bottom:calc(6px * ${u});">🎲 주사위 3+로 정화 · 실패 시 저주 · ${allDone?'✅ 완전 정화 달성!':'전원 정화 → ₩100만 + SP+2 + 신화 확률'}</div>
+    ${items}
+  </div>`;
+}
+
 function renderMission(){
   ensureMissions();
   const u='var(--u)';
   const fs=(px)=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
   const sectionTitles = {daily:'📅 일일 미션', weekly:'🗓️ 주간 미션', monthly:'📆 월간 미션'};
   const resetKeys = {daily:'dailyResetAt', weekly:'weeklyResetAt', monthly:'monthlyResetAt'};
-  let html = renderCoursesHTML();   // 🎯 특별코스(일일/주간)를 최상단에
+  let html = renderCoursesHTML() + renderSinRushHTML();   // 🎯 특별코스 + 😈 7대죄 보스 러시
   ['daily','weekly','monthly'].forEach(period=>{
     const resetAt = S.missions[resetKeys[period]];
     const left = resetAt ? Math.max(0, resetAt - Date.now()) : 0;
@@ -2332,7 +2393,7 @@ function closeModalAndLaunch(wr){
 }
 // 새 게임 초기 상태(공통). resetGame·doPrestige가 공유한다.
 function freshState(){
-  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
+  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[]},postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
 }
 // 초기화 후 공통 뒷정리(뱃지·애니메이션·루프)
 function afterReset(){
