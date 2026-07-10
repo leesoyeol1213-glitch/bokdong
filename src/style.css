@@ -46,15 +46,25 @@ body {
   -webkit-tap-highlight-color: transparent;
   color: var(--ink);
 }
+/* 앱 셸: 상단(캔버스+상태+탭)을 고정하고 그 아래 내용만 스크롤 → 라이딩 애니메이션이 항상 보임 */
 #app {
-  display: block;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 420px;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;   /* 모바일 주소창 대응 */
   margin: 0 auto;
   background: var(--bg);
   position: relative;
-  overflow-x: hidden;
+  overflow: hidden;
+}
+.app-head { flex: 0 0 auto; background: var(--bg); z-index: 5; }
+.app-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   padding-bottom: calc(10px * var(--u));
 }
 #cv {

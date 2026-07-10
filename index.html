@@ -6,7 +6,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>임복동 세계일주 v9.43</title>
+<title>임복동 세계일주 v9.44</title>
 <!-- 갈무리(Galmuri) 픽셀폰트를 최우선·병렬 로드 — @import 직렬 로딩으로 인한 폰트 폴백(상단/하단 글씨체 불일치) 방지 -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/quiple/galmuri/dist/galmuri.css">
@@ -14,6 +14,7 @@
 </head>
 <body>
 <div id="app">
+<div class="app-head">
 <canvas id="cv" width="420" height="236"></canvas>
 
 <div class="px-panel" style="margin:0 6px 4px;padding:calc(9px * var(--u)) calc(11px * var(--u));">
@@ -50,6 +51,8 @@
   <button class="px-tab" onclick="ST('postcard')">엽서</button>
   <button class="px-tab" onclick="ST('log')">로그</button>
 </div>
+</div><!-- /app-head (고정) -->
+<div class="app-body">
 
 <div id="tab-main">
   <div class="px-panel">
@@ -103,6 +106,7 @@
 <div id="tab-gacha" style="display:none;padding:0 6px;"><div id="gacha-panel"></div></div>
 <div id="tab-postcard" style="display:none;padding:0 6px;"><div id="postcard-panel"></div></div>
 <div id="tab-log"  style="display:none;padding:0 6px;"><div id="ev-log"></div></div>
+</div><!-- /app-body (스크롤) -->
 </div>
 
 <!-- 로드 순서 중요: data(데이터·상태) → render(그리기) → logic(게임로직·UI) → boot(시동) -->
