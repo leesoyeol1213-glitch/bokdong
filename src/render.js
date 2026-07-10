@@ -1652,7 +1652,7 @@ function animLoop(){
     // 캔버스 CSS 크기 (내부 해상도 420×210은 항상 고정)
     const cvEl = document.getElementById('cv');
     if(cvEl){
-      const cvW = Math.min(winW, 420 * u);
+      const cvW = Math.min(winW, 420 * u, 420);   // 앱 최대폭(420)을 넘지 않게 → 태블릿 캔버스 오버플로우 방지
       cvEl.style.width  = cvW + 'px';
       cvEl.style.height = Math.round(cvW * 0.562) + 'px';
     }
