@@ -1409,6 +1409,38 @@ function renderCoursesHTML(){
   </div>`;
 }
 
+// 메인 화면(외부 UI) 컴팩트 특별코스 위젯 — 미션 탭 안 들어가도 항상 보이게
+function renderCourseWidget(){
+  const el=document.getElementById('course-main'); if(!el) return;
+  ensureCourse();
+  const u='var(--u)';
+  const d=getDailyCourse(), w=getWeeklyCourse();
+  function row(period,c){
+    const store=period==='week'?S.course.week:S.course.day;
+    const claimed=period==='week'?S.course.weekClaimed:S.course.dayClaimed;
+    const prog=Math.min(c.target,Math.floor(store[c.metric]||0));
+    const pct=Math.min(100,Math.floor(prog/c.target*100));
+    const done=prog>=c.target;
+    const tag=period==='week'?'주간':'오늘';
+    return `<div style="display:flex;align-items:center;gap:calc(6px * ${u});margin-top:calc(4px * ${u});">
+      <div style="font-size:calc(9px * ${u});color:#fdba74;white-space:nowrap;min-width:calc(52px * ${u});">${c.icon} ${tag}·${c.name}</div>
+      <div class="px-bar-bg" style="flex:1;height:calc(9px * ${u});"><div class="px-bar-fill" style="width:${pct}%;background:${done?'#f97316':'#fb923c'};"></div></div>
+      <div style="font-size:calc(9px * ${u});color:var(--ink-mid);white-space:nowrap;">${prog}/${c.target}</div>
+      ${done&&!claimed
+        ? `<button class="px-btn px-btn-sm px-btn-orange" style="font-size:calc(8px * ${u});padding:calc(4px * ${u}) calc(8px * ${u});" onclick="claimCourse('${period}')">수령</button>`
+        : claimed ? `<span style="font-size:calc(9px * ${u});color:var(--ink-soft);">✓</span>` : ''}
+    </div>`;
+  }
+  el.innerHTML=`<div class="px-panel" style="border-color:#f97316;margin:0;padding:calc(8px * ${u}) calc(10px * ${u});">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-size:calc(10px * ${u});color:#fb923c;">🎯 특별코스</div>
+      <div style="font-size:calc(8px * ${u});color:var(--ink-soft);cursor:pointer;" onclick="ST('mission')">자세히 ▸</div>
+    </div>
+    ${row('day',d)}
+    ${row('week',w)}
+  </div>`;
+}
+
 function renderMission(){
   ensureMissions();
   const u='var(--u)';
@@ -3000,6 +3032,7 @@ function update(){
   // #8: 크로스바이크(v6) 보유 후 메인 사과 버튼을 사과박스 구매로 전환
   const _apBtn=document.getElementById('apple-btn');
   if(_apBtn){ const _box=ownsVeh('v6'); const _html=_box?'📦<br>사과박스':'🍎<br>사과'; if(_apBtn.innerHTML!==_html)_apBtn.innerHTML=_html; }
+  renderCourseWidget();   // 메인 화면 특별코스 위젯 갱신
   document.getElementById('hp-v').textContent=Math.round(S.hp)+'/'+S.mhp;document.getElementById('hp-b').style.width=Math.round(S.hp/S.mhp*100)+'%';
   document.getElementById('xp-v').textContent=Math.round(S.xp)+'/'+S.xpMax;document.getElementById('xp-b').style.width=Math.round(S.xp/S.xpMax*100)+'%';
   document.getElementById('dop-v').textContent=S.dopT>0?S.dopT+'s':'OFF';document.getElementById('dop-b').style.width=Math.round(S.dopT/40*100)+'%';
