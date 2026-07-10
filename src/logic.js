@@ -881,6 +881,7 @@ function showJuiceBoxResult(type){
   }
   juiceBoxResult = {type, title, msg, color, bg, until: Date.now()+8000};
   addLog(logKind, logMsg);
+  showSt(logMsg);  // 메인 화면에서 눌러도 결과가 바로 보이게(아이템 탭 밖에서도 피드백)
   // 아이템 탭이 현재 보이는 중이면 즉시 갱신
   if(curTab==='item') renderItems();
   // 8초 후 자동 사라짐 → 아이템 탭 갱신
@@ -2823,23 +2824,8 @@ function buyAp(){
 }
 // #1·#8: 사과박스 — 크로스바이크(v9) 보유 시 메인 사과 버튼이 이걸로 전환됨(대량 구매).
 function ownsVeh(id){ return (S.vehs||[]).some(v=>v.id===id && v.owned); }
-function buyAppleBox(){
-  const N=20, unit=2250;                    // 개당 ₩2,250 (단품 3,000 대비 25%↓), 박스 20개 = ₩45,000
-  const room=99-(S.ap||0);
-  if(room<=0){ showSt('🍎 사과가 이미 가득해요 (최대 99개)'); return; }
-  let add=Math.min(N, room);
-  if(S.money < unit*add) add=Math.floor((S.money||0)/unit);   // 돈 부족하면 살 수 있는 만큼만
-  add=Math.min(add, room);
-  if(add<=0){ showSt('돈 부족! 사과 1개 ₩'+unit.toLocaleString()+'부터'); return; }
-  const cost=unit*add;
-  S.money-=cost; S.ap+=add;
-  addLog('good','📦 사과박스! 🍎 +'+add+' (₩'+cost.toLocaleString()+')');
-  showSt('📦 사과 +'+add+' 구매! (₩'+cost.toLocaleString()+')');
-  playSfx('apple');
-  update(); if(curTab==='item') renderItems();
-}
-// 메인 사과 버튼: v9 이후엔 사과박스 구매, 그 전엔 사과 먹기
-function appleBtnAction(){ if(ownsVeh('v9')) buyAppleBox(); else useApple(); }
+// 메인 사과 버튼: 크로스바이크(v9) 이후엔 아이템 탭의 '📦 사과박스(랜덤)'과 동일 동작(buyJuiceBox), 그 전엔 사과 먹기
+function appleBtnAction(){ if(ownsVeh('v9')) buyJuiceBox(); else useApple(); }
 function buyJc(){
   if(S.jc>=99){addLog('bad','🧃 사과즙 보유 한도 초과! (최대 99개)');return;}
   if(S.money<8000){addLog('bad','돈 부족!');return;}
