@@ -1225,6 +1225,13 @@ var ASSETS_SOURCES = {
   // 특별
   npc_kimri:    "./assets/npc_kimri.png",    // 검도왕 김리
 
+  // 탈것 카탈로그 이미지(구매 화면) — 15대 각기 다른 자전거
+  veh_v1:  "./assets/veh_v1.png",   veh_v2:  "./assets/veh_v2.png",   veh_v3:  "./assets/veh_v3.png",
+  veh_v4:  "./assets/veh_v4.png",   veh_v5:  "./assets/veh_v5.png",   veh_v6:  "./assets/veh_v6.png",
+  veh_v7:  "./assets/veh_v7.png",   veh_v8:  "./assets/veh_v8.png",   veh_v9:  "./assets/veh_v9.png",
+  veh_v10: "./assets/veh_v10.png",  veh_v11: "./assets/veh_v11.png",  veh_v12: "./assets/veh_v12.png",
+  veh_v13: "./assets/veh_v13.png",  veh_v14: "./assets/veh_v14.png",  veh_v15: "./assets/veh_v15.png",
+
   // UI 프레임/아이콘
   ui_npc_frame: null,  // NPC 모달 갈색 액자
   ui_btn_o:     null,
@@ -1446,6 +1453,19 @@ function drawVehPixel(ctx2, vId, cx, cy, scale, isAnim){
   // scale=1 기준, cx/cy는 중심점
   const v=VEHS.find(x=>x.id===vId)||VEHS[0];
   const s=scale||1;
+  // 탈것 카탈로그 이미지(veh_*)가 있으면 캔버스에 맞춰 그림 → 구매 화면에서 자전거가 각기 다르게 보임
+  const _vkey='veh_'+vId;
+  if(typeof hasAsset==='function' && hasAsset(_vkey)){
+    const vimg=ASSETS_IMG[_vkey];
+    if(vimg && vimg.complete && vimg.naturalWidth>0){
+      const cnv=ctx2.canvas, CW=cnv.width, CH=cnv.height;
+      const fit=Math.min((CW-2)/vimg.naturalWidth, (CH-2)/vimg.naturalHeight);
+      const dw=vimg.naturalWidth*fit, dh=vimg.naturalHeight*fit;
+      ctx2.imageSmoothingEnabled=true; ctx2.imageSmoothingQuality='high';
+      ctx2.drawImage(vimg, (CW-dw)/2, (CH-dh)/2, dw, dh);
+      return;
+    }
+  }
   function pp(x,y,w,h,c){ctx2.fillStyle=c;ctx2.fillRect(Math.round(cx+x*s),Math.round(cy+y*s),Math.max(1,Math.round(w*s)),Math.max(1,Math.round(h*s)));}
   // 2번 fix: 모든 탈것은 항상 임복동 자전거로 그림 (탈것 성능은 그대로 유지, 외형만 통일)
   // → isBikeKind를 무조건 true로 처리
