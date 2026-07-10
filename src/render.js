@@ -1453,9 +1453,10 @@ function drawVehPixel(ctx2, vId, cx, cy, scale, isAnim){
   // scale=1 기준, cx/cy는 중심점
   const v=VEHS.find(x=>x.id===vId)||VEHS[0];
   const s=scale||1;
-  // 탈것 카탈로그 이미지(veh_*)가 있으면 캔버스에 맞춰 그림 → 구매 화면에서 자전거가 각기 다르게 보임
+  // 탈것 카탈로그 이미지(veh_*)는 '미리보기(작은 scale)'에서만 사용.
+  // 라이딩(scale>=0.9)은 아래 drawBokdongSprite(복동이 애니)를 써야 하므로 여기서 가로채지 않음.
   const _vkey='veh_'+vId;
-  if(typeof hasAsset==='function' && hasAsset(_vkey)){
+  if(s < 0.9 && typeof hasAsset==='function' && hasAsset(_vkey)){
     const vimg=ASSETS_IMG[_vkey];
     if(vimg && vimg.complete && vimg.naturalWidth>0){
       const cnv=ctx2.canvas, CW=cnv.width, CH=cnv.height;
