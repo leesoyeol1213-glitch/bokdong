@@ -1548,6 +1548,32 @@ function drawGearDropAnim(){
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.translate(210, 105 - lift);
+  // ✨ 고등급(전설+) 광선 — 카드 뒤에서 회전하는 god-ray + 중심 글로우
+  const rayTier = {legend:1, epic:2, mythic:3}[item.rarity] || 0;
+  if(rayTier>0){
+    const glow = r.glow || r.color;
+    ctx.save();
+    // 중심 방사 글로우
+    const g = ctx.createRadialGradient(0,0,0,0,0,95);
+    g.addColorStop(0, glow); g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalAlpha = alpha * (0.16 + rayTier*0.07);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(0,0,95,0,Math.PI*2); ctx.fill();
+    // 회전 광선
+    ctx.globalAlpha = alpha * (0.14 + rayTier*0.06);
+    ctx.fillStyle = glow;
+    ctx.rotate(frame*0.02*(rayTier>=3?2:1));
+    const rays = 6 + rayTier*3;
+    for(let i=0;i<rays;i++){
+      ctx.rotate(Math.PI*2/rays);
+      ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-7,-150); ctx.lineTo(7,-150); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+    // 신화(mythic) 초반 화이트 플래시
+    if(item.rarity==='mythic' && t>105){
+      ctx.save(); ctx.globalAlpha = (t-105)/15*0.6; ctx.fillStyle='#FFF'; ctx.fillRect(-210,-131,420,236); ctx.restore();
+    }
+  }
   // 배경 광채
   ctx.fillStyle = r.bg;
   ctx.strokeStyle = r.color;
@@ -1860,6 +1886,8 @@ function rollGearGacha(){
   if(rarityKey==='legend') playSfx('mythic');
   else playSfx('gear');
   showGachaResult('gear', item, true);
+  // ✨ 전설 뽑기는 상단 캔버스에도 god-ray 드롭 연출(인벤토리 추가 없이 시각만)
+  if(rarityKey==='legend') showGearDropAnim(item);
 }
 
 // 가챠 결과를 가챠 탭에 인라인 표시 (8초 후 자동 사라짐)
