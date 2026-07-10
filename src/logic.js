@@ -123,7 +123,17 @@ function tick(){
   const baseSp = (v.sp + (S.dopT>0?S.dopSp:0) + (eqBonus.speedBonus||0)) * sinSpeedMult * prestigeMult();
   const wMod = weather.mod.speedMult || 1.0;
   const km=(baseSp * wMod)*.05;
+  const prevTotKm=S.totKm;
   S.sgKm+=km;S.totKm+=km;
+  // #4: 탈것 신규 오픈 알림 — 이번 tick에 거리 조건을 새로 넘긴 미보유 자전거
+  VEHS.forEach(vv=>{
+    if(vv.cat!=='bike' || vehOwned(vv.id)) return;
+    if(prevTotKm < vv.km && S.totKm >= vv.km){
+      addLog('good','🚲 새 탈것 해금! ['+vv.n+'] — '+vv.km.toLocaleString()+'km 달성! 탈것 탭에서 구매하세요');
+      showSt('🚲 새 탈것 해금: '+vv.n+'!');
+      playSfx('levelup');
+    }
+  });
   const speedHpDrain = 0.30 * (v.sp / 6);
   const boostDrain = S.dopT > 0 ? 0.4 : 0;
   // 분노 시 체력 소모 ↑ (속도 +50%만큼 추가 소모)
