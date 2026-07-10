@@ -549,6 +549,10 @@ const ACHIEVEMENTS=[
   {id:'reg_jeon', grp:'지역',emoji:'🌾',name:'전라도 정복', desc:'여수·목포·군산 모두 방문',  check:s=>['여수','목포','군산'].every(c=>s.visited.includes(c)),         rw:{money:40000,xp:120}},
   {id:'reg_gyeong2',grp:'지역',emoji:'🏙️',name:'경기도 정복',desc:'인천·서울 모두 방문',     check:s=>['인천','서울'].every(c=>s.visited.includes(c)),                rw:{money:50000,xp:150}},
   {id:'reg_all',  grp:'지역',emoji:'🇰🇷',name:'한국 완전 정복',desc:'모든 한국 도시 방문',  check:s=>CITIES.filter(c=>c.region!=='우주'&&c.region!=='일본').every(c=>s.visited.includes(c.n)), rw:{money:500000,sp:5,xp:1000}},
+  // 지역별 '도착 회수'(반복 포함) 기반 — 스탯 탭 표기와 연동
+  {id:'reg_regular',grp:'지역',emoji:'🔁',name:'지역 단골',   desc:'한 지역에 20회 도착',        check:s=>Object.values(s.regionVisits||{}).some(n=>n>=20),                          rw:{money:100000,xp:300}},
+  {id:'reg_nomad', grp:'지역',emoji:'🧭',name:'전국 유랑',    desc:'전 지역 합산 100회 도착',    check:s=>Object.values(s.regionVisits||{}).reduce((a,b)=>a+b,0)>=100,                rw:{money:200000,sp:2}},
+  {id:'reg_master',grp:'지역',emoji:'👑',name:'오도 정복 마스터',desc:'강원·경기·경상·전라·충청 각 10회 도착',check:s=>['강원','경기','경상','전라','충청'].every(r=>(s.regionVisits||{})[r]>=10),  rw:{money:1000000,sp:5,xp:1000}},
   // 일본
   {id:'jp_first', grp:'일본',emoji:'⛴️',name:'페리 출항',     desc:'후쿠오카 도착',           check:s=>s.visited.includes('후쿠오카'),  rw:{money:100000,xp:200}},
   {id:'jp_all',   grp:'일본',emoji:'🇯🇵',name:'일본 완전 정복', desc:'일본 도시 5곳 모두 방문',  check:s=>['후쿠오카','오사카','교토','도쿄','삿포로'].every(c=>s.visited.includes(c)), rw:{money:1500000,sp:8,xp:2000}},

@@ -189,6 +189,11 @@ function tick(){
     }
     S.city=S.dest;S.dest=null;S.sgKm=0;S.money+=arriveMoney;S._jinchonForkShown=false;
     const ci=CITIES.find(c=>c.n===S.city)||CITIES[0];
+    // #3: 지역별 도착 회수 누적(반복 포함) — 스탯 표기 + 업적 연계
+    if(ci.region && ci.region!=='함정' && ci.region!=='우주'){
+      S.regionVisits = S.regionVisits || {};
+      S.regionVisits[ci.region] = (S.regionVisits[ci.region]||0) + 1;
+    }
     // 일본 도착 완료 → 페리 플래그 해제 (이후 일본 내 이동은 currentInJapan 로직이 담당)
     if(ci.region==='일본') S.onFerryToJapan = false;
     if(!S.visited.includes(S.city)){
@@ -2111,6 +2116,7 @@ function doLoad(parsedD){
           addLog('neutral','🚲 탈것 체계 정비(15단계)! 자전거 '+newOwned+'단계로 이전됐어요');
         }
         if(!S.achievements)S.achievements=[];if(!S.boostCount)S.boostCount=0;if(!S.offlineCount)S.offlineCount=0;if(typeof S.autoApple!=='boolean')S.autoApple=false;if(typeof S.prestige!=='number')S.prestige=0;
+        if(!S.regionVisits)S.regionVisits={}; // #3 지역별 도착 회수
         // #6 엽서 마이그레이션: 없으면 이미 방문한 도시들로 소급 생성
         if(!Array.isArray(S.postcards)){ S.postcards=[]; (S.visited||[]).forEach(c=>collectPostcard(c)); }
         if(!S.equipped)S.equipped={head:null,eyes:null,hands:null,feet:null,body:null};
@@ -2211,7 +2217,7 @@ function closeModalAndLaunch(wr){
 }
 // 새 게임 초기 상태(공통). resetGame·doPrestige가 공유한다.
 function freshState(){
-  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
+  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
 }
 // 초기화 후 공통 뒷정리(뱃지·애니메이션·루프)
 function afterReset(){
@@ -2822,6 +2828,16 @@ function renderStat(){
     <div class="stat-row"><div style="${fs(6)};color:#8B6340;">NPC 만남</div><div style="${fs(6)};color:#3D2510;">${metNpc} / ${S.npcs.filter(n=>!n.locked).length}</div></div>
     <div class="stat-row"><div style="${fs(6)};color:#8B6340;">업적 달성</div><div style="${fs(6)};color:#3D2510;">${S.achievements.length} / ${ACHIEVEMENTS.length}</div></div>
     <div class="stat-row"><div style="${fs(6)};color:#8B6340;">부스터 사용</div><div style="${fs(6)};color:#3D2510;">${S.boostCount||0}회</div></div>
+    ${(()=>{
+      const rv=S.regionVisits||{};
+      const order=[['강원','🏔️'],['경기','🏙️'],['경상','🌊'],['전라','🌾'],['충청','🍎'],['일본','🇯🇵']];
+      const total=Object.values(rv).reduce((a,b)=>a+(b||0),0);
+      const rows=order.filter(([r])=>rv[r]).map(([r,em])=>`<span style="background:#EFE2C6;border:1px solid #C9B487;border-radius:4px;padding:2px 6px;${fs(6)};color:#3D2510;">${em} ${r} <b>${rv[r]}</b></span>`).join('');
+      return `<div style="margin-top:7px;border-top:1px dashed #D4B483;padding-top:6px;">
+        <div style="${fs(6)};color:#8B6340;margin-bottom:4px;">🧭 지역별 도착 회수 (총 ${total}회)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:3px;">${rows||`<span style="${fs(5)};color:#8B6340;">아직 도착 기록 없음</span>`}</div>
+      </div>`;
+    })()}
     ${S.visited.length>0?`<div style="margin-top:7px;">
       <div style="${fs(6)};color:#8B6340;margin-bottom:4px;">방문 도시:</div>
       <div style="display:flex;flex-wrap:wrap;gap:3px;">
