@@ -2830,7 +2830,7 @@ function renderStat(){
     <div class="stat-row"><div style="${fs(6)};color:#8B6340;">부스터 사용</div><div style="${fs(6)};color:#3D2510;">${S.boostCount||0}회</div></div>
     ${(()=>{
       const rv=S.regionVisits||{};
-      const order=[['강원','🏔️'],['경기','🏙️'],['경상','🌊'],['전라','🌾'],['충청','🍎'],['일본','🇯🇵']];
+      const order=[['강원','🏔️'],['경기','🏙️'],['경상','🌊'],['전라','🌾'],['충청','🍎'],['제주','🍊'],['일본','🇯🇵']];
       const total=Object.values(rv).reduce((a,b)=>a+(b||0),0);
       const rows=order.filter(([r])=>rv[r]).map(([r,em])=>`<span style="background:#EFE2C6;border:1px solid #C9B487;border-radius:4px;padding:2px 6px;${fs(6)};color:#3D2510;">${em} ${r} <b>${rv[r]}</b></span>`).join('');
       return `<div style="margin-top:7px;border-top:1px dashed #D4B483;padding-top:6px;">
