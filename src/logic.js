@@ -164,6 +164,7 @@ function tick(){
     }
   }
   trackMission('km', km);
+  submitRaid();   // 전국 레이드: 라이딩 중 내 주간 km 주기 제출(45s 스로틀)
   // 5번: 펫 진화 체크
   const prevStage = S._petStage || 1;
   const curStage = getPetStage().stage;
@@ -417,6 +418,7 @@ function useJuice(){
   S.dopT=dur;
   boosterBubble=110;S.boostCount=(S.boostCount||0)+1;
   bumpCourse('boost', 1);   // 특별코스(부스터데이) 누적
+  submitRaid();             // 전국 레이드 내 진행 제출(스로틀)
   addLog('good','⚡ 부스터 ON! '+dur+'초 (기본 40 + 지구력 보너스)');
   playSfx('boost');
   update();
@@ -1444,7 +1446,11 @@ function renderCourseWidget(){
 // ── 주간 전국 레이드 (비동기 협동) — 클라 스캐폴딩 ─────────
 // Supabase 연결 전엔 오프라인 미리보기. RAID_BACKEND 설정 + syncRaid/submitRaid 구현부만 채우면 실연결.
 var RAID_GOAL = 1000000;    // 주간 전국 합산 목표(km)
-var RAID_BACKEND = null;    // 실연결 시 {url, anonKey} 지정 (anon=공개키. service_role 비밀키는 절대 클라에 X)
+// anon(public) 키 — RLS로 보호되는 공개 클라이언트 키(서비스롤 비밀키 아님). 클라 코드에 두는 게 정상.
+var RAID_BACKEND = {
+  url:'https://xaqrklunbxqvcxbxaapl.supabase.co',
+  anonKey:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhcXJrbHVuYnhxdmN4YnhhYXBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NjY5MTcsImV4cCI6MjA5OTI0MjkxN30.j0laJ9YvXo30umfma-4gybaIxrNQ1T542CkigJUPrdU'
+};
 var raidState = { goal:RAID_GOAL, total:0, myKm:0, week:'', top:[], connected:false };
 function ensurePlayerId(){
   if(!S.playerId) S.playerId = 'bd_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
@@ -1454,28 +1460,48 @@ function setNickname(v){
   ensurePlayerId();
   S.nickname=(v||'').trim().slice(0,12);
   showSt('닉네임 저장: '+(S.nickname||'(없음)'));
-  submitRaid(); if(curTab==='mission') renderMission();
+  submitRaid(true); fetchRaid(true); if(curTab==='mission') renderMission();
 }
-// 동기화(목업). 실연결 시: 서버에서 이번 주 전국 합산·랭킹 수신.
+function _raidHeaders(extra){
+  return Object.assign({'apikey':RAID_BACKEND.anonKey,'Authorization':'Bearer '+RAID_BACKEND.anonKey,'Content-Type':'application/json'}, extra||{});
+}
+// 로컬 갱신(내 기여·주차). 서버 미연결 시 전국=내 기여만(오프라인 미리보기).
 function syncRaid(){
   ensureCourse(); ensurePlayerId();
   raidState.week=getWeekKey();
   raidState.goal=RAID_GOAL;
   raidState.myKm=Math.floor(S.course.week.km||0);
-  if(RAID_BACKEND){ /* TODO(실연결): fetch로 전국 합산·top 수신 → raidState 갱신 */ }
-  else {
-    raidState.connected=false;
-    raidState.total=raidState.myKm;           // 오프라인: 전국=내 기여만(실연결 시 대체)
+  if(!raidState.connected){
+    raidState.total=raidState.myKm;
     raidState.top=[{name:(S.nickname||'나'), km:raidState.myKm}];
   }
 }
-// 내 진행 제출(목업 no-op). 실연결 시: 서버에 {playerId,nickname,week,km} upsert.
-function submitRaid(){
-  ensurePlayerId();
-  if(RAID_BACKEND){ /* TODO(실연결): POST/upsert */ }
+var _raidLastFetch=0, _raidLastSubmit=0;
+// 서버에서 이번 주 전국 합산·톱 라이더 수신(25s 스로틀)
+function fetchRaid(force){
+  if(!RAID_BACKEND) return;
+  const now=Date.now(); if(!force && now-_raidLastFetch<25000) return; _raidLastFetch=now;
+  const wk=getWeekKey();
+  const q=RAID_BACKEND.url+'/rest/v1/raid_progress?week=eq.'+encodeURIComponent(wk)+'&select=nickname,km&order=km.desc&limit=1000';
+  fetch(q,{headers:_raidHeaders()}).then(r=>r.ok?r.json():Promise.reject(r.status)).then(rows=>{
+    let total=0; rows.forEach(x=>{ total+=(x.km||0); });
+    raidState.total=total;
+    raidState.top=rows.slice(0,10).map(x=>({name:(x.nickname||'익명'), km:x.km||0}));
+    raidState.connected=true;
+    if(curTab==='mission') renderMission();
+  }).catch(_=>{ raidState.connected=false; });
+}
+// 내 이번 주 km 제출/갱신(upsert, 45s 스로틀)
+function submitRaid(force){
+  ensurePlayerId(); if(!RAID_BACKEND) return;
+  const now=Date.now(); if(!force && now-_raidLastSubmit<45000) return; _raidLastSubmit=now;
+  ensureCourse();
+  const body=[{player_id:S.playerId, nickname:(S.nickname||'').slice(0,12), week:getWeekKey(), km:Math.floor(S.course.week.km||0), updated_at:new Date().toISOString()}];
+  fetch(RAID_BACKEND.url+'/rest/v1/raid_progress',{method:'POST',headers:_raidHeaders({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(body)}).catch(_=>{});
 }
 function renderRaidHTML(){
   syncRaid();
+  fetchRaid();   // 서버 전국 합산·랭킹 갱신(스로틀). 완료 시 재렌더.
   const u='var(--u)'; const fs=(px)=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
   const pct=Math.min(100, Math.floor(raidState.total/raidState.goal*100));
   const nick=(S.nickname||'').replace(/"/g,'&quot;');
