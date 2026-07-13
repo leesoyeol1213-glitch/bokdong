@@ -7,12 +7,16 @@ function cv2(){return VEHS.find(v=>v.id===S.vId)||VEHS[0];}
 
 // 1번: 랜덤 다이스 시스템 제거됨 — autoPickNextDestination()이 도착 시 자동 호출
 
+var _rideStartTracked=false;  // 계측: 활성화(첫 라이딩) — 세션당 1회만 기록
 function toggleRide(){
   enforceJapanRule();  // 출발 직전 일본 규칙 강제
   // 1번: 목적지 없고 한국 일반 도시면 자동 랜덤 목적지 (컨셉: 충동적 세계일주)
   if(!S.dest && S.city!=='달' && !S.trapZone) autoPickNextDestination();
   S.riding=!S.riding;document.getElementById('ride-btn').textContent=S.riding?'■ 정지':'▶ 출발!';
-  if(S.riding){tickIv=setInterval(tick,1000);startNpcTimer();}else{clearInterval(tickIv);tickIv=null;clearTimeout(npcIv);}
+  if(S.riding){
+    tickIv=setInterval(tick,1000);startNpcTimer();
+    if(!_rideStartTracked && typeof track==='function'){ _rideStartTracked=true; track('ride_start',{dest:S.dest||'', lv:S.lv||1}); }
+  }else{clearInterval(tickIv);tickIv=null;clearTimeout(npcIv);}
 }
 function startNpcTimer(){clearTimeout(npcIv);npcIv=setTimeout(()=>{if(S.riding)fireNpc();startNpcTimer();},60000+Math.random()*60000);}
 // 일본 진입 규칙 강제: 일본은 부산 페리(buyFerryFromModal)로만 진입 가능.
@@ -175,7 +179,7 @@ function tick(){
   } else if(!S._petStage){
     S._petStage = curStage;
   }
-  if(S.xp>=S.xpMax){S.xp-=S.xpMax;S.lv++;S.xpMax=Math.floor(S.xpMax*1.35);S.sp++;S.money+=5000*S.lv;addLog('good','LEVEL UP! Lv.'+S.lv+' SP+1');playSfx('levelup');levelUpFx=90;levelUpLv=S.lv;}
+  if(S.xp>=S.xpMax){S.xp-=S.xpMax;S.lv++;S.xpMax=Math.floor(S.xpMax*1.35);S.sp++;S.money+=5000*S.lv;addLog('good','LEVEL UP! Lv.'+S.lv+' SP+1');playSfx('levelup');levelUpFx=90;levelUpLv=S.lv;if(typeof track==='function')track('level_up',{lv:S.lv});}
   if(S.dest&&S.sgKm>=S.sgTot){
     // 도착 보상에 장비 돈 보너스 + 컬렉션 보너스 + 날씨 돈 보너스 적용
     const total = Math.floor((S.visited.length/CITIES.length + S.foodDone.length/FOODS.length + S.npcs.filter(n=>n.met&&!n.locked).length/Math.max(1,S.npcs.filter(n=>!n.locked).length)) /3 * 100);
@@ -491,6 +495,7 @@ function applyOfflineReward(lastTime, wasRiding){
   S.xp+=xpGain;
   while(S.xp>=S.xpMax){ S.xp-=S.xpMax; S.lv++; S.xpMax=Math.floor(S.xpMax*1.35); S.sp++; const lm=5000*S.lv; S.money+=lm; moneyGain+=lm; levelsUp++; }
   S.offlineCount=(S.offlineCount||0)+1;
+  if(typeof track==='function') track('offline_reward',{sec:Math.floor(sec), levelsUp:levelsUp, arrived:arrivedCount||0});
   window._offlineSim=false;
   showTravelLog({resting:false, timeStr:hm(sec), dist:Math.floor(dist), arrived, arrivedCount,
     moneyGain, xpGain:Math.floor(xpGain), applesUsed, levelsUp, stoppedNoApple, capped});
