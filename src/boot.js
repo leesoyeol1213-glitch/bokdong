@@ -13,17 +13,21 @@ requestAnimationFrame(animLoop);
 (function initPersistence(){
   let raw=null;
   try{raw=localStorage.getItem('bkdng_v45');}catch(e){}
+  track('app_open',{returning:!!raw});
   if(raw){
     let d=null;
     try{d=JSON.parse(raw);}catch(e){}
     if(d && doLoad(d)){
       showSt('📂 자동 불러오기 완료!');
+      track('load_game',{prestige:S.prestige||0, totKm:Math.floor(S.totKm||0), lv:S.lv||1});
     }else{
       // 손상 데이터 보호: 자동저장을 켜면 손상본을 새 게임으로 덮어씀 → 꺼둔 채 안내
       showSt('⚠️ 저장 데이터 손상 — 보호를 위해 자동저장 중지. [초기화]로 새로 시작할 수 있어요.');
+      track('save_corrupt');
     }
   }else{
     saveReady=true; // 새 게임 — 바로 자동저장 시작
+    track('new_game');
   }
   setInterval(()=>doSave(false),30000);                                                  // 30초 주기
   document.addEventListener('visibilitychange',()=>{if(document.hidden)doSave(false);}); // 탭 이탈·홈버튼(모바일)

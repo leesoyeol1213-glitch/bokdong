@@ -23,6 +23,7 @@
 ## 파일 구조 (로드 순서 중요)
 `index.html`이 아래 순서로 전역(global) 스크립트를 로드 — **순서 바꾸면 깨짐**:
 ```
+src/analytics.js → 제공자 독립 계측(전역 track()). 제공자 미연결 시 외부 전송 0.
 src/data.js    → 상수·상태·데이터 (CITIES, VEHS, FOODS, ACHIEVEMENTS, DAILY/WEEKLY_COURSES, freshState 등)
 src/render.js  → Canvas 그리기 (drawScene, drawBokdown, drawVehPixel, 이펙트, 슈퍼샘플링)
 src/logic.js   → 게임 로직·UI (tick, trackMission, 탭 렌더, 코스/보스러시/레이드) — 가장 큼
@@ -54,11 +55,23 @@ src/boot.js    → 시동
 - **service_role(secret) 키는 절대 금지** — 클라이언트/커밋/채팅에 넣지 말 것.
 - 레이드는 익명 `player_id`로 4개 필드만 공유(player_id, nickname, week, km). 닉네임은 리더보드 표시용. km는 라이딩 시 45초 스로틀 자동 제출. km CHECK 클램프(0~500000)로 어뷰징 방지.
 
+## 🎯 북극성: $0 출시 로드맵 (사용자 결정 — 인생 게임개발 프로젝트를 무비용으로 실제 출시까지)
+목표는 "수익"이 아니라 **프로토→개발→출시 전 과정을 돈 안 들이고 완주**. 순서 = 측정→리텐션→계정→PWA→출시.
+- **0. 측정** ✅ (v9.59) — `src/analytics.js` 전역 `track()`. 핵심 퍼널 이벤트 심음(app_open/new_game/load_game/city_arrive/bike_buy/gacha_roll/prestige). **제공자 미연결이라 아직 외부 전송 0.**
+  - 활성화(무료): PostHog 무료 계정 → 프로젝트 키를 `analytics.js`의 `ANALYTICS_CONFIG`에 넣고 `sendToProvider` 주석 해제 + index.html에 posthog 스니펫. (또는 GA4/Cloudflare)
+- **1. 계정+클라우드 세이브** — Supabase Auth(무료). 익명 localStorage→계정. 진행도 보존 = 리텐션·수익화 전제.
+- **2. 온보딩** — 첫 실행 튜토리얼·닉네임(D1 리텐션).
+- **3. PWA** — manifest + service worker → 설치가능/오프라인 셸. $0 앱화.
+- **4. 출시 준비** — 개인정보처리방침·itch.io(무료 HTML게임 배포)·QA.
+- **5. 출시&관찰** — itch.io + 웹 + PWA. (Google Play는 1회 $25 — 원할 때만. PWA/itch.io로 순수 $0 출시 가능)
+- 참고: 실제 돈(가챠 현금화) 붙이면 **한국 확률형 아이템 확률 공시 의무**(게임산업법, 2024.3) 적용.
+
 ## 남은 작업 (BACKLOG.md 참고)
 - Supabase 테스트 행 정리(`bd_verify_a`, `bd_verify_b`, `bd_testrunner1` — 모두 지난주 2026-28, 현재 순위 무영향. anon DELETE 불가 시 대시보드에서 삭제).
 - (유저 증가 시) Edge Function 서버측 검증 강화, 첫 실행 닉네임 팝업.
 
 ### 완료
+- ✅ **0단계 측정 계측**(v9.59) — `src/analytics.js` 제공자 독립 `track()`. 실제 브라우저에서 5개 이벤트 발생·외부 전송 0 검증. Node 하네스 64/64.
 - ✅ 전국 레이드 **실연결됨**(테이블 `raid_progress` 생성·가동 중, 실제 테스터 주간 km 제출 확인). CLAUDE.md 옛 "테이블 생성 대기" 메모는 폐기.
 - ✅ **구간별 상위 랭커 박스**(v9.56) — 지난주 최종 순위 정산 → 🥇1·🥈2·🥉3위 전설~신화 랜덤박스(1위 신화확정, 2위40%/3위20%). `settleRaidRankReward`→`applyRankSettlement`, `S.raidRankClaimedWeek` dedup.
 - ✅ 버그: **대구 OX 퀴즈 먹통**(해설 큰따옴표가 onclick 속성 조기 종료) — 문제를 전역 `curOX`에 저장, 버튼은 pick만 전달(v9.55). **가챠 천장 전설 유실**(가방 가득 시 무조건 자동분해) — 과금 전 가방 가득 가드(v9.55).

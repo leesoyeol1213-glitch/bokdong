@@ -207,6 +207,7 @@ function tick(){
     arriveFx=100; arriveCity=S.city;   // ✨ 도착 컨페티 연출
     trackMission('arrive');
     if(S.city==='달') trackMission('moon');
+    track('city_arrive',{city:S.city, visited:(S.visited||[]).length});
     showHistModal(ci);
   }
   // 2번: 달에서 — 목적지 없이 200km 라이딩, moonKm 누적
@@ -2253,17 +2254,17 @@ function rollGearGacha(){
   if(S.money < 100000){addLog('bad','자금 부족! (₩100,000 필요)');return;}
   if(gachaBagFull()) return;
   S.money -= 100000;
-  _doGearRoll();
+  _doGearRoll('money');
 }
 // F: 가챠권으로 장비 뽑기 — 결제 수단만 다르고 확률·천장은 공유
 function rollGearGachaTicket(){
   if((S.gachaTicket||0) < 1){addLog('bad','가챠권이 없어요! 자전거를 새로 구매하면 지급돼요.');return;}
   if(gachaBagFull()) return;
   S.gachaTicket -= 1;
-  _doGearRoll();
+  _doGearRoll('ticket');
 }
 // 공통 추첨 로직(결제는 호출부에서 이미 처리)
-function _doGearRoll(){
+function _doGearRoll(source){
   S.gachaCount = (S.gachaCount||0) + 1;
   let rarityKey;
   // 천장 — 50회마다 전설 확정
@@ -2281,6 +2282,7 @@ function _doGearRoll(){
   const item = generateGear(rarityKey);
   S.inventory = S.inventory || [];
   const r = GEAR_RARITY.find(x=>x.key===rarityKey);
+  track('gacha_roll',{source:source||'money', rarity:rarityKey});
   // 정상 흐름에선 위 가드로 항상 자리가 있다. 만약을 대비한 방어: 자리가 있을 때만 "획득", 없으면 정직하게 안내.
   const added = S.inventory.length < BAG_CAPACITY;
   if(added){
@@ -2719,6 +2721,7 @@ function doPrestige(){
       S.prestige=keep.prestige; S.achievements=keep.achievements; S.paints=keep.paints; S.activePaint=keep.activePaint; S.autoApple=keep.autoApple;
       afterReset();
       addLog('good','🌏✨ '+S.prestige+'회차 세계일주 시작! 여행 노하우: 속도·수입 +'+Math.round((prestigeMult()-1)*100)+'% (영구)');
+      track('prestige',{n:S.prestige});
       showSt('🌏 '+S.prestige+'회차 시작!');
       playSfx('levelup');
       prestigeFx=150; prestigeRound=S.prestige;   // ✨ 회차 출발 축하 연출
@@ -3021,6 +3024,7 @@ function buyVeh(id){
   S.money-=v.cost;setVehOwned(id,true);
   // F: 자전거 신규 등록(도감) 보상 — 가챠권 +1. 무료 스타터 v1·1회용 로켓 제외. (재구매는 위에서 이미 차단됨 → 항상 신규)
   if(v.cat==='bike' && id!=='v1'){ S.gachaTicket=(S.gachaTicket||0)+1; addLog('good','🎟️ 자전거 도감 등록! 가챠권 +1 (보유 '+S.gachaTicket+')'); }
+  track('bike_buy',{id:id, idx:VEHS.findIndex(x=>x.id===id), cost:v.cost});
   // 2번 fix: 탈것 탭에서 구매 시 즉시 seenTabs.veh 갱신 (빨간점 잔존 방지)
   if(curTab==='veh' && S.seenTabs){
     S.seenTabs.veh = (S.vehs||[]).filter(v=>v.owned).length;
