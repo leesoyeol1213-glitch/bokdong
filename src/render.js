@@ -114,9 +114,10 @@ function drawScene(){
   if(evAnim==='downhill') drawDownhill();
 
   // ✨ 프레스티지 상시 오라 — 회차가 오를수록 화려해짐(캐릭터 뒤에 깔림)
-  if((S.prestige||0)>0 && !isResting) drawPrestigeAura(bikeX,145);
+  // 신규 배경은 도로가 하단(≈y205)이라 캐릭터를 y165로 내려 바퀴가 도로에 닿게 함(구 배경 145 → +20).
+  if((S.prestige||0)>0 && !isResting) drawPrestigeAura(bikeX,165);
   if(isResting)drawRestScene();
-  else         drawBokdong(bikeX,145,asp);
+  else         drawBokdong(bikeX,165,asp);
 
   // 3번: 모든 이벤트 애니메이션
   if(evAnim==='dog')              drawDogAnim();
@@ -1595,6 +1596,7 @@ function drawBokdong(x,y,asp){
 
 // ── 휴식 씬 ────────────────────────────────────────────
 function drawRestScene(){
+  ctx.save(); ctx.translate(0,20);  // 캐릭터와 동일하게 하단 도로에 맞춰 내림
   const tx=305,ty=148;
   p(tx-5,ty-35,10,35,'#6B4226');
   ctx.fillStyle='#2E7D32';ctx.fillRect(tx-20,ty-62,40,22);ctx.fillRect(tx-15,ty-72,30,13);ctx.fillRect(tx-9,ty-80,18,11);
@@ -1611,6 +1613,7 @@ function drawRestScene(){
   ['z','z','Z'].forEach((z,i)=>{const a=.2+Math.abs(Math.sin(frame*.05+i*.85))*.7;ctx.globalAlpha=a;ctx.fillStyle='#8B6340';ctx.font=`bold ${8+i*3}px monospace`;ctx.fillText(z,rpx+20+i*9,rpy-38-i*11+Math.sin(frame*.04+i)*4);});
   ctx.globalAlpha=1;
   ctx.fillStyle='#E53935';ctx.beginPath();ctx.arc(rpx-28,rpy-2,5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#33691E';ctx.fillRect(rpx-29,rpy-8,2,5);
+  ctx.restore();
 }
 
 // ── 애니메이션 루프 (속도 연동) ────────────────────────
