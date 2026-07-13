@@ -65,7 +65,7 @@ src/boot.js    → 시동
 - **2. 온보딩** ✅ (v9.61) — 첫 실행 환영 모달 → 닉네임 입력(레이드 리더보드용) → 시작 힌트. `showOnboarding/obStep2/obFinish`, boot new_game 시 1회(`bkdng_onboarded` 플래그). 이벤트 계측(onboarding_start/nickname_set/done/skip).
 - **3. PWA** ✅ (v9.62) — `manifest.json`(아이콘 192·512, standalone) + `sw.js`(네트워크 우선→오프라인 캐시, 업데이트 안전) + head 메타. 홈화면 설치가능. 아이콘은 복동이 스프라이트를 헤드리스 Chrome로 렌더($0). SW는 HTTPS/localhost에서만 등록(boot.js).
 - **4. 출시 준비** ✅ 자료 완료 (v9.63) — `privacy.html`(수집 항목·처리자 Vercel/Supabase/PostHog 명시, 연락처 placeholder) + 게임 내 링크. `LAUNCH_itch.md`(스토어 문구·태그·업로드 가이드·스크린샷 리스트). 히어로 스크린샷 `launch/shot_main.png`.
-- **5. 출시&관찰** ⏳ — itch.io 프로젝트 생성·업로드는 사용자 계정 필요. PWA/itch.io 링크로 순수 $0 출시 가능. (Google Play는 1회 $25 — 원할 때만)
+- **5. 출시&관찰** ✅ **출시됨!** (2026-07-13) — itch.io에 브랜디드 런처(`itch/index.html`) + 커버(`launch/cover.png`)로 공개. 순수 $0 달성. 이제 관찰(PostHog 리텐션)→개선 루프.
 - 참고: 실제 돈(가챠 현금화) 붙이면 **한국 확률형 아이템 확률 공시 의무**(게임산업법, 2024.3) 적용.
 
 ## 남은 작업 (BACKLOG.md 참고)
