@@ -2492,6 +2492,7 @@ function openBackup(){
     <textarea id="bk-in" placeholder="BKDNG1. 로 시작하는 코드 붙여넣기" style="width:100%;height:calc(30px * var(--u));font-size:calc(7px * var(--u));border:2px solid #D4B483;border-radius:5px;padding:4px;box-sizing:border-box;resize:none;word-break:break-all;"></textarea>
     <button class="px-btn px-btn-green" style="width:100%;font-size:calc(9px * var(--u));margin-top:4px;" onclick="importBackupCode()">📥 복원하기</button>
     <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(9px * var(--u));margin-top:6px;" onclick="closeModal(${wr})">닫기 ▶</button>
+    <div style="text-align:center;margin-top:calc(8px * var(--u));"><a href="./privacy.html" target="_blank" style="font-size:calc(6px * var(--u));color:#8B6340;">개인정보처리방침</a></div>
   </div>`;
   refreshCloudSection();
 }
