@@ -13,7 +13,8 @@ requestAnimationFrame(animLoop);
 (function initPersistence(){
   let raw=null;
   try{raw=localStorage.getItem('bkdng_v45');}catch(e){}
-  track('app_open',{returning:!!raw});
+  var _pwa=false; try{ _pwa=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true||location.search.indexOf('src=pwa')>=0; }catch(e){}
+  track('app_open',{returning:!!raw, pwa:_pwa});
   if(raw){
     let d=null;
     try{d=JSON.parse(raw);}catch(e){}
@@ -36,6 +37,11 @@ requestAnimationFrame(animLoop);
   window.addEventListener('pagehide',()=>doSave(false));                                 // 페이지 종료(모바일 신뢰)
   window.addEventListener('beforeunload',()=>doSave(false));                             // 데스크톱 창 닫기
 })();
+
+// ── PWA: 서비스 워커 등록(설치가능 + 오프라인 셸). HTTPS/localhost에서만 동작. ──
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{ try{ navigator.serviceWorker.register('./sw.js'); }catch(e){} });
+}
 
 // ── 새 버전 감지 → 새로고침 안내 ─────────────────────────
 // 테스터가 옛 JS를 캐시/메모리에 문 채 계속 플레이하면 이미 고친 버그가 남아 보인다.

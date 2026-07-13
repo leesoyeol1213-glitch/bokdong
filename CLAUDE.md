@@ -63,7 +63,7 @@ src/boot.js    → 시동
   - 활성화(무료): PostHog 무료 계정 → 프로젝트 키를 `analytics.js`의 `ANALYTICS_CONFIG`에 넣고 `sendToProvider` 주석 해제 + index.html에 posthog 스니펫. (또는 GA4/Cloudflare)
 - **1. 계정+클라우드 세이브** 🔨 진행중 — 클라이언트 `src/cloud.js` 완성·검증(이메일 매직링크+세이브 push/pull, 미로그인 무동작). **백엔드 설정 대기**: `saves` 테이블+RLS+Redirect URL → [CLOUD_SETUP.md] 참고(소열님 5분 작업). 설정 후 함께 로그인→동기화 테스트.
 - **2. 온보딩** ✅ (v9.61) — 첫 실행 환영 모달 → 닉네임 입력(레이드 리더보드용) → 시작 힌트. `showOnboarding/obStep2/obFinish`, boot new_game 시 1회(`bkdng_onboarded` 플래그). 이벤트 계측(onboarding_start/nickname_set/done/skip).
-- **3. PWA** — manifest + service worker → 설치가능/오프라인 셸. $0 앱화.
+- **3. PWA** ✅ (v9.62) — `manifest.json`(아이콘 192·512, standalone) + `sw.js`(네트워크 우선→오프라인 캐시, 업데이트 안전) + head 메타. 홈화면 설치가능. 아이콘은 복동이 스프라이트를 헤드리스 Chrome로 렌더($0). SW는 HTTPS/localhost에서만 등록(boot.js).
 - **4. 출시 준비** — 개인정보처리방침·itch.io(무료 HTML게임 배포)·QA.
 - **5. 출시&관찰** — itch.io + 웹 + PWA. (Google Play는 1회 $25 — 원할 때만. PWA/itch.io로 순수 $0 출시 가능)
 - 참고: 실제 돈(가챠 현금화) 붙이면 **한국 확률형 아이템 확률 공시 의무**(게임산업법, 2024.3) 적용.
