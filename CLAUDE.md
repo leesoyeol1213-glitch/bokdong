@@ -62,7 +62,7 @@ src/boot.js    → 시동
 - **0. 측정** ✅ (v9.59) — `src/analytics.js` 전역 `track()`. 핵심 퍼널 이벤트 심음(app_open/new_game/load_game/city_arrive/bike_buy/gacha_roll/prestige). **제공자 미연결이라 아직 외부 전송 0.**
   - 활성화(무료): PostHog 무료 계정 → 프로젝트 키를 `analytics.js`의 `ANALYTICS_CONFIG`에 넣고 `sendToProvider` 주석 해제 + index.html에 posthog 스니펫. (또는 GA4/Cloudflare)
 - **1. 계정+클라우드 세이브** 🔨 진행중 — 클라이언트 `src/cloud.js` 완성·검증(이메일 매직링크+세이브 push/pull, 미로그인 무동작). **백엔드 설정 대기**: `saves` 테이블+RLS+Redirect URL → [CLOUD_SETUP.md] 참고(소열님 5분 작업). 설정 후 함께 로그인→동기화 테스트.
-- **2. 온보딩** — 첫 실행 튜토리얼·닉네임(D1 리텐션).
+- **2. 온보딩** ✅ (v9.61) — 첫 실행 환영 모달 → 닉네임 입력(레이드 리더보드용) → 시작 힌트. `showOnboarding/obStep2/obFinish`, boot new_game 시 1회(`bkdng_onboarded` 플래그). 이벤트 계측(onboarding_start/nickname_set/done/skip).
 - **3. PWA** — manifest + service worker → 설치가능/오프라인 셸. $0 앱화.
 - **4. 출시 준비** — 개인정보처리방침·itch.io(무료 HTML게임 배포)·QA.
 - **5. 출시&관찰** — itch.io + 웹 + PWA. (Google Play는 1회 $25 — 원할 때만. PWA/itch.io로 순수 $0 출시 가능)
@@ -70,7 +70,7 @@ src/boot.js    → 시동
 
 ## 남은 작업 (BACKLOG.md 참고)
 - Supabase 테스트 행 정리(`bd_verify_a`, `bd_verify_b`, `bd_testrunner1` — 모두 지난주 2026-28, 현재 순위 무영향. anon DELETE 불가 시 대시보드에서 삭제).
-- (유저 증가 시) Edge Function 서버측 검증 강화, 첫 실행 닉네임 팝업.
+- (유저 증가 시) Edge Function 서버측 검증 강화. (첫 실행 닉네임 팝업 ✅ v9.61 온보딩에 포함)
 
 ### 완료
 - ✅ **0단계 측정 계측**(v9.59) — `src/analytics.js` 제공자 독립 `track()`. 실제 브라우저에서 5개 이벤트 발생·외부 전송 0 검증. Node 하네스 64/64.

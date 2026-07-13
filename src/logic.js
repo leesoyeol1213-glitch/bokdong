@@ -2417,6 +2417,51 @@ function doSave(showToast){
 // 수동 저장 버튼 — 자동저장 도입으로 확인 모달 제거(즉시 저장). 어차피 30초마다 덮어씀.
 function save(){doSave(true);}
 
+// ── 첫 실행 온보딩 ($0 로드맵 2단계) — 첫인상=D1 리텐션. 짧게: 환영 → 닉네임 → 시작 ──
+function showOnboarding(){
+  try{ if(localStorage.getItem('bkdng_onboarded')) return; localStorage.setItem('bkdng_onboarded','1'); }catch(e){}
+  if(typeof track==='function') track('onboarding_start');
+  const u='var(--u)';
+  document.getElementById('modal-area').innerHTML=`
+  <div class="px-panel" style="border-color:#0284c7;background:linear-gradient(135deg,#F0F9FF,#FFF8DC);margin-bottom:5px;text-align:center;">
+    <div style="font-size:calc(15px * ${u});margin-bottom:calc(4px * ${u});">🚲</div>
+    <div style="font-size:calc(11px * ${u});color:#0284c7;font-weight:bold;margin-bottom:calc(8px * ${u});">임복동 세계일주에 온 걸 환영해요!</div>
+    <div style="font-size:calc(8px * ${u});color:#3D2510;line-height:2.1;text-align:left;background:#FFF;border:2px solid #D4B483;border-radius:calc(6px * ${u});padding:calc(8px * ${u});margin-bottom:calc(10px * ${u});">
+      🚴 세발자전거 한 대로 <b>전국을 여행</b>하는 방치형 게임이에요.<br>
+      🏙️ 달리다 보면 <b>새 도시</b>를 발견하고,<br>
+      🍜 <b>맛집</b>·🎁 <b>장비</b>를 얻고,<br>
+      👥 길에서 <b>친구들(NPC)</b>을 만나요.<br>
+      💤 <b>켜두기만 해도</b> 복동이는 계속 달립니다!
+    </div>
+    <button class="px-btn px-btn-green" style="width:100%;font-size:calc(10px * ${u});" onclick="obStep2()">시작하기 ▶</button>
+  </div>`;
+}
+function obStep2(){
+  const u='var(--u)';
+  const nick=(S.nickname||'').replace(/"/g,'&quot;');
+  document.getElementById('modal-area').innerHTML=`
+  <div class="px-panel" style="border-color:#0284c7;background:linear-gradient(135deg,#F0F9FF,#FFF8DC);margin-bottom:5px;text-align:center;">
+    <div style="font-size:calc(11px * ${u});color:#0284c7;font-weight:bold;margin-bottom:calc(8px * ${u});">🙂 여행자 이름을 정해줄래요?</div>
+    <div style="font-size:calc(8px * ${u});color:#5C3D1E;line-height:1.9;margin-bottom:calc(8px * ${u});">전국의 임복동들과 함께 달리는 <b>주간 레이드 리더보드</b>에 표시돼요.<br><span style="color:#8B6340;">(나중에 언제든 바꿀 수 있어요)</span></div>
+    <input id="ob-nick" type="text" maxlength="12" value="${nick}" placeholder="닉네임 (최대 12자)" style="width:100%;font-size:calc(9px * ${u});padding:calc(7px * ${u});border:2px solid #7fb8d8;border-radius:calc(6px * ${u});background:#FFF;color:#3D2510;box-sizing:border-box;margin-bottom:calc(8px * ${u});text-align:center;">
+    <button class="px-btn px-btn-green" style="width:100%;font-size:calc(10px * ${u});margin-bottom:calc(5px * ${u});" onclick="obFinish(false)">여행 시작! 🚴</button>
+    <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(8px * ${u});" onclick="obFinish(true)">나중에 정할게요</button>
+  </div>`;
+}
+function obFinish(skip){
+  if(!skip){
+    const inp=document.getElementById('ob-nick');
+    const v=((inp&&inp.value)||'').trim().slice(0,12);
+    if(v){ ensurePlayerId(); S.nickname=v; if(typeof track==='function') track('onboarding_nickname_set'); }
+  }
+  if(typeof track==='function') track(skip?'onboarding_skip':'onboarding_done');
+  document.getElementById('modal-area').innerHTML='';
+  doSave(false);
+  showSt('🚴 아래 ▶ 초록 버튼을 눌러 첫 라이딩을 시작해요!');
+  addLog('good','🚲 여행 시작! 아래 ▶ 버튼으로 달려보세요.');
+  update();
+}
+
 // ── 저장코드 백업/복원 (v9.19) ──────────────────────────
 // localStorage 하나에만 있던 세이브를 코드 문자열로 내보내/가져오기.
 // 용도: 브라우저 데이터 삭제 대비 보관, 폰↔PC 이동. 포맷: 'BKDNG1.' + base64(UTF-8 JSON)
