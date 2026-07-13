@@ -1593,8 +1593,16 @@ function renderRaidHTML(){
   const lead=raidState.top.map((r,i)=>`<div style="display:flex;justify-content:space-between;${fs(6)};color:#3D2510;padding:calc(2px * ${u}) 0;"><span>${i+1}. ${r.name}</span><span>${r.km.toLocaleString()}km</span></div>`).join('');
   return `<div class="px-panel" style="margin-bottom:calc(6px * ${u});border-color:#0284c7;">
     <div style="${fs(9)};color:#0284c7;text-align:center;margin-bottom:calc(3px * ${u});">🌏 주간 전국 레이드 ${raidState.connected?'':`<span style="${fs(5)};color:#8B6340;">(연결 준비중·오프라인)</span>`}</div>
-    <div style="${fs(6)};color:#8B6340;text-align:center;margin-bottom:calc(5px * ${u});">전국의 임복동이 함께 ${raidState.goal.toLocaleString()}km! 달성 시 모두 ₩50만+🎟️2</div>
+    <div style="${fs(6)};color:#8B6340;text-align:center;margin-bottom:calc(5px * ${u});">전국의 임복동이 함께 ${raidState.goal.toLocaleString()}km 완주에 도전!</div>
     ${goalBanner}
+    <div style="background:#F0F9FF;border:2px solid #0284c7;border-radius:calc(6px * ${u});padding:calc(6px * ${u});margin-bottom:calc(6px * ${u});">
+      <div style="${fs(6)};color:#0284c7;font-weight:bold;margin-bottom:calc(3px * ${u});">🎁 이렇게 보상받아요</div>
+      <div style="${fs(5)};color:#3D2510;line-height:2.0;">
+        🤝 <b>협동 보상</b> — 전국 합산 <b>${raidState.goal.toLocaleString()}km</b> 달성 시 <b>참여자 모두</b> ₩500,000 + 🎟️가챠권 2 <span style="color:#8B6340;">(주 1회)</span><br>
+        🏆 <b>순위 보상</b> — 주 마감 최종 <b>🥇1·🥈2·🥉3위</b>에게 <b>전설~신화 랜덤박스</b> <span style="color:#8B6340;">(1위 신화확정 · 2위 40% · 3위 20%, 다음 주 접속 시 지급)</span><br>
+        🚴 <b>참여법</b> — 그냥 달리면 이번 주 km가 자동 집계돼요! 아래에 닉네임을 정하면 리더보드에 이름이 떠요
+      </div>
+    </div>
     <div style="display:flex;align-items:center;gap:calc(5px * ${u});margin-bottom:calc(5px * ${u});">
       <div class="px-bar-bg" style="flex:1;height:calc(10px * ${u});"><div class="px-bar-fill" style="width:${pct}%;background:#0ea5e9;"></div></div>
       <div style="${fs(6)};color:#3D2510;white-space:nowrap;">${raidState.total.toLocaleString()}/${Math.floor(raidState.goal/1000).toLocaleString()}k</div>
@@ -1604,9 +1612,8 @@ function renderRaidHTML(){
       <input value="${nick}" placeholder="닉네임(최대 12자)" onchange="setNickname(this.value)" style="flex:1;${fs(6)};padding:calc(5px * ${u});border:2px solid #C0A060;border-radius:calc(6px * ${u});background:#FFF8DC;color:#3D2510;">
     </div>
     <div style="border-top:1px dashed #D4B483;padding-top:calc(4px * ${u});">
-      <div style="${fs(6)};color:#8B6340;margin-bottom:calc(2px * ${u});">🏅 이번 주 톱 라이더</div>
+      <div style="${fs(6)};color:#8B6340;margin-bottom:calc(2px * ${u});">🏅 이번 주 톱 라이더 <span style="${fs(4)};">(상위 3위는 순위 보상!)</span></div>
       ${lead||`<div style="${fs(5)};color:#8B6340;">아직 기록 없음</div>`}
-      <div style="${fs(4)};color:#8B6340;margin-top:calc(4px * ${u});line-height:1.7;border-top:1px dotted #D4B483;padding-top:calc(3px * ${u});">🎁 매주 마감 시 최종 순위 <b>🥇1·🥈2·🥉3위</b>에게 <b>전설~신화 랜덤박스</b>! (1위 신화 확정) — 다음 주 접속 시 지급</div>
     </div>
   </div>`;
 }
