@@ -650,6 +650,9 @@ function showHistModal(ci){
   // 3번: 도시별 OX 퀴즈 풀에서 랜덤 선택
   const cityQs=OX_BY_CITY[ci.n]||OX_QS;
   const q=cityQs[Math.floor(Math.random()*cityQs.length)];
+  // 현재 문제를 전역에 저장 — 버튼 onclick엔 pick만 넘긴다(정답/해설 문자열을 HTML 속성에 인라인하지 않아
+  //   따옴표·백틱 등이 포함돼도 안 깨짐. 과거 대구 해설의 "" 때문에 O/X 버튼이 먹통되던 버그 수정)
+  curOX = {a:q.a, ex:q.ex, wr:wr};
   document.getElementById('modal-area').innerHTML=`
   <div class="px-panel" style="border-color:#C0A060;background:#FFF8DC;margin-bottom:5px;">
     <div style="font-size:calc(9px * var(--u));color:#5C3D1E;text-align:center;margin-bottom:5px;">🎉 ${ci.n} 도착!</div>
@@ -657,8 +660,8 @@ function showHistModal(ci){
     <div style="font-size:calc(9px * var(--u));color:#5C3D1E;margin-bottom:6px;">역사 OX 퀴즈!</div>
     <div style="font-size:calc(9px * var(--u));color:#3D2510;background:#FFF8DC;border:2px solid #D4B483;border-radius:6px;padding:7px;margin-bottom:10px;line-height:1.9;">${q.q}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;">
-      <button class="px-btn px-btn-gray" style="font-size:calc(9px * var(--u));padding:12px;" onclick="ansOX(true,${q.a},\`${q.ex}\`,${wr})">O</button>
-      <button class="px-btn px-btn-red" style="font-size:calc(9px * var(--u));padding:12px;" onclick="ansOX(false,${q.a},\`${q.ex}\`,${wr})">X</button>
+      <button class="px-btn px-btn-gray" style="font-size:calc(9px * var(--u));padding:12px;" onclick="ansOX(true)">O</button>
+      <button class="px-btn px-btn-red" style="font-size:calc(9px * var(--u));padding:12px;" onclick="ansOX(false)">X</button>
     </div>
     <div style="font-size:calc(9px * var(--u));color:#8B6340;text-align:center;">정답시 ₩5,000 + XP+20</div>
   </div>`;
@@ -914,7 +917,10 @@ function dismissJuiceBoxResult(){
   juiceBoxResult = null;
   if(curTab==='item') renderItems();
 }
-function ansOX(pick,ans,ex,wr){
+var curOX=null;  // 현재 도착 OX 퀴즈 문제(정답 a·해설 ex·라이딩중 wr). ansOX가 여기서 읽는다.
+function ansOX(pick){
+  const o=curOX||{}; const ans=o.a, ex=o.ex||'', wr=o.wr;
+  curOX=null;
   if(pick===ans){
     S.money+=5000;S.xp+=20;
     addLog('good','OX 정답! ₩5,000 + XP+20');
@@ -2168,14 +2174,25 @@ var GACHA_PROBS = [
   {key:'unique', weight:12},
   {key:'legend', weight:3},
 ];
+// 가방이 가득 찼는지 — 가챠는 유료/유한 자원이므로 과금 전에 막아 아이템·재화 유실을 방지한다.
+function gachaBagFull(){
+  if((S.inventory||[]).length >= BAG_CAPACITY){
+    addLog('bad','🎒 가방이 가득 찼어요! ('+BAG_CAPACITY+'/'+BAG_CAPACITY+') 장비를 분해·정리한 뒤 뽑아주세요.');
+    showSt('가방 가득! 장비 정리 후 뽑기 가능');
+    return true;
+  }
+  return false;
+}
 function rollGearGacha(){
   if(S.money < 100000){addLog('bad','자금 부족! (₩100,000 필요)');return;}
+  if(gachaBagFull()) return;
   S.money -= 100000;
   _doGearRoll();
 }
 // F: 가챠권으로 장비 뽑기 — 결제 수단만 다르고 확률·천장은 공유
 function rollGearGachaTicket(){
   if((S.gachaTicket||0) < 1){addLog('bad','가챠권이 없어요! 자전거를 새로 구매하면 지급돼요.');return;}
+  if(gachaBagFull()) return;
   S.gachaTicket -= 1;
   _doGearRoll();
 }
@@ -2197,20 +2214,23 @@ function _doGearRoll(){
   }
   const item = generateGear(rarityKey);
   S.inventory = S.inventory || [];
-  if(S.inventory.length < BAG_CAPACITY){
-    S.inventory.push(item);
-  } else {
-    // 가방 가득 → 자동 분해
-    S.gearDust = (S.gearDust||0) + RARITY_DUST[item.rarity];
-    addLog('neutral','가방 가득! 자동 분해: '+item.name+' → 강화석+'+RARITY_DUST[item.rarity]);
-  }
   const r = GEAR_RARITY.find(x=>x.key===rarityKey);
-  addLog('good','⚔️ 장비 가챠 ['+r.label+'] '+getSlotIcon(item.slot)+' '+item.name+' 획득!');
+  // 정상 흐름에선 위 가드로 항상 자리가 있다. 만약을 대비한 방어: 자리가 있을 때만 "획득", 없으면 정직하게 안내.
+  const added = S.inventory.length < BAG_CAPACITY;
+  if(added){
+    S.inventory.push(item);
+    addLog('good','⚔️ 장비 가챠 ['+r.label+'] '+getSlotIcon(item.slot)+' '+item.name+' 획득!');
+  } else {
+    S.gearDust = (S.gearDust||0) + RARITY_DUST[item.rarity];
+    addLog('bad','🎒 가방이 가득 차 ['+r.label+'] '+item.name+'은(는) 강화석 +'+RARITY_DUST[item.rarity]+'로 전환됐어요.');
+  }
   if(rarityKey==='legend') playSfx('mythic');
   else playSfx('gear');
-  showGachaResult('gear', item, true);
-  // ✨ 전설 뽑기는 상단 캔버스에도 god-ray 드롭 연출(인벤토리 추가 없이 시각만)
-  if(rarityKey==='legend') showGearDropAnim(item);
+  if(added){
+    showGachaResult('gear', item, true);
+    // ✨ 전설 뽑기는 상단 캔버스에도 god-ray 드롭 연출
+    if(rarityKey==='legend') showGearDropAnim(item);
+  }
 }
 
 // 가챠 결과를 가챠 탭에 인라인 표시 (8초 후 자동 사라짐)
