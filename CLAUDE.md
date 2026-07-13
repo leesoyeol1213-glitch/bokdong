@@ -61,7 +61,7 @@ src/boot.js    → 시동
 목표는 "수익"이 아니라 **프로토→개발→출시 전 과정을 돈 안 들이고 완주**. 순서 = 측정→리텐션→계정→PWA→출시.
 - **0. 측정** ✅ (v9.59) — `src/analytics.js` 전역 `track()`. 핵심 퍼널 이벤트 심음(app_open/new_game/load_game/city_arrive/bike_buy/gacha_roll/prestige). **제공자 미연결이라 아직 외부 전송 0.**
   - 활성화(무료): PostHog 무료 계정 → 프로젝트 키를 `analytics.js`의 `ANALYTICS_CONFIG`에 넣고 `sendToProvider` 주석 해제 + index.html에 posthog 스니펫. (또는 GA4/Cloudflare)
-- **1. 계정+클라우드 세이브** 🔨 진행중 — 클라이언트 `src/cloud.js` 완성·검증(이메일 매직링크+세이브 push/pull, 미로그인 무동작). **백엔드 설정 대기**: `saves` 테이블+RLS+Redirect URL → [CLOUD_SETUP.md] 참고(소열님 5분 작업). 설정 후 함께 로그인→동기화 테스트.
+- **1. 계정+클라우드 세이브** ✅ (v9.60~65) — `src/cloud.js` 이메일 매직링크 로그인 + 세이브 push/pull. Supabase `saves` 테이블+RLS 생성 완료, 실제 로그인 동작 확인됨(2026-07-13). 게임 내 🔑 백업 → ☁️ 클라우드 세이브.
 - **2. 온보딩** ✅ (v9.61) — 첫 실행 환영 모달 → 닉네임 입력(레이드 리더보드용) → 시작 힌트. `showOnboarding/obStep2/obFinish`, boot new_game 시 1회(`bkdng_onboarded` 플래그). 이벤트 계측(onboarding_start/nickname_set/done/skip).
 - **3. PWA** ✅ (v9.62) — `manifest.json`(아이콘 192·512, standalone) + `sw.js`(네트워크 우선→오프라인 캐시, 업데이트 안전) + head 메타. 홈화면 설치가능. 아이콘은 복동이 스프라이트를 헤드리스 Chrome로 렌더($0). SW는 HTTPS/localhost에서만 등록(boot.js).
 - **4. 출시 준비** ✅ 자료 완료 (v9.63) — `privacy.html`(수집 항목·처리자 Vercel/Supabase/PostHog 명시, 연락처 placeholder) + 게임 내 링크. `LAUNCH_itch.md`(스토어 문구·태그·업로드 가이드·스크린샷 리스트). 히어로 스크린샷 `launch/shot_main.png`.
