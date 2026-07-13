@@ -30,4 +30,34 @@ requestAnimationFrame(animLoop);
   window.addEventListener('pagehide',()=>doSave(false));                                 // 페이지 종료(모바일 신뢰)
   window.addEventListener('beforeunload',()=>doSave(false));                             // 데스크톱 창 닫기
 })();
+
+// ── 새 버전 감지 → 새로고침 안내 ─────────────────────────
+// 테스터가 옛 JS를 캐시/메모리에 문 채 계속 플레이하면 이미 고친 버그가 남아 보인다.
+// index.html을 no-store로 다시 받아 <title> 버전이 바뀌었으면 하단 배너로 새로고침을 유도.
+(function initUpdateCheck(){
+  const runVer=(document.title.match(/v[\d.]+/)||[])[0]||'';
+  if(!runVer) return;
+  let notified=false;
+  function showUpdateBanner(newVer){
+    if(notified) return; notified=true;
+    let b=document.getElementById('update-banner');
+    if(!b){
+      b=document.createElement('div'); b.id='update-banner';
+      b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:99999;background:#0284c7;color:#fff;text-align:center;padding:calc(10px + env(safe-area-inset-bottom)) 10px 10px;font-size:14px;font-weight:bold;cursor:pointer;box-shadow:0 -2px 10px rgba(0,0,0,.35);';
+      b.onclick=()=>{ try{doSave(true);}catch(e){} location.reload(); };
+      document.body.appendChild(b);
+    }
+    b.textContent='🔄 새 버전 '+newVer+' 나왔어요! 탭하여 새로고침';
+  }
+  function check(){
+    fetch('index.html?_='+Date.now(),{cache:'no-store'})
+      .then(r=>r.ok?r.text():Promise.reject())
+      .then(html=>{ const m=html.match(/<title>[^<]*?(v[\d.]+)<\/title>/); if(m && m[1]!==runVer) showUpdateBanner(m[1]); })
+      .catch(()=>{});
+  }
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden) check(); }); // 탭 복귀 시
+  setInterval(check, 5*60*1000);   // 5분 주기
+  setTimeout(check, 15000);        // 최초 15초 후 1회
+})();
+
 update();
