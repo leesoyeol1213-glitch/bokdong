@@ -1488,8 +1488,23 @@ function fetchRaid(force){
     raidState.total=total;
     raidState.top=rows.slice(0,10).map(x=>({name:(x.nickname||'익명'), km:x.km||0}));
     raidState.connected=true;
+    claimRaidRewardIfDone();   // 서버 확인된 전국 합산이 목표 도달 시 이번 주 그랜드 보상 1회 지급
     if(curTab==='mission') renderMission();
   }).catch(_=>{ raidState.connected=false; });
+}
+// 전국 레이드 공동목표(100만km) 달성 보상 — 서버 확인 합산 기준, 주당 1회. "달성 시 모두 보상" 약속 이행.
+function raidRewardClaimedThisWeek(){ ensurePlayerId(); return S.raidRewardClaimed === getWeekKey(); }
+function claimRaidRewardIfDone(){
+  if(!raidState.connected) return;                       // 오프라인 추정치로는 지급하지 않음(서버 합산만 인정)
+  if(raidState.total < raidState.goal) return;           // 목표 미달
+  const wk=getWeekKey();
+  if(S.raidRewardClaimed===wk) return;                   // 이번 주 이미 수령
+  S.raidRewardClaimed=wk;
+  S.money+=1000000; S.sp=(S.sp||0)+2; S.gachaTicket=(S.gachaTicket||0)+3;
+  addLog('good','🌏 전국 레이드 목표 '+RAID_GOAL.toLocaleString()+'km 달성! 그랜드 보상 ₩1,000,000 + SP+2 + 🎟️가챠권 3');
+  showSt('🌏 전국 레이드 목표 달성! ₩100만 + SP+2 + 🎟️×3');
+  playSfx('levelup');
+  checkAchievements(); save(); update();
 }
 // 내 이번 주 km 제출/갱신(upsert, 45s 스로틀)
 function submitRaid(force){
@@ -1504,11 +1519,17 @@ function renderRaidHTML(){
   fetchRaid();   // 서버 전국 합산·랭킹 갱신(스로틀). 완료 시 재렌더.
   const u='var(--u)'; const fs=(px)=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
   const pct=Math.min(100, Math.floor(raidState.total/raidState.goal*100));
+  const reached=raidState.connected && raidState.total>=raidState.goal;
+  const claimed=raidRewardClaimedThisWeek();
+  const goalBanner = reached
+    ? `<div style="${fs(6)};text-align:center;background:#DCFCE7;border:2px solid #16a34a;border-radius:calc(6px * ${u});padding:calc(5px * ${u});margin-bottom:calc(5px * ${u});color:#15803d;">🎉 이번 주 목표 달성! ${claimed?'그랜드 보상 지급 완료 ✓':'보상 지급 중…'}</div>`
+    : '';
   const nick=(S.nickname||'').replace(/"/g,'&quot;');
   const lead=raidState.top.map((r,i)=>`<div style="display:flex;justify-content:space-between;${fs(6)};color:#3D2510;padding:calc(2px * ${u}) 0;"><span>${i+1}. ${r.name}</span><span>${r.km.toLocaleString()}km</span></div>`).join('');
   return `<div class="px-panel" style="margin-bottom:calc(6px * ${u});border-color:#0284c7;">
     <div style="${fs(9)};color:#0284c7;text-align:center;margin-bottom:calc(3px * ${u});">🌏 주간 전국 레이드 ${raidState.connected?'':`<span style="${fs(5)};color:#8B6340;">(연결 준비중·오프라인)</span>`}</div>
-    <div style="${fs(6)};color:#8B6340;text-align:center;margin-bottom:calc(5px * ${u});">전국의 임복동이 함께 ${raidState.goal.toLocaleString()}km! 달성 시 모두 보상</div>
+    <div style="${fs(6)};color:#8B6340;text-align:center;margin-bottom:calc(5px * ${u});">전국의 임복동이 함께 ${raidState.goal.toLocaleString()}km! 달성 시 모두 ₩100만+SP2+🎟️3</div>
+    ${goalBanner}
     <div style="display:flex;align-items:center;gap:calc(5px * ${u});margin-bottom:calc(5px * ${u});">
       <div class="px-bar-bg" style="flex:1;height:calc(10px * ${u});"><div class="px-bar-fill" style="width:${pct}%;background:#0ea5e9;"></div></div>
       <div style="${fs(6)};color:#3D2510;white-space:nowrap;">${raidState.total.toLocaleString()}/${Math.floor(raidState.goal/1000).toLocaleString()}k</div>
@@ -2432,6 +2453,7 @@ function doLoad(parsedD){
           if(_paidBikes>0){ S.gachaTicket += _paidBikes; addLog('good','🎟️ 자전거 도감 소급 보상! 가챠권 +'+_paidBikes); }
           S.gachaTicketMigrated = true;
         }
+        if(typeof S.raidRewardClaimed !== 'string') S.raidRewardClaimed = '';
         // 2번 fix: seenTabs 마이그레이션 — 없거나 잘못된 값이면 현재 보유 갯수로 보정
         if(!S.seenTabs) S.seenTabs = {npc:0, veh:0, ach:0, gear:0};
         // veh/gear는 한번도 없던 사용자는 0인데 시작 자전거 't'가 있으니 보정 필요

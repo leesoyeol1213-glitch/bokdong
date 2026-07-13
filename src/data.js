@@ -665,6 +665,7 @@ let S={
   moonKm:0,
   paints:['gray'], activePaint:'gray', gachaCount:0,
   gachaTicket:0, gachaTicketMigrated:true,   // F: 자전거 신규 등록 시 지급되는 가챠권
+  raidRewardClaimed:'',                       // 전국 레이드 공동목표 보상 — 마지막 수령 주차(중복 방지)
   foodStreak:0,
   seenTabs:{npc:0,veh:0,ach:0,gear:0},
   inventory:[],

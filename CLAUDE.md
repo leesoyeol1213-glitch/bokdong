@@ -55,10 +55,11 @@ src/boot.js    → 시동
 - 레이드는 익명 `player_id`로 4개 필드만 공유(player_id, nickname, week, km). 닉네임은 리더보드 표시용. km는 라이딩 시 45초 스로틀 자동 제출. km CHECK 클램프(0~500000)로 어뷰징 방지.
 
 ## 남은 작업 (BACKLOG.md 참고)
-- Supabase 테스트 행 정리(`bd_verify*`, `bd_testrunner1`, `bd_me_demo`).
-- 전국 레이드 **공동 목표(100만km) 달성 보상** 지급 로직(미구현).
+- Supabase 테스트 행 정리(`bd_verify_a`, `bd_verify_b`, `bd_testrunner1` — 모두 지난주 2026-28, 현재 순위 무영향. anon DELETE 불가 시 대시보드에서 삭제).
 - (유저 증가 시) Edge Function 서버측 검증 강화, 첫 실행 닉네임 팝업.
 
 ### 완료
+- ✅ 전국 레이드 **실연결됨**(테이블 `raid_progress` 생성·가동 중, 실제 테스터 주간 km 제출 확인). CLAUDE.md 옛 "테이블 생성 대기" 메모는 폐기.
+- ✅ 전국 레이드 **공동 목표(100만km) 달성 보상**(v9.53) — 서버 확인 합산이 목표 도달 시 주당 1회 ₩100만+SP2+🎟️3 지급(`claimRaidRewardIfDone`, `S.raidRewardClaimed` 주차 dedup).
 - ✅ BACKLOG **F: #10 자전거 도감 + 가챠권**(v9.52) — 도감 자전거 섹션, 신규 구매 시 🎟️가챠권 +1, 가챠권 뽑기.
 - ✅ 강화 표기 15%↔8% 불일치 — 확인 결과 이미 해결됨(효과·표기·메시지 모두 +8%).
