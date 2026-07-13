@@ -1445,7 +1445,7 @@ function renderCourseWidget(){
 
 // ── 주간 전국 레이드 (비동기 협동) — 클라 스캐폴딩 ─────────
 // Supabase 연결 전엔 오프라인 미리보기. RAID_BACKEND 설정 + syncRaid/submitRaid 구현부만 채우면 실연결.
-var RAID_GOAL = 1000000;    // 주간 전국 합산 목표(km)
+var RAID_GOAL = 50000;      // 주간 전국 합산 목표(km) — 베타 테스터 규모(주 ~3만km)에 맞춰 조정. 유저 증가 시 상향.
 // anon(public) 키 — RLS로 보호되는 공개 클라이언트 키(서비스롤 비밀키 아님). 클라 코드에 두는 게 정상.
 var RAID_BACKEND = {
   url:'https://xaqrklunbxqvcxbxaapl.supabase.co',
@@ -1500,9 +1500,10 @@ function claimRaidRewardIfDone(){
   const wk=getWeekKey();
   if(S.raidRewardClaimed===wk) return;                   // 이번 주 이미 수령
   S.raidRewardClaimed=wk;
-  S.money+=1000000; S.sp=(S.sp||0)+2; S.gachaTicket=(S.gachaTicket||0)+3;
-  addLog('good','🌏 전국 레이드 목표 '+RAID_GOAL.toLocaleString()+'km 달성! 그랜드 보상 ₩1,000,000 + SP+2 + 🎟️가챠권 3');
-  showSt('🌏 전국 레이드 목표 달성! ₩100만 + SP+2 + 🎟️×3');
+  // 주간 반복 지급이므로 영구 SP는 제외(스탯 인플레 방지). 금액 + 가챠권 위주.
+  S.money+=500000; S.gachaTicket=(S.gachaTicket||0)+2;
+  addLog('good','🌏 전국 레이드 목표 '+RAID_GOAL.toLocaleString()+'km 달성! 모두에게 보상 ₩500,000 + 🎟️가챠권 2');
+  showSt('🌏 전국 레이드 목표 달성! ₩50만 + 🎟️×2');
   playSfx('levelup');
   checkAchievements(); save(); update();
 }
@@ -1528,7 +1529,7 @@ function renderRaidHTML(){
   const lead=raidState.top.map((r,i)=>`<div style="display:flex;justify-content:space-between;${fs(6)};color:#3D2510;padding:calc(2px * ${u}) 0;"><span>${i+1}. ${r.name}</span><span>${r.km.toLocaleString()}km</span></div>`).join('');
   return `<div class="px-panel" style="margin-bottom:calc(6px * ${u});border-color:#0284c7;">
     <div style="${fs(9)};color:#0284c7;text-align:center;margin-bottom:calc(3px * ${u});">🌏 주간 전국 레이드 ${raidState.connected?'':`<span style="${fs(5)};color:#8B6340;">(연결 준비중·오프라인)</span>`}</div>
-    <div style="${fs(6)};color:#8B6340;text-align:center;margin-bottom:calc(5px * ${u});">전국의 임복동이 함께 ${raidState.goal.toLocaleString()}km! 달성 시 모두 ₩100만+SP2+🎟️3</div>
+    <div style="${fs(6)};color:#8B6340;text-align:center;margin-bottom:calc(5px * ${u});">전국의 임복동이 함께 ${raidState.goal.toLocaleString()}km! 달성 시 모두 ₩50만+🎟️2</div>
     ${goalBanner}
     <div style="display:flex;align-items:center;gap:calc(5px * ${u});margin-bottom:calc(5px * ${u});">
       <div class="px-bar-bg" style="flex:1;height:calc(10px * ${u});"><div class="px-bar-fill" style="width:${pct}%;background:#0ea5e9;"></div></div>
