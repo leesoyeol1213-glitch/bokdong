@@ -88,6 +88,9 @@ function drawScene(){
         ctx.drawImage(img, 0, 0, 420, 236); ctx.restore();
       }
     }
+    // 🐰 달: 절구질하는 토끼 — 고정 위치 애니메이션 스프라이트로 오버레이.
+    //   (배경에 굽지 않아 스크롤돼도 안 미끄러지고, 절굿공이가 위아래로 움직인다)
+    if(bgKey==='bg_moon') drawMoonRabbit();
   } else {
     // 폴백: 기존 픽셀 그리기
     p(0,-26,420,90+26,pal.sky);p(0,90,420,25,pal.sky2);
