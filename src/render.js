@@ -130,14 +130,7 @@ function drawScene(){
   else if(evAnim==='food_fail')   drawFoodFailAnim();
   else if(evAnim==='npc_reward'&&evAnimNpc) drawNpcRewardAnim();
 
-  // 속도선 — 일반 라이딩만 (부스트 시는 캐릭터 스프라이트가 효과 처리)
-  if(S.riding&&!isResting&&S.dopT<=0){
-    const lc=Math.min(5,Math.ceil(asp*2));
-    const ll=22*Math.min(2,asp);
-    ctx.strokeStyle='rgba(255,255,255,.65)';
-    ctx.lineWidth=Math.min(3,1+asp*.5);
-    for(let i=0;i<lc;i++){const y=132+i*8;ctx.beginPath();ctx.moveTo(bikeX-48,y);ctx.lineTo(bikeX-48-ll,y);ctx.stroke();}
-  }
+  // (일반 라이딩 속도선 삭제 — 복동이 뒤 흰 작대기 제거. 부스트 효과는 캐릭터 스프라이트가 처리)
   // 부스터 불꽃 제거 — 캐릭터 PNG에 화염 자세가 이미 있음
   // HUD (배경을 더 진하게 → 밝은 배경에서도 글씨 인식 잘 되게)
   p(4,4,124,18,'rgba(0,0,0,.75)');ctx.fillStyle='#FFD700';ctx.font='bold 10px Galmuri11, monospace';ctx.fillText('📍 '+city.n,8,18);
@@ -1185,19 +1178,19 @@ function drawTree(x,y){
 // ─────────────────────────────────────────────────────────
 var ASSETS_SOURCES = {
   // 배경 (도시별) — 1024x576 권장
-  bg_seoul: "./assets/bg_seoul.png",  // 서울 노을
+  bg_seoul: "./assets/bg_seoul.webp",  // 서울 (화창한 대낮)
   bg_busan:     null,  // 부산 항구
-  bg_chungju: "./assets/bg_chungju.png",  // 충주 시골 (시작 도시)
+  bg_chungju: "./assets/bg_chungju.webp",  // 충주 시골 (시작 도시)
   bg_tokyo:     null,
-  bg_jeju: "./assets/bg_jeju.png",
+  bg_jeju: "./assets/bg_jeju.webp",
   bg_default:   null,  // 기본 배경 (도시별 없을 때 폴백)
-  // 범용 배경 — region/bg 기반 자동 적용
-  bg_nature: "./assets/bg_nature.png",  // 자연 (mountain/snow)
-  bg_coast_gen: "./assets/bg_coast_gen.png",  // 해안가 범용
-  bg_city_gen: "./assets/bg_city_gen.png",  // 도시 범용 (city/industrial)
-  bg_moon: "./assets/bg_moon.png",  // 달 우주
-  bg_shinhan: "./assets/bg_shinhan.png",  // 신한 함정 (염전)
-  bg_cheonghak: "./assets/bg_cheonghak.png",  // 청학동 함정 (훈장)
+  // 범용 배경 — region/bg 기반 자동 적용. (WebP 압축: ~1.5MB→~150KB)
+  bg_nature: "./assets/bg_nature.webp",  // 자연 (mountain/snow)
+  bg_coast_gen: "./assets/bg_coast_gen.webp",  // 해안가 범용
+  bg_city_gen: "./assets/bg_city_gen.webp",  // 도시 범용 (city/industrial)
+  bg_moon: "./assets/bg_moon.webp",  // 달 우주
+  bg_shinhan: "./assets/bg_shinhan.webp",  // 신한 함정 (염전)
+  bg_cheonghak: "./assets/bg_cheonghak.webp",  // 청학동 함정 (훈장)
 
   // NPC 픽셀 초상화 (배경 투명) — 모달 + 카드용
   // 신 1
