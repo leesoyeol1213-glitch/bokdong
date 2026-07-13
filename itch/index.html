@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>임복동 세계일주</title>
+<style>
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    font-family:'Malgun Gothic','Apple SD Gothic Neo',system-ui,sans-serif;
+    background:linear-gradient(160deg,#6BB8E8 0%,#89CCEE 45%,#E8D5A0 46%,#D8BE86 100%);
+    color:#3D2510; display:flex; align-items:center; justify-content:center; min-height:100%;
+    text-align:center; padding:20px;
+  }
+  .card{
+    background:rgba(255,248,220,0.92); border:3px solid #C0A060; border-radius:18px;
+    padding:28px 24px 26px; max-width:360px; width:100%;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+  }
+  img.icon{ width:132px; height:132px; border-radius:20px; image-rendering:pixelated;
+    box-shadow:0 4px 14px rgba(0,0,0,.25); margin-bottom:14px; background:#89CCEE; }
+  h1{ font-size:24px; color:#0f5c8c; margin-bottom:6px; letter-spacing:-.5px; }
+  .tag{ font-size:14px; color:#8B6340; margin-bottom:20px; line-height:1.6; }
+  a.play{
+    display:block; text-decoration:none; background:#22b34b; color:#fff; font-size:20px; font-weight:bold;
+    padding:16px; border-radius:12px; box-shadow:0 5px 0 #178a39; transition:transform .05s;
+  }
+  a.play:active{ transform:translateY(3px); box-shadow:0 2px 0 #178a39; }
+  .sub{ font-size:12px; color:#8B6340; margin-top:14px; line-height:1.7; }
+  .feat{ font-size:12.5px; color:#5C3D1E; margin-top:16px; text-align:left; line-height:1.9;
+    background:#fff; border:2px solid #D4B483; border-radius:10px; padding:12px 14px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <img class="icon" src="https://bokdong.vercel.app/assets/icon-512.png" alt="임복동" onerror="this.style.display='none'">
+    <h1>임복동 세계일주</h1>
+    <div class="tag">세발자전거로 떠나는 전국 방치형 여행 🚲</div>
+    <a class="play" href="https://bokdong.vercel.app" target="_blank" rel="noopener">▶ 지금 플레이</a>
+    <div class="sub">브라우저에서 바로 · 무료 · 설치 불필요<br>(새 탭에서 열려요)</div>
+    <div class="feat">
+      🏙️ 달리며 전국 도시 발견 · 역사 OX 퀴즈<br>
+      🍜 지역 맛집 미니게임 · 🎁 장비 수집·강화<br>
+      🌏 매주 전국 협동 레이드 · 랭커 보상<br>
+      ☁️ 클라우드 로그인 — 기기 바꿔도 이어서<br>
+      💤 켜두면 복동이가 알아서 달려요
+    </div>
+  </div>
+</body>
+</html>
