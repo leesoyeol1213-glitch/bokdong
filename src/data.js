@@ -664,6 +664,7 @@ let S={
   mhpSpBonus:0,
   moonKm:0,
   paints:['gray'], activePaint:'gray', gachaCount:0,
+  gachaTicket:0, gachaTicketMigrated:true,   // F: 자전거 신규 등록 시 지급되는 가챠권
   foodStreak:0,
   seenTabs:{npc:0,veh:0,ach:0,gear:0},
   inventory:[],

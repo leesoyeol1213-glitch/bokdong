@@ -2005,10 +2005,13 @@ function renderCodex(){
   const foodDone = S.foodDone || [];
   const npcMet = S.npcs.filter(n=>n.met&&!n.locked).length;
   const npcTotal = S.npcs.filter(n=>!n.locked).length;
+  const bikeAll = VEHS.filter(v=>v.cat==='bike');
+  const bikeOwn = bikeAll.filter(v=>vehOwned(v.id)).length;
   const cityPct = Math.floor(visited.length / CITIES.length * 100);
   const foodPct = Math.floor(foodDone.length / FOODS.length * 100);
   const npcPct = Math.floor(npcMet / npcTotal * 100);
-  const total = Math.floor((cityPct + foodPct + npcPct) / 3);
+  const bikePct = Math.floor(bikeOwn / bikeAll.length * 100);
+  const total = Math.floor((cityPct + foodPct + npcPct + bikePct) / 4);
 
   let html = `<div class="px-panel" style="margin-bottom:5px;text-align:center;">
     <div style="${fs(9)};color:#3D2510;margin-bottom:calc(6px * ${u});">📖 임복동 도감</div>
@@ -2058,6 +2061,20 @@ function renderCodex(){
     html += `</div></div>`;
   });
   html += `</div>`;
+
+  // 🚲 자전거 도감 (F) — 신규 등록 시 가챠권 지급
+  html += `<div class="px-panel" style="margin-bottom:5px;">
+    <div style="${fs(7)};color:#3D2510;margin-bottom:calc(5px * ${u});">🚲 자전거 (${bikeOwn}/${bikeAll.length}) — ${bikePct}% <span style="${fs(4)};color:#00897B;">· 신규 등록마다 🎟️가챠권 +1</span></div>
+    <div style="display:flex;flex-direction:column;gap:calc(3px * ${u});">`;
+  bikeAll.forEach((v,i)=>{
+    const got = vehOwned(v.id);
+    html += `<div style="display:flex;align-items:center;gap:calc(6px * ${u});${fs(5)};padding:calc(3px * ${u}) calc(5px * ${u});border:2px solid ${got?'#00897B':'#AAA'};background:${got?'#E0F2F1':'#EEE'};border-radius:calc(4px * ${u});">
+      <span style="${fs(6)};color:${got?'#00695C':'#999'};min-width:calc(22px * ${u});">${got?'🚲':'🔒'}</span>
+      <span style="color:${got?'#004D40':'#999'};flex:1;">Lv.${i+1} ${got?v.n:'???'}</span>
+      ${got?'<span style="'+fs(4)+';color:#00897B;">✔ 등록</span>':''}
+    </div>`;
+  });
+  html += `</div></div>`;
 
   // 누적 보너스
   const bonusMoney = Math.floor(total/10) * 2; // 10%당 2%
@@ -2132,6 +2149,16 @@ var GACHA_PROBS = [
 function rollGearGacha(){
   if(S.money < 100000){addLog('bad','자금 부족! (₩100,000 필요)');return;}
   S.money -= 100000;
+  _doGearRoll();
+}
+// F: 가챠권으로 장비 뽑기 — 결제 수단만 다르고 확률·천장은 공유
+function rollGearGachaTicket(){
+  if((S.gachaTicket||0) < 1){addLog('bad','가챠권이 없어요! 자전거를 새로 구매하면 지급돼요.');return;}
+  S.gachaTicket -= 1;
+  _doGearRoll();
+}
+// 공통 추첨 로직(결제는 호출부에서 이미 처리)
+function _doGearRoll(){
   S.gachaCount = (S.gachaCount||0) + 1;
   let rarityKey;
   // 천장 — 50회마다 전설 확정
@@ -2395,6 +2422,16 @@ function doLoad(parsedD){
         if(!S.paints) S.paints = ['gray'];
         if(!S.activePaint) S.activePaint = 'gray';
         if(typeof S.gachaCount !== 'number') S.gachaCount = 0;
+        // F: 가챠권 — 자전거 신규 등록 보상. 기존 유저에게는 이미 보유한 자전거(무료 스타터 v1 제외) 수만큼 1회 소급 지급.
+        if(typeof S.gachaTicket !== 'number') S.gachaTicket = 0;
+        if(!S.gachaTicketMigrated){
+          const _paidBikes = (S.vehs||[]).filter(sv=>{
+            const vd = VEHS.find(v=>v.id===sv.id);
+            return sv.owned && vd && vd.cat==='bike' && vd.id!=='v1';
+          }).length;
+          if(_paidBikes>0){ S.gachaTicket += _paidBikes; addLog('good','🎟️ 자전거 도감 소급 보상! 가챠권 +'+_paidBikes); }
+          S.gachaTicketMigrated = true;
+        }
         // 2번 fix: seenTabs 마이그레이션 — 없거나 잘못된 값이면 현재 보유 갯수로 보정
         if(!S.seenTabs) S.seenTabs = {npc:0, veh:0, ach:0, gear:0};
         // veh/gear는 한번도 없던 사용자는 0인데 시작 자전거 't'가 있으니 보정 필요
@@ -2686,6 +2723,7 @@ function renderGachaShop(){
   const fs=(px)=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
   const gachaCnt = S.gachaCount || 0;
   const pityLeft = 50 - gachaCnt;
+  const tickets = S.gachaTicket || 0;
 
   // 결과 알림
   const resultHtml = gachaResult ? renderGachaResultBox() : '';
@@ -2707,7 +2745,9 @@ function renderGachaShop(){
       <div style="${fs(5)};color:#5C3D1E;background:#FFF;border:1px dashed #7B1FA2;border-radius:calc(4px * ${u});padding:calc(4px * ${u});margin-bottom:calc(6px * ${u});text-align:center;">
         🎯 천장까지: <b>${pityLeft}회</b> 남음
       </div>
-      <button class="px-btn" style="width:100%;${fs(7)};background:#7B1FA2;border-color:#4A148C;box-shadow:calc(3px * ${u}) calc(3px * ${u}) 0 #2A0040;" onclick="rollGearGacha()">⚔️ 장비 뽑기 ₩100,000</button>
+      <button class="px-btn" style="width:100%;${fs(7)};background:#7B1FA2;border-color:#4A148C;box-shadow:calc(3px * ${u}) calc(3px * ${u}) 0 #2A0040;margin-bottom:calc(6px * ${u});" onclick="rollGearGacha()">⚔️ 장비 뽑기 ₩100,000</button>
+      <button class="px-btn" style="width:100%;${fs(7)};background:${tickets>0?'#00897B':'#9E9E9E'};border-color:${tickets>0?'#004D40':'#616161'};box-shadow:calc(3px * ${u}) calc(3px * ${u}) 0 ${tickets>0?'#002620':'#424242'};" onclick="rollGearGachaTicket()">🎟️ 가챠권으로 뽑기 (보유 ${tickets})</button>
+      <div style="${fs(4)};color:#8B6340;text-align:center;margin-top:calc(4px * ${u});">🎟️ 가챠권은 자전거를 새로 구매해 도감에 등록할 때마다 1장 지급돼요.</div>
     </div>
   `;
 }
@@ -2868,6 +2908,8 @@ function buyVeh(id){
   if(v.cat==='rocket' && vehOwned(id)){addLog('bad','임복동1호 이미 보유 중! 발사 후 다시 구매하세요.');return;}
   if(S.money<v.cost||S.totKm<v.km){addLog('bad','조건 부족!');return;}
   S.money-=v.cost;setVehOwned(id,true);
+  // F: 자전거 신규 등록(도감) 보상 — 가챠권 +1. 무료 스타터 v1·1회용 로켓 제외. (재구매는 위에서 이미 차단됨 → 항상 신규)
+  if(v.cat==='bike' && id!=='v1'){ S.gachaTicket=(S.gachaTicket||0)+1; addLog('good','🎟️ 자전거 도감 등록! 가챠권 +1 (보유 '+S.gachaTicket+')'); }
   // 2번 fix: 탈것 탭에서 구매 시 즉시 seenTabs.veh 갱신 (빨간점 잔존 방지)
   if(curTab==='veh' && S.seenTabs){
     S.seenTabs.veh = (S.vehs||[]).filter(v=>v.owned).length;
