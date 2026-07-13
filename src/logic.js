@@ -2409,6 +2409,7 @@ function doSave(showToast){
   try{
     const d={S:{...S,npcs:S.npcs.map(n=>({id:n.id,met:n.met}))},log:logs.slice(0,15),at:new Date().toLocaleString(),lpt:Date.now()};
     localStorage.setItem('bkdng_v45',JSON.stringify(d));
+    if(typeof cloudPushThrottled==='function') cloudPushThrottled();  // 로그인 시 클라우드에도 백업(미로그인 무동작)
     if(showToast){showSt('💾 저장 완료!');addLog('good','💾 저장 완료');}
     return true;
   }catch(e){if(showToast){showSt('저장 실패');addLog('bad','저장 실패');}return false;}
@@ -2433,8 +2434,12 @@ function openBackup(){
   let code='';
   try{const raw=localStorage.getItem('bkdng_v45');if(raw)code=_encodeSave(raw);}catch(e){}
   document.getElementById('modal-area').innerHTML=`
+  <div class="px-panel" style="border-color:#0284c7;margin-bottom:5px;">
+    <div id="cloud-section"></div>
+  </div>
   <div class="px-panel" style="border-color:#1976D2;margin-bottom:5px;">
     <div style="font-size:calc(10px * var(--u));color:#1976D2;text-align:center;margin-bottom:6px;">🔑 저장코드 백업/복원</div>
+    <div style="font-size:calc(7px * var(--u));color:#8B6340;text-align:center;margin-bottom:6px;">☁️ 클라우드 로그인이 더 편해요. 코드 백업은 오프라인용 보조 수단.</div>
     <div style="font-size:calc(8px * var(--u));color:#5C3D1E;margin-bottom:4px;">📤 내 저장코드 — 복사해서 메모장·카톡(나에게) 등에 보관:</div>
     <textarea id="bk-out" readonly style="width:100%;height:calc(40px * var(--u));font-size:calc(7px * var(--u));border:2px solid #D4B483;border-radius:5px;padding:4px;box-sizing:border-box;resize:none;word-break:break-all;">${code}</textarea>
     <button class="px-btn px-btn-blue" style="width:100%;font-size:calc(9px * var(--u));margin:4px 0 10px;" onclick="copyBackupCode()">📋 코드 복사</button>
@@ -2443,6 +2448,32 @@ function openBackup(){
     <button class="px-btn px-btn-green" style="width:100%;font-size:calc(9px * var(--u));margin-top:4px;" onclick="importBackupCode()">📥 복원하기</button>
     <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(9px * var(--u));margin-top:6px;" onclick="closeModal(${wr})">닫기 ▶</button>
   </div>`;
+  refreshCloudSection();
+}
+// ☁️ 클라우드 세이브 섹션 — 백업 모달 상단. cloud.js가 상태 바뀔 때 cloudUpdateUI로 재호출.
+function refreshCloudSection(){
+  const el=document.getElementById('cloud-section'); if(!el) return;
+  const u='var(--u)';
+  const signedIn = (typeof cloudIsSignedIn==='function') && cloudIsSignedIn();
+  const title=`<div style="font-size:calc(10px * ${u});color:#0284c7;text-align:center;margin-bottom:6px;">☁️ 클라우드 세이브</div>`;
+  if(signedIn){
+    const email=(typeof cloudEmail==='function')?cloudEmail():'';
+    el.innerHTML = title + `
+      <div style="font-size:calc(8px * ${u});color:#15803d;text-align:center;margin-bottom:6px;">✅ 로그인됨 — <b>${(email||'').replace(/</g,'&lt;')}</b><br><span style="font-size:calc(6px * ${u});color:#5C3D1E;">저장 시 클라우드에 자동 백업돼요. 다른 기기에선 같은 이메일로 로그인!</span></div>
+      <button class="px-btn px-btn-blue" style="width:100%;font-size:calc(9px * ${u});margin-bottom:4px;" onclick="cloudPush(true)">☁️ 지금 클라우드에 저장</button>
+      <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(8px * ${u});" onclick="cloudSignOut()">로그아웃</button>`;
+  } else {
+    const configured = (typeof cloudInit==='function');
+    el.innerHTML = title + `
+      <div style="font-size:calc(8px * ${u});color:#5C3D1E;text-align:center;margin-bottom:6px;">이메일만 넣으면 <b>비밀번호 없이</b> 로그인 링크를 보내드려요.<br><span style="font-size:calc(6px * ${u});color:#8B6340;">캐시를 지워도·다른 기기에서도 진행도가 살아있어요.</span></div>
+      <input id="cloud-email" type="email" placeholder="이메일 주소" style="width:100%;font-size:calc(8px * ${u});padding:calc(6px * ${u});border:2px solid #7fb8d8;border-radius:calc(6px * ${u});background:#F0F9FF;color:#3D2510;box-sizing:border-box;margin-bottom:5px;">
+      <button class="px-btn px-btn-green" style="width:100%;font-size:calc(9px * ${u});" onclick="cloudLoginFromInput()">📧 로그인 링크 받기</button>`;
+  }
+}
+function cloudLoginFromInput(){
+  const inp=document.getElementById('cloud-email');
+  if(!inp || typeof cloudSignIn!=='function'){ showSt('클라우드 준비 중'); return; }
+  cloudSignIn(inp.value);
 }
 function copyBackupCode(){
   const ta=document.getElementById('bk-out');

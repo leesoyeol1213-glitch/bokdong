@@ -29,6 +29,7 @@ requestAnimationFrame(animLoop);
     saveReady=true; // 새 게임 — 바로 자동저장 시작
     track('new_game');
   }
+  if(typeof cloudInit==='function') cloudInit();  // 클라우드 계정: 매직링크 복귀·세션 복원·최신본 pull (로그인 안 했으면 무동작)
   setInterval(()=>doSave(false),30000);                                                  // 30초 주기
   document.addEventListener('visibilitychange',()=>{if(document.hidden)doSave(false);}); // 탭 이탈·홈버튼(모바일)
   window.addEventListener('pagehide',()=>doSave(false));                                 // 페이지 종료(모바일 신뢰)

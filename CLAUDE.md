@@ -24,9 +24,11 @@
 `index.html`이 아래 순서로 전역(global) 스크립트를 로드 — **순서 바꾸면 깨짐**:
 ```
 src/analytics.js → 제공자 독립 계측(전역 track()). 제공자 미연결 시 외부 전송 0.
+                   (로드는 data.js보다 먼저)
 src/data.js    → 상수·상태·데이터 (CITIES, VEHS, FOODS, ACHIEVEMENTS, DAILY/WEEKLY_COURSES, freshState 등)
 src/render.js  → Canvas 그리기 (drawScene, drawBokdown, drawVehPixel, 이펙트, 슈퍼샘플링)
 src/logic.js   → 게임 로직·UI (tick, trackMission, 탭 렌더, 코스/보스러시/레이드) — 가장 큼
+src/cloud.js   → 클라우드 계정(이메일 매직링크)+세이브. logic 다음·boot 전 로드. 미로그인 시 무동작.
 src/boot.js    → 시동
 ```
 - 버전 표기: **`index.html`의 `<title>임복동 세계일주 vX.XX</title>`** 단일 출처. 작업 시 올릴 것.
@@ -59,7 +61,7 @@ src/boot.js    → 시동
 목표는 "수익"이 아니라 **프로토→개발→출시 전 과정을 돈 안 들이고 완주**. 순서 = 측정→리텐션→계정→PWA→출시.
 - **0. 측정** ✅ (v9.59) — `src/analytics.js` 전역 `track()`. 핵심 퍼널 이벤트 심음(app_open/new_game/load_game/city_arrive/bike_buy/gacha_roll/prestige). **제공자 미연결이라 아직 외부 전송 0.**
   - 활성화(무료): PostHog 무료 계정 → 프로젝트 키를 `analytics.js`의 `ANALYTICS_CONFIG`에 넣고 `sendToProvider` 주석 해제 + index.html에 posthog 스니펫. (또는 GA4/Cloudflare)
-- **1. 계정+클라우드 세이브** — Supabase Auth(무료). 익명 localStorage→계정. 진행도 보존 = 리텐션·수익화 전제.
+- **1. 계정+클라우드 세이브** 🔨 진행중 — 클라이언트 `src/cloud.js` 완성·검증(이메일 매직링크+세이브 push/pull, 미로그인 무동작). **백엔드 설정 대기**: `saves` 테이블+RLS+Redirect URL → [CLOUD_SETUP.md] 참고(소열님 5분 작업). 설정 후 함께 로그인→동기화 테스트.
 - **2. 온보딩** — 첫 실행 튜토리얼·닉네임(D1 리텐션).
 - **3. PWA** — manifest + service worker → 설치가능/오프라인 셸. $0 앱화.
 - **4. 출시 준비** — 개인정보처리방침·itch.io(무료 HTML게임 배포)·QA.
