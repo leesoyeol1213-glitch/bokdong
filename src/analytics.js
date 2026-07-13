@@ -6,8 +6,9 @@
 (function(){
   var GLOBAL = (function(){ return this; })() || (typeof globalThis!=='undefined' ? globalThis : {});
 
-  // 제공자 연결 전엔 provider=null → 전송 안 함. 예) {provider:'posthog', key:'phc_...', host:'https://us.i.posthog.com'}
-  var ANALYTICS_CONFIG = { provider: null, key: null, host: null };
+  // PostHog(제품 애널리틱스) 연결됨. Project API key는 공개용(RLS 격 anon 키) — 커밋 정상.
+  // 실제 SDK 로드/init은 index.html의 posthog 스니펫이 담당. 여기선 커스텀 이벤트를 posthog.capture로 전달.
+  var ANALYTICS_CONFIG = { provider: 'posthog', key: 'phc_yh8nk7vukT9U4p8jGU4rHTbbHFzNgSTYFCQDqLyB3woL', host: 'https://us.i.posthog.com' };
 
   var buffer = [];
   var anonId = null, firstSeen = null;
@@ -30,10 +31,11 @@
   }
   function daysSinceFirst(){ return Math.floor((Date.now()-parseInt(getFirstSeen(),10))/86400000); }
 
-  // 제공자 전송부 — 키를 받으면 여기만 채우면 실측 시작.
+  // 제공자 전송부 — posthog SDK가 로드/init됐으면 커스텀 이벤트 전달. SDK 미로드(테스트 등)면 안전 무시.
   function sendToProvider(evt){
-    // if(ANALYTICS_CONFIG.provider==='posthog' && GLOBAL.posthog){ GLOBAL.posthog.capture(evt.event, evt.props); }
-    // if(ANALYTICS_CONFIG.provider==='ga' && GLOBAL.gtag){ GLOBAL.gtag('event', evt.event, evt.props); }
+    if(ANALYTICS_CONFIG.provider==='posthog' && GLOBAL.posthog && typeof GLOBAL.posthog.capture==='function'){
+      GLOBAL.posthog.capture(evt.event, evt.props);
+    }
   }
 
   // 전역 track(event, props). 앱 어디서나 track('bike_buy',{id:'v6'}) 형태로 호출.
