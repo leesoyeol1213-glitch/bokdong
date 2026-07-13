@@ -1341,7 +1341,8 @@ function claimMission(id){
   renderMission();update();
 }
 // ── 특별코스 (일일/주간) ─────────────────────────────
-function getWeekKey(){ const d=new Date(); const oj=new Date(d.getFullYear(),0,1); const wn=Math.ceil((((d-oj)/86400000)+oj.getDay()+1)/7); return d.getFullYear()+'-'+wn; }
+function getWeekKey(dt){ const d=dt||new Date(); const oj=new Date(d.getFullYear(),0,1); const wn=Math.ceil((((d-oj)/86400000)+oj.getDay()+1)/7); return d.getFullYear()+'-'+wn; }
+function getPrevWeekKey(){ return getWeekKey(new Date(Date.now()-7*86400000)); }
 function getDailyCourse(){ return DAILY_COURSES[new Date().getDay()] || DAILY_COURSES[0]; }
 function getWeeklyCourse(){ const wn=parseInt((getWeekKey().split('-')[1])||'0',10); return WEEKLY_COURSES[((wn%WEEKLY_COURSES.length)+WEEKLY_COURSES.length)%WEEKLY_COURSES.length]; }
 function ensureCourse(){
@@ -1495,6 +1496,7 @@ function fetchRaid(force){
     raidState.top=rows.slice(0,10).map(x=>({name:(x.nickname||'익명'), km:x.km||0}));
     raidState.connected=true;
     claimRaidRewardIfDone();   // 서버 확인된 전국 합산이 목표 도달 시 이번 주 그랜드 보상 1회 지급
+    settleRaidRankReward();    // 지난주 최종 순위 정산 → 상위 3위 랭커 박스 지급(주 바뀔 때 1회)
     if(curTab==='mission') renderMission();
   }).catch(_=>{ raidState.connected=false; });
 }
@@ -1512,6 +1514,62 @@ function claimRaidRewardIfDone(){
   showSt('🌏 전국 레이드 목표 달성! ₩50만 + 🎟️×2');
   playSfx('levelup');
   checkAchievements(); save(); update();
+}
+// ── 구간별 상위 랭커 보상 — 지난주 최종 순위 정산(공정성). 상위 3위에게 전설~신화 랜덤박스 ──
+// 순위별 신화 확률: 1위 100%(신화 확정) · 2위 40% · 3위 20%, 나머지는 전설.
+function rankBoxRarity(rank){
+  const p = rank===1 ? 1 : rank===2 ? 0.4 : 0.2;
+  return Math.random() < p ? 'mythic' : 'legend';
+}
+function grantRankBox(rank){
+  const rarity=rankBoxRarity(rank);
+  const item=generateGear(rarity);
+  const r=GEAR_RARITY.find(x=>x.key===rarity);
+  S.inventory=S.inventory||[];
+  if(S.inventory.length < BAG_CAPACITY){
+    S.inventory.push(item);
+  } else {
+    // 자동 지급이라 막을 수 없다 → 고등급 박스는 인벤 최저 등급을 분해하고 보관(유실 방지).
+    const order={common:0,rare:1,unique:2,legend:3,epic:4,mythic:5};
+    let lo=0; for(let i=1;i<S.inventory.length;i++){ if(order[S.inventory[i].rarity]<order[S.inventory[lo].rarity]) lo=i; }
+    if(order[item.rarity] > order[S.inventory[lo].rarity]){
+      const dumped=S.inventory[lo]; S.gearDust=(S.gearDust||0)+RARITY_DUST[dumped.rarity];
+      S.inventory[lo]=item; addLog('neutral','가방 가득 → 최저 등급 '+dumped.name+' 분해하고 랭커 박스 보관');
+    } else {
+      S.gearDust=(S.gearDust||0)+RARITY_DUST[item.rarity]; addLog('bad','가방 가득 → 랭커 박스 강화석 전환');
+    }
+  }
+  const medal = rank===1?'🥇':rank===2?'🥈':'🥉';
+  addLog('good',medal+' 지난주 전국 레이드 '+rank+'위! 랭커 박스 개봉 → ['+r.label+'] '+getSlotIcon(item.slot)+' '+item.name+'!');
+  showSt(medal+' 지난주 '+rank+'위 랭커 보상! ['+r.label+'] 획득');
+  playSfx('mythic');
+  if(typeof showGearDropAnim==='function') showGearDropAnim(item);
+}
+// 지난주 최종 보드 rows(km 내림차순)로 내 등수를 판정해 상위 3위면 박스 지급. (네트워크와 분리 — 테스트 용이)
+// rows는 km desc 정렬 가정. 서버 정렬과 무관하게 방어적으로 재정렬한다.
+function applyRankSettlement(rows, lastWk){
+  S.raidRankClaimedWeek=lastWk;   // 상위권이 아니어도 정산 완료로 표시(매 fetch 재조회 방지)
+  const sorted=(rows||[]).slice().sort((a,b)=>(b.km||0)-(a.km||0));
+  const idx=sorted.findIndex(x=>x.player_id===S.playerId);
+  if(idx>=0 && idx<3 && (sorted[idx].km||0)>0){
+    grantRankBox(idx+1);
+  }
+}
+var _raidRankSettling=false;
+function settleRaidRankReward(){
+  if(!RAID_BACKEND) return;
+  ensurePlayerId();
+  const lastWk=getPrevWeekKey();
+  if(S.raidRankClaimedWeek===lastWk) return;   // 이미 정산한 주
+  if(_raidRankSettling) return; _raidRankSettling=true;
+  // 지난주 최종 보드(player_id 포함)를 km 내림차순으로 받아 내 등수 확인
+  const q=RAID_BACKEND.url+'/rest/v1/raid_progress?week=eq.'+encodeURIComponent(lastWk)+'&select=player_id,km&order=km.desc&limit=1000';
+  fetch(q,{headers:_raidHeaders()}).then(r=>r.ok?r.json():Promise.reject(r.status)).then(rows=>{
+    applyRankSettlement(rows, lastWk);
+    _raidRankSettling=false;
+    save(); update();
+    if(curTab==='mission') renderMission();
+  }).catch(_=>{ _raidRankSettling=false; });
 }
 // 내 이번 주 km 제출/갱신(upsert, 45s 스로틀)
 function submitRaid(force){
@@ -1548,6 +1606,7 @@ function renderRaidHTML(){
     <div style="border-top:1px dashed #D4B483;padding-top:calc(4px * ${u});">
       <div style="${fs(6)};color:#8B6340;margin-bottom:calc(2px * ${u});">🏅 이번 주 톱 라이더</div>
       ${lead||`<div style="${fs(5)};color:#8B6340;">아직 기록 없음</div>`}
+      <div style="${fs(4)};color:#8B6340;margin-top:calc(4px * ${u});line-height:1.7;border-top:1px dotted #D4B483;padding-top:calc(3px * ${u});">🎁 매주 마감 시 최종 순위 <b>🥇1·🥈2·🥉3위</b>에게 <b>전설~신화 랜덤박스</b>! (1위 신화 확정) — 다음 주 접속 시 지급</div>
     </div>
   </div>`;
 }
@@ -2475,6 +2534,8 @@ function doLoad(parsedD){
           S.gachaTicketMigrated = true;
         }
         if(typeof S.raidRewardClaimed !== 'string') S.raidRewardClaimed = '';
+        // 상위 랭커 박스 정산 주차 — 기존 유저는 지난주를 정산 완료로 간주(소급 지급 없음, 다음 주부터 적용)
+        if(typeof S.raidRankClaimedWeek !== 'string') S.raidRankClaimedWeek = getPrevWeekKey();
         // 2번 fix: seenTabs 마이그레이션 — 없거나 잘못된 값이면 현재 보유 갯수로 보정
         if(!S.seenTabs) S.seenTabs = {npc:0, veh:0, ach:0, gear:0};
         // veh/gear는 한번도 없던 사용자는 0인데 시작 자전거 't'가 있으니 보정 필요

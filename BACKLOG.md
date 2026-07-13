@@ -43,6 +43,9 @@
 - [x] **공동 목표 달성 보상** — 서버 확인 전국 합산이 `RAID_GOAL` 도달 시 주당 1회 ₩500,000 + 🎟️가챠권 2 지급.
   `claimRaidRewardIfDone()`(fetchRaid 성공 시 호출), `S.raidRewardClaimed`=수령 주차로 중복 방지, 오프라인 추정치로는 미지급.
   목표는 베타 테스터 규모(주 ~3만km)에 맞춰 **5만km**로 설정(v9.54). 유저 증가 시 상향 검토. 주간 반복 지급이라 영구 SP는 보상에서 제외.
+- [x] **구간별 상위 랭커 박스**(v9.56) — 지난주 최종 순위 정산으로 🥇1·🥈2·🥉3위에게 전설~신화 랜덤박스.
+  신화 확률 1위 100%·2위 40%·3위 20%(나머지 전설). `settleRaidRankReward()`(fetchRaid 성공 시) → `applyRankSettlement(rows,주차)`,
+  `S.raidRankClaimedWeek`로 주당 1회 dedup. 가방 가득이어도 최저 등급 분해 후 보관(유실 방지). 기존 유저는 다음 주부터 적용(소급 없음).
 - [ ] 테스트 행 정리(`bd_verify_a/b`, `bd_testrunner1` — 지난주 데이터라 순위 무영향). anon DELETE 막혀 있으면 Supabase 대시보드에서 삭제.
 
 ---
