@@ -126,7 +126,7 @@ function tick(){
 
   const baseSp = (v.sp + (S.dopT>0?S.dopSp:0) + (eqBonus.speedBonus||0)) * sinSpeedMult * prestigeMult();
   const wMod = weather.mod.speedMult || 1.0;
-  const km=(baseSp * wMod)*.05;
+  const km=(baseSp * wMod)*.05*SPEED_SCALE;
   const prevTotKm=S.totKm;
   S.sgKm+=km;S.totKm+=km;
   // #4: 탈것 신규 오픈 알림 — 이번 tick에 거리 조건을 새로 넘긴 미보유 자전거
@@ -466,7 +466,7 @@ function applyOfflineReward(lastTime, wasRiding){
   // 라이딩 중 → 여정 시뮬레이션
   window._offlineSim=true;
   const v=cv2();
-  const kmPerSec=v.sp*0.05*prestigeMult(); // 프레스티지 배수(오프라인 이동 거리도 늘어남)
+  const kmPerSec=v.sp*0.05*prestigeMult()*SPEED_SCALE; // 프레스티지 배수 + 전역 속도배율(온라인과 일치)
   const drainPerSec=Math.max(0.05, 0.05*v.sp); // tick과 동일한 ≈1HP/km
   let hp=S.hp, dist=0, moneyGain=0, xpGain=0, applesUsed=0, levelsUp=0, stoppedNoApple=false, arrivedCount=0;
   const arrived=[];

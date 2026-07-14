@@ -785,5 +785,7 @@ var rocketLaunchAnim = null;
 function vehOwned(id){return S.vehs.find(v=>v.id===id)?.owned||false;}
 function setVehOwned(id,val){const v=S.vehs.find(v=>v.id===id);if(v)v.owned=val;}
 // 탈것 속도에 비례한 애니메이션 배수 (3번 속도 연동)
-function animSpeedMult(){return Math.max(0.5,cv2().sp/26);}
+// 전역 속도 배율 — 이동거리·애니메이션 모두에 곱해 일관되게 느리게/빠르게. 1=원래, 0.65=35% 느리게. ★조정 지점★
+var SPEED_SCALE = 0.65;
+function animSpeedMult(){return Math.max(0.5,cv2().sp/26) * SPEED_SCALE;}
 
