@@ -595,6 +595,7 @@ function showHistModal(ci){
 
   // 4번: 달 특별 도착 화면
   if(ci.special==='moon'){
+    S.moonRpsDone=false;   // 달 방문 시작 → 가위바위보 1회 게이트 리셋
     document.getElementById('modal-area').innerHTML=`
     <div class="px-panel" style="border-color:#FFD700;background:linear-gradient(135deg,#0A0A2E,#1A1A4E);margin-bottom:5px;">
       <div style="font-size:calc(11px * var(--u));color:#FFD700;text-align:center;margin-bottom:8px;">🌕 달 도착!!</div>
@@ -1076,13 +1077,16 @@ function openFood(){
   const food=FOODS.find(f=>f.c===S.city);
   if(!food){ if(!modalOpen())addLog('neutral','등록된 맛집 없음'); return; }
   ensureMissions();  // 자정 지났으면 오늘 방문 기록(foodToday) 리셋
-  // 달토끼 가위바위보는 매 방문마다 가능(하루 1회 게이트 예외)
-  if(S.city!=='달' && (S.foodToday||[]).includes(S.city)){ if(!modalOpen())addLog('neutral','오늘 이미 방문! (자정에 초기화돼요)'); return; }
+  // 달토끼 가위바위보: 방문당 1회(달 도착 시 리셋). 일반 맛집: 하루 1회(자정 리셋).
+  if(S.city==='달'){
+    if(S.moonRpsDone){ if(!modalOpen())addLog('neutral','🐰 이번 방문엔 이미 놀았어요! (다음에 또 와요)'); return; }
+  } else if((S.foodToday||[]).includes(S.city)){ if(!modalOpen())addLog('neutral','오늘 이미 방문! (자정에 초기화돼요)'); return; }
   // 특수 이벤트 모달이 열린 채 맛집을 누르면, 맛집이 끝난 뒤 그 이벤트를 다시 띄운다(이벤트 손실 방지)
   const ci=CITIES.find(c=>c.n===S.city);
   if(modalOpen() && ci && ci.special && !['moon','trap_shinhan','trap_cheonghak'].includes(ci.special)){
     pendingSpecial = ci;
   }
+  if(S.city==='달') S.moonRpsDone=true;   // 열면 이번 방문 소진(무제한 반복 방지)
   const wr=S.riding;if(S.riding){S.riding=false;isResting=false;clearInterval(tickIv);tickIv=null;}
   if(food.type==='timing')showTimingGame(food,wr);
   else if(food.type==='rps')showRpsGame(food,wr);
