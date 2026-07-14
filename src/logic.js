@@ -1212,7 +1212,7 @@ function autoPickNextDestination(){
   // 후보: 현재 도시 제외, 달 제외, 진천 제외(특수)
   const isJapan = c => c.region==='일본';
   const currentInJapan = isJapan(CITIES.find(c=>c.n===S.city)||{});
-  let others=CITIES.filter(c=>c.n!==S.city && c.n!=='달' && c.n!=='진천');
+  let others=CITIES.filter(c=>c.n!==S.city && c.n!=='달' && c.n!=='진천' && isRegionUnlocked(c.region));
   if(currentInJapan){
     // 3번 fix: 일본 5개 도시 모두 방문해야 부산으로 귀국 가능 (코스 완주 룰)
     const japanCities = CITIES.filter(c=>isJapan(c)).map(c=>c.n);
@@ -2834,6 +2834,34 @@ function savePostcardImage(i){
 
 // ── 프레스티지(2회차 세계일주) — 콘텐츠 소진 해결. 진행 리셋 + 영구 배수 ──
 function prestigeMult(){ return 1 + 0.25*(S.prestige||0); } // 속도·수입 +25%/회차
+// 🌏 세계지도 — 대륙별 해금 현황(프레스티지 회차마다 새 대륙). 콘텐츠 준비 전엔 '준비중'.
+function showWorldMap(){
+  if(modalOpen()){showSt('진행 중인 선택을 먼저 마쳐주세요');return;}
+  const wr=S.riding; if(S.riding){S.riding=false;isResting=false;clearInterval(tickIv);tickIv=null;}
+  const u='var(--u)'; const pr=S.prestige||0;
+  let rows='';
+  WORLD_MAP.forEach(r=>{
+    const unlocked = pr >= r.unlock;
+    const isNext = !unlocked && r.unlock === pr+1;
+    const status = r.unlock===0 ? '기본 지역' : (unlocked ? (r.soon?'✅ 해금됨 · 콘텐츠 준비중':'✅ 해금됨') : (r.unlock+'회차 프레스티지 해금'+(r.soon?' · 준비중':'')));
+    const bg = unlocked ? (r.soon?'#FFF3E0':'#E8F5E9') : '#EEEEEE';
+    const bd = unlocked ? (r.soon?'#FB8C00':'#4CAF50') : (isNext?'#0284c7':'#CCCCCC');
+    rows += `<div style="display:flex;align-items:center;gap:calc(8px * ${u});padding:calc(6px * ${u});margin-bottom:calc(4px * ${u});border:2px solid ${bd};background:${bg};border-radius:calc(6px * ${u});${isNext?'box-shadow:0 0 calc(6px * '+u+') #0284c7;':''}">
+      <div style="font-size:calc(17px * ${u});filter:${unlocked?'none':'grayscale(1) opacity(0.55)'};">${r.flag}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:calc(7px * ${u});color:${unlocked?'#3D2510':'#999'};font-weight:bold;">${r.name} ${isNext?`<span style="color:#0284c7;font-size:calc(5px * ${u});">◀ 다음 회차!</span>`:''}</div>
+        <div style="font-size:calc(5px * ${u});color:#8B6340;">${unlocked?'':'🔒 '}${status}</div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('modal-area').innerHTML=`
+  <div class="px-panel" style="border-color:#0284c7;background:linear-gradient(135deg,#F0F9FF,#FFF8DC);margin-bottom:5px;">
+    <div style="font-size:calc(12px * ${u});color:#0284c7;text-align:center;font-weight:bold;margin-bottom:calc(3px * ${u});">🌏 세계 지도</div>
+    <div style="font-size:calc(6px * ${u});color:#8B6340;text-align:center;margin-bottom:calc(8px * ${u});">프레스티지 회차마다 새 대륙이 열려요! · 현재 <b>${pr}회차</b></div>
+    ${rows}
+    <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(9px * ${u});margin-top:calc(6px * ${u});" onclick="closeModal(${wr})">닫기 ▶</button>
+  </div>`;
+}
 function canPrestige(){
   if(vehOwned('v15')) return true; // 전설의 서퍼티지(₩2억) 보유 = 사실상 완주
   return CITIES.filter(c=>c.region!=='우주').every(c=>S.visited.includes(c.n)); // 또는 전 도시 방문
@@ -2853,6 +2881,8 @@ function doPrestige(){
       afterReset();
       addLog('good','🌏✨ '+S.prestige+'회차 세계일주 시작! 여행 노하우: 속도·수입 +'+Math.round((prestigeMult()-1)*100)+'% (영구)');
       track('prestige',{n:S.prestige});
+      const _unlk=WORLD_MAP.find(r=>r.unlock===S.prestige);
+      if(_unlk){ addLog('good','🌏 새 지역 해금! '+_unlk.flag+' '+_unlk.name+(_unlk.soon?' — 곧 공개!':'')); showSt('🌏 '+_unlk.flag+' '+_unlk.name+' 해금!'); }
       showSt('🌏 '+S.prestige+'회차 시작!');
       playSfx('levelup');
       prestigeFx=150; prestigeRound=S.prestige;   // ✨ 회차 출발 축하 연출
@@ -3279,6 +3309,8 @@ function renderStat(){
     ${canP
       ? `<button class="px-btn" style="width:100%;${fs(7)};background:linear-gradient(180deg,#a78bfa,#7c3aed);border-color:#6d28d9;color:#fff;" onclick="doPrestige()">🌏 ${pv+1}회차 출발! (속도·수입 +25% 획득)</button>`
       : `<div style="${fs(5)};color:#C4B5FD;text-align:center;">v15(전설의 서퍼티지) 보유 또는 전 도시 방문 시 2회차 가능</div>`}
+    ${(()=>{const nx=WORLD_MAP.find(r=>r.unlock===pv+1);return nx?`<div style="${fs(5)};color:#FCD34D;text-align:center;margin-top:calc(6px * ${u});">🔜 다음 회차 해금 → ${nx.flag} ${nx.name}${nx.soon?' (준비중)':''}</div>`:'';})()}
+    <button class="px-btn px-btn-sm" style="width:100%;${fs(6)};margin-top:calc(6px * ${u});background:#0284c7;border-color:#025a94;color:#fff;" onclick="showWorldMap()">🌏 세계지도 보기</button>
   </div>
   <div class="px-panel" style="margin-bottom:5px;background:linear-gradient(135deg,#FFF8E1,#FFFDE7);border-color:${pet.textColor};">
     <div style="${fs(7)};color:${pet.textColor};margin-bottom:6px;text-align:center;font-weight:bold;text-shadow:1px 1px 0 #FFF;">${pet.name} (${pet.stage}/4 단계)</div>
