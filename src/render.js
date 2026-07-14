@@ -1436,8 +1436,7 @@ function drawBokdongSprite(ctx2, cx, cy, scale, isRiding){
   // 128px 고해상도 → 100px. 일반·부스트 동일 크기/정렬 (부스트도 목 안잘림)
   // 부스트 스프라이트는 머리위·발아래 여백을 넉넉히 둬서 같은 크기로 그려도 오라까지 다 보임
   const sz = 112 * scale; // 복동이 표시 크기(+약간 크게). 조정 지점.
-  ctx2.imageSmoothingEnabled = true;
-  ctx2.imageSmoothingQuality = 'high';
+  ctx2.imageSmoothingEnabled = false;  // #A: 크리스프(픽셀) 렌더 — 배경처럼 쨍하게. (부드럽게 되돌리려면 true)
   // 발끝(바퀴 바닥) 기준 정렬 — 바퀴가 화면 아래로 안 잘리게.
   // 일반(cyc) 스프라이트는 바퀴가 프레임 하단에 더 붙어있어 도로에 ~1/5 잠김 → 7px 올림. 부스트는 그대로.
   const footY = cy + 34 - (isBoost ? 0 : 7);  // 바퀴 바닥선
