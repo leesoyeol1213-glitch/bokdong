@@ -369,6 +369,19 @@ function drawRocketLaunchAnim(){
 // 작은 로켓 스프라이트
 function drawRocketSprite(cx, cy, rot, scale){
   scale = scale || 1;
+  // 🚀 고퀄 로켓 이미지 (있으면 사용). 코드 로켓과 동일 위치(nose≈cy-38, fins≈cy+12)에 맞춤.
+  if(hasAsset('rocket')){
+    const img = ASSETS_IMG['rocket'];
+    const h = 62*scale, w = h*(img.naturalWidth/img.naturalHeight);  // 히어로 순간 → 살짝 크게
+    ctx.save();
+    if(rot){ ctx.translate(cx,cy); ctx.rotate(rot); ctx.translate(-cx,-cy); }
+    ctx.imageSmoothingEnabled = false;  // 크리스프
+    // 하단(노즐/핀)을 cy+12에 고정 → 화염 위치와 맞음. 위(노즈)로만 커짐.
+    ctx.drawImage(img, Math.round(cx - w/2), Math.round(cy + 12*scale - h), Math.round(w), Math.round(h));
+    ctx.restore();
+    return;
+  }
+  // 폴백: 코드 로켓 (이미지 로드 실패 시)
   ctx.save();
   ctx.translate(cx, cy);
   ctx.scale(scale, scale);
@@ -1226,6 +1239,7 @@ var ASSETS_SOURCES = {
   bg_moon: "./assets/bg_moon.webp",  // 달 우주
   bg_shinhan: "./assets/bg_shinhan.webp",  // 신한 함정 (염전)
   bg_cheonghak: "./assets/bg_cheonghak.webp",  // 청학동 함정 (훈장)
+  rocket: "./assets/rocket.png",  // 나로호(임복동1호) 발사 스프라이트 (태극기 로켓)
 
   // NPC 픽셀 초상화 (배경 투명) — 모달 + 카드용
   // 신 1
