@@ -865,7 +865,9 @@ function showDisasterNpcModal(npc){
     <div style="font-size:calc(8px * var(--u));color:#3D2510;background:#FFF8DC;border:2px solid #5D0303;border-radius:5px;padding:7px;margin-bottom:8px;line-height:2;">"${line}"</div>
     <div style="font-size:calc(8px * var(--u));color:#FFE082;background:rgba(255,255,255,.1);border:2px solid #FFE082;border-radius:6px;padding:6px;margin-bottom:8px;text-align:center;">⚠️ ${npc.reward}</div>
     <button class="px-btn px-btn-red" style="width:100%;font-size:calc(9px * var(--u));" onclick="acceptNpc('${npc.id}',${wr})">…피할 수 없다</button>
+    ${wr?`<div id="npc-auto" style="text-align:center;margin-top:calc(6px * var(--u));font-size:calc(7px * var(--u));color:#FFCDD2;">⏱️ 6초 후 자동 진행</div>`:''}
   </div>`;
+  if(wr) startNpcAutoContinue(npc.id, wr, 6);
 }
 
 // ── 5번: 사과즙 박스 ───────────────────────────────────
@@ -973,9 +975,26 @@ function showNpcModal(npc){
     <div style="font-size:calc(9px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid #D4B483;border-left:4px solid ${gc};border-radius:0 6px 6px 0;padding:7px 9px;margin-bottom:8px;line-height:2;">"${line}"</div>
     <div style="font-size:calc(9px * var(--u));color:#8B6340;margin-bottom:10px;">보상: <span style="color:#3D2510;">${npc.reward}</span></div>
     <button class="px-btn" style="width:100%;font-size:calc(9px * var(--u));" onclick="acceptNpc('${npc.id}',${wr})">${isCV?'...잘 가. (음료를 받는다)':'고마워! 계속 달리자! ▶'}</button>
+    ${wr?`<div id="npc-auto" style="text-align:center;margin-top:calc(6px * var(--u));font-size:calc(7px * var(--u));color:#8B6340;">⏱️ 6초 후 자동 진행</div>`:''}
   </div>`;
+  if(wr) startNpcAutoContinue(npc.id, wr, 6);
+}
+// 방치형: NPC 만남 시 몇 초 뒤 자동 수락·재개 (탭하면 즉시). 자리를 비워도 진행이 안 멈춤.
+var npcAutoTimer=null;
+function clearNpcAuto(){ if(npcAutoTimer){clearInterval(npcAutoTimer);npcAutoTimer=null;} }
+function startNpcAutoContinue(id, wr, secs){
+  clearNpcAuto();
+  let left=secs;
+  npcAutoTimer=setInterval(function(){
+    const el=document.getElementById('npc-auto');
+    if(!el){ clearNpcAuto(); return; }   // 모달이 닫히거나 바뀌면 중단
+    left--;
+    if(left<=0){ clearNpcAuto(); acceptNpc(id, wr); return; }
+    el.textContent='⏱️ '+left+'초 후 자동 진행';
+  }, 1000);
 }
 function acceptNpc(id,wr){
+  clearNpcAuto();
   const n=S.npcs.find(x=>x.id===id);
   if(n&&!n.locked){
     const snap={money:S.money,xp:S.xp,hp:S.hp,jc:S.jc,ap:S.ap};  // #1: 랜덤 보상 실수령액 즉시 표시용
