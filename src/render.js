@@ -1438,8 +1438,9 @@ function drawBokdongSprite(ctx2, cx, cy, scale, isRiding){
   const sz = 112 * scale; // 복동이 표시 크기(+약간 크게). 조정 지점.
   ctx2.imageSmoothingEnabled = true;
   ctx2.imageSmoothingQuality = 'high';
-  // 발끝(바퀴 바닥) 기준 정렬 — 바퀴가 화면 아래로 안 잘리게
-  const footY = cy + 34;  // 바퀴 바닥선
+  // 발끝(바퀴 바닥) 기준 정렬 — 바퀴가 화면 아래로 안 잘리게.
+  // 일반(cyc) 스프라이트는 바퀴가 프레임 하단에 더 붙어있어 도로에 ~1/5 잠김 → 7px 올림. 부스트는 그대로.
+  const footY = cy + 34 - (isBoost ? 0 : 7);  // 바퀴 바닥선
   ctx2.drawImage(img, Math.round(cx - sz/2), Math.round(footY - sz), sz, sz);
   return true;
 }
