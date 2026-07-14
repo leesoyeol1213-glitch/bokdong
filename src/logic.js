@@ -670,7 +670,9 @@ function showHistModal(ci){
       <button class="px-btn px-btn-red" style="font-size:calc(9px * var(--u));padding:12px;" onclick="ansOX(false)">X</button>
     </div>
     <div style="font-size:calc(9px * var(--u));color:#8B6340;text-align:center;">정답시 ₩5,000 + XP+20</div>
+    ${wr?`<div id="ox-auto" style="text-align:center;margin-top:calc(6px * var(--u));font-size:calc(7px * var(--u));color:#8B6340;">⏱️ 6초 후 넘어감(무응답)</div>`:''}
   </div>`;
+  if(wr) startOXAuto(6);
 }
 
 // ── 3번(재설계): 함정 도시 — 시간 기반 탈출 주사위 + 천장(실패할수록 쉬워짐) ─────
@@ -926,7 +928,30 @@ function dismissJuiceBoxResult(){
   if(curTab==='item') renderItems();
 }
 var curOX=null;  // 현재 도착 OX 퀴즈 문제(정답 a·해설 ex·라이딩중 wr). ansOX가 여기서 읽는다.
+// 방치형: OX 퀴즈도 몇 초 무응답이면 자동으로 넘어감(스킵·보상없음). 탭하면 즉시 응답.
+var oxAutoTimer=null;
+function clearOXAuto(){ if(oxAutoTimer){clearInterval(oxAutoTimer);oxAutoTimer=null;} }
+function startOXAuto(secs){
+  clearOXAuto();
+  let left=secs;
+  oxAutoTimer=setInterval(function(){
+    const el=document.getElementById('ox-auto');
+    if(!el){ clearOXAuto(); return; }   // 모달 닫힘/교체 → 중단
+    left--;
+    if(left<=0){ clearOXAuto(); skipOX(); return; }
+    el.textContent='⏱️ '+left+'초 후 넘어감(무응답)';
+  }, 1000);
+}
+function skipOX(){
+  clearOXAuto();
+  const wr = curOX ? curOX.wr : false;
+  curOX=null;
+  document.getElementById('modal-area').innerHTML='';
+  showSt('⏭️ 퀴즈 넘어감');
+  closeModal(wr);
+}
 function ansOX(pick){
+  clearOXAuto();
   const o=curOX||{}; const ans=o.a, ex=o.ex||'', wr=o.wr;
   curOX=null;
   if(pick===ans){
