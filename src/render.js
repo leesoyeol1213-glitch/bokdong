@@ -137,6 +137,24 @@ function drawScene(){
   p(4,4,124,18,'rgba(0,0,0,.75)');ctx.fillStyle='#FFD700';ctx.font='bold 10px Galmuri11, monospace';ctx.fillText('📍 '+city.n,8,18);
   if(S.restT>0){p(4,25,150,16,'rgba(0,0,0,.75)');ctx.fillStyle='#FFD700';ctx.font='8px Galmuri11, monospace';ctx.fillText('💤 휴식 '+S.restT+'s',8,37);}
   if(S.dopT>0){p(4,25,162,16,'rgba(200,80,0,.82)');ctx.fillStyle='#FFE082';ctx.font='bold 8px Galmuri11, monospace';ctx.fillText('⚡ BOOST '+S.dopT+'s',8,37);}
+  // 7대죄 저주 상태 — 활성 패널티의 남은 시간/조건 표시(언제 끝나는지)
+  (function(){
+    const now=Date.now(), cur=[];
+    const mmss=ms=>{const s=Math.max(0,Math.ceil(ms/1000));return Math.floor(s/60)+':'+(s%60<10?'0':'')+(s%60);};
+    if(S.wrathUntil>now) cur.push('😡분노 +50% '+mmss(S.wrathUntil-now));
+    if(S.slothUntil>now) cur.push('😴나태 부스터X '+mmss(S.slothUntil-now));
+    if(S.envyUntil>now)  cur.push('😒시기 회복X '+mmss(S.envyUntil-now));
+    if(S.lustUntil>now)  cur.push('💋색욕 -50% '+mmss(S.lustUntil-now));
+    if(S.disasterFred){const rem=Math.ceil(1000-(S.totKm-S.disasterFred.kmStart));if(rem>0)cur.push('💸프레드 '+rem+'km');}
+    if(S.prideNextCity)  cur.push('🦚교만 다음도시까지');
+    let yy=(S.dopT>0||S.restT>0)?44:25;
+    for(let k=0;k<cur.length;k++){
+      const t=cur[k], w=Math.min(210, 16+t.length*7);
+      p(4,yy,w,15,'rgba(120,0,40,.82)');
+      ctx.fillStyle='#FFCDD2';ctx.font='bold 8px Galmuri11, monospace';ctx.fillText(t,8,yy+10);
+      yy+=17;
+    }
+  })();
   if(boosterBubble>0){drawBoosterBubble(bikeX+10,85);boosterBubble--;}
 
   // TY 수호천사 (항상 표시)
@@ -743,6 +761,30 @@ function drawTY(){
       ctx.fill();
     });
     ctx.globalAlpha = 1;
+  }
+
+  // 5번: TY 프레스티지 회차 오라 — 복동이처럼 회차↑일수록 화려(금→보라→무지개 + 궤도 별 + 3회차↑ 왕관)
+  {
+    const pr=Math.min(6,S.prestige||0);
+    if(pr>0){
+      const cxx=clampedTx, cyy=ty-18, pulse=0.5+Math.sin(frame*0.1)*0.5;
+      const hue=(frame*2+pr*40)%360;
+      const col= pr>=4?'hsla('+hue+',90%,65%,':(pr>=2?'rgba(167,139,250,':'rgba(255,215,0,');
+      const glowR=15+pr*3+pulse*3;
+      const grd=ctx.createRadialGradient(cxx,cyy,0,cxx,cyy,glowR);
+      grd.addColorStop(0,col+(0.20+pr*0.04)+')');grd.addColorStop(1,col+'0)');
+      ctx.fillStyle=grd;ctx.beginPath();ctx.arc(cxx,cyy,glowR,0,Math.PI*2);ctx.fill();
+      for(let i=0;i<pr;i++){
+        const a=(i/pr)*Math.PI*2+frame*0.06, r=17+pr*1.5;
+        const px=cxx+Math.cos(a)*r, py=cyy+Math.sin(a)*r*0.55;
+        const hue2=(frame*3+i*60)%360;
+        ctx.fillStyle=pr>=4?'hsl('+hue2+',90%,70%)':(pr>=2?'#c4b5fd':'#FFD700');
+        ctx.font='bold 8px Galmuri11, monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(pr>=3?'✦':'✨',px,py);
+      }
+      if(pr>=3){const bob=Math.sin(frame*0.15)*1.5;ctx.font='10px Galmuri11, monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(pr>=5?'👑':'⭐',cxx,cyy-24+bob);}
+      ctx.textAlign='left';ctx.textBaseline='alphabetic';
+    }
   }
 
   // TY 천사 본체 — 픽셀 이미지 10프레임 애니메이션 (제자리 비행)

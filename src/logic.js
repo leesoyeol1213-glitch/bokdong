@@ -1032,7 +1032,8 @@ function openFood(){
   const food=FOODS.find(f=>f.c===S.city);
   if(!food){ if(!modalOpen())addLog('neutral','등록된 맛집 없음'); return; }
   ensureMissions();  // 자정 지났으면 오늘 방문 기록(foodToday) 리셋
-  if((S.foodToday||[]).includes(S.city)){ if(!modalOpen())addLog('neutral','오늘 이미 방문! (자정에 초기화돼요)'); return; }
+  // 달토끼 가위바위보는 매 방문마다 가능(하루 1회 게이트 예외)
+  if(S.city!=='달' && (S.foodToday||[]).includes(S.city)){ if(!modalOpen())addLog('neutral','오늘 이미 방문! (자정에 초기화돼요)'); return; }
   // 특수 이벤트 모달이 열린 채 맛집을 누르면, 맛집이 끝난 뒤 그 이벤트를 다시 띄운다(이벤트 손실 방지)
   const ci=CITIES.find(c=>c.n===S.city);
   if(modalOpen() && ci && ci.special && !['moon','trap_shinhan','trap_cheonghak'].includes(ci.special)){
@@ -1120,7 +1121,7 @@ function showFoodQuiz(food,wr){
 function checkFoodQ(sel,ans,city,wr){const food=FOODS.find(f=>f.c===city);if(sel===ans)foodOk(food,wr,800);else foodFail(food,wr);}
 function foodOk(food,wr,bonus){
   if(!S.foodDone.includes(food.c)) S.foodDone.push(food.c);   // 도감용 영구 기록
-  S.foodToday = S.foodToday || []; if(!S.foodToday.includes(food.c)) S.foodToday.push(food.c); // 오늘 방문(자정 리셋)
+  S.foodToday = S.foodToday || []; if(food.c!=='달' && !S.foodToday.includes(food.c)) S.foodToday.push(food.c); // 오늘 방문(자정 리셋). 달은 매 방문 가능하므로 기록 제외
   S.foodStreak = (S.foodStreak||0) + 1;
   const reward=bonus*10;
   S.money+=reward;S.xp+=500;S.hp=Math.min(S.mhp,S.hp+20);
@@ -3260,13 +3261,25 @@ function renderStat(){
       </div>
     </div>
 
-    <div class="stat-row">
-      <div>
-        <div style="${fs(6)};color:#8B6340;">🏎️ 속도</div>
-        <div style="${fs(5)};color:#AAAAAA;margin-top:2px;">탈것 기본값 · 이동 거리에 직접 영향</div>
-      </div>
-      <div style="${fs(6)};color:#3D2510;">${v.sp} km/h</div>
-    </div>
+    ${(()=>{
+      const now=Date.now();
+      const eqSp=(getEquippedBonus().speedBonus)||0;
+      const boostSp=S.dopT>0?(S.dopSp||0):0;
+      let sinM=1; if(S.wrathUntil>now)sinM*=1.5; if(S.lustUntil>now)sinM*=0.5;
+      const pM=prestigeMult();
+      const w=WEATHER_TYPES.find(x=>x.key===(S.weather&&S.weather.key))||WEATHER_TYPES[0];
+      const wM=(w.mod&&w.mod.speedMult)||1;
+      const eff=Math.round((v.sp+boostSp+eqSp)*sinM*pM*wM);
+      const parts=['기본 '+v.sp];
+      if(boostSp>0)parts.push('⚡부스터 +'+boostSp);
+      if(eqSp>0)parts.push('🎁장비 +'+eqSp);
+      if(pM>1)parts.push('🌏프레스티지 ×'+pM.toFixed(2));
+      if(sinM>1)parts.push('😡분노 ×1.5');
+      if(sinM<1)parts.push('💋색욕 ×0.5');
+      if(wM!==1)parts.push('☁️날씨 ×'+wM.toFixed(2));
+      const col=eff>v.sp?'#1B5E20':(eff<v.sp?'#B71C1C':'#3D2510');
+      return `<div class="stat-row"><div><div style="${fs(6)};color:#8B6340;">🏎️ 속도 <span style="${fs(4)};color:#AAA;">(실효)</span></div><div style="${fs(5)};color:#AAAAAA;margin-top:2px;">${parts.join(' · ')}</div></div><div style="${fs(6)};color:${col};font-weight:bold;">${eff} km/h</div></div>`;
+    })()}
 
     <div class="stat-row">
       <div>
