@@ -231,29 +231,63 @@ function drawRocketLaunchAnim(){
     const rocketY = 145 - (t / liftDur) * 200;
     const scale = Math.max(0.3, 1.0 - (t / liftDur) * 0.7);
 
-    // 화염 (로켓 아래)
-    ctx.save();
-    ctx.translate(210, rocketY + 20*scale);
-    ctx.scale(scale, scale);
-    for(let i=0;i<10;i++){
-      const fy = i * 4 + Math.random()*3;
-      const fw = 14 - i*1.2;
-      ctx.fillStyle = i<3 ? '#FFEB3B' : i<6 ? '#FF9800' : '#F44336';
-      ctx.fillRect(-fw/2, fy, fw, 5);
+    // ✨ 점화 섬광 (발사 직후 번쩍)
+    if(t < 12){ ctx.fillStyle = `rgba(255,240,185,${0.55*(1-t/12)})`; ctx.fillRect(0,0,420,210); }
+
+    // 발사 진동(흔들림) — 초반 강하게, 점차 잦아듦
+    const shk = t < 70 ? (1 - t/70) * 3.2 : 0;
+    const shx = (Math.random()-0.5)*shk, shy = (Math.random()-0.5)*shk;
+
+    // 지면 폭발 연기 (발사 초반 좌우로 크게 퍼짐)
+    if(t < 95){
+      const gA = Math.max(0, 1 - t/95);
+      for(let i=0;i<16;i++){
+        const dir = i%2===0 ? -1 : 1;
+        const gx = 210 + dir*(10 + t*0.7 + (i*3));
+        const gy = 176 + Math.sin(i*1.3)*4;
+        ctx.fillStyle = `rgba(214,209,203,${gA*0.55})`;
+        ctx.beginPath(); ctx.arc(gx, gy, 6 + (i%5)*2 + t*0.12, 0, Math.PI*2); ctx.fill();
+      }
     }
+
+    // 🔥 화염 (로켓 아래) — 흰 코어 + 깜빡임 + 더 길게
+    ctx.save();
+    ctx.translate(210 + shx, rocketY + 18*scale + shy);
+    ctx.scale(scale, scale);
+    const flick = 0.85 + Math.random()*0.45;
+    for(let i=0;i<16;i++){
+      const fy = i * 3.2 + Math.random()*3;
+      const fw = (20 - i*1.05) * flick;
+      ctx.globalAlpha = Math.max(0, 1 - i/17);
+      ctx.fillStyle = i<2 ? '#FFFFFF' : i<5 ? '#FFF176' : i<10 ? '#FF9800' : '#F44336';
+      ctx.fillRect(-fw/2, fy, Math.max(1,fw), 5);
+    }
+    ctx.globalAlpha = 1;
     ctx.restore();
 
-    // 로켓
-    drawRocketSprite(210, rocketY, 0, scale);
+    // 🌟 상승 불꽃(embers) — 뒤로 흩날림
+    for(let i=0;i<12;i++){
+      const et = (t*2 + i*22) % 130;
+      const ex = 210 + shx + Math.sin(i*1.7 + t*0.05)*26 - i;
+      const ey = (rocketY + 30) + et*0.8;
+      if(ey < 210){
+        ctx.fillStyle = `rgba(255,${150+((i*37)%90)},70,${Math.max(0,1-et/130)})`;
+        const s = Math.max(1, 2.4 - et/70);
+        ctx.fillRect(ex, ey, s, s);
+      }
+    }
 
-    // 연기/구름
-    for(let i=0;i<8;i++){
-      const px = 210 + (Math.sin(t*.15+i)*30) - (i*3);
-      const py = 165 + Math.sin(t*.1+i*0.7)*5;
-      const alpha = Math.max(0, 1 - t/liftDur);
-      ctx.fillStyle = `rgba(220,220,220,${alpha*0.7})`;
+    // 로켓
+    drawRocketSprite(210 + shx, rocketY + shy, 0, scale);
+
+    // 상승 연기 기둥 — 더 풍성하게
+    for(let i=0;i<12;i++){
+      const px = 210 + (Math.sin(t*.15+i)*28) - (i*2);
+      const py = 168 + i*3 + Math.sin(t*.1+i*0.7)*5;
+      const alpha = Math.max(0, 1 - t/liftDur) * (1 - i/16);
+      ctx.fillStyle = `rgba(226,223,219,${alpha*0.7})`;
       ctx.beginPath();
-      ctx.arc(px + (i%2===0?-15:15), py, 8+i*2, 0, Math.PI*2);
+      ctx.arc(px + (i%2===0?-14:14), py, 7+i*2, 0, Math.PI*2);
       ctx.fill();
     }
 
