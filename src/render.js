@@ -134,9 +134,10 @@ function drawScene(){
   // (일반 라이딩 속도선 삭제 — 복동이 뒤 흰 작대기 제거. 부스트 효과는 캐릭터 스프라이트가 처리)
   // 부스터 불꽃 제거 — 캐릭터 PNG에 화염 자세가 이미 있음
   // HUD (배경을 더 진하게 → 밝은 배경에서도 글씨 인식 잘 되게)
-  p(4,4,124,18,'rgba(0,0,0,.75)');ctx.fillStyle='#FFD700';ctx.font='bold 10px Galmuri11, monospace';ctx.fillText('📍 '+city.n,8,18);
-  if(S.restT>0){p(4,25,150,16,'rgba(0,0,0,.75)');ctx.fillStyle='#FFD700';ctx.font='8px Galmuri11, monospace';ctx.fillText('💤 휴식 '+S.restT+'s',8,37);}
-  if(S.dopT>0){p(4,25,162,16,'rgba(200,80,0,.82)');ctx.fillStyle='#FFE082';ctx.font='bold 8px Galmuri11, monospace';ctx.fillText('⚡ BOOST '+S.dopT+'s',8,37);}
+  // HUD를 캔버스 상단에 붙임(과거 y=4→화면30, 위 하늘 30px 낭비 → -22 시프트로 상단 여백 제거)
+  p(4,-18,124,18,'rgba(0,0,0,.75)');ctx.fillStyle='#FFD700';ctx.font='bold 10px Galmuri11, monospace';ctx.fillText('📍 '+city.n,8,-4);
+  if(S.restT>0){p(4,3,150,16,'rgba(0,0,0,.75)');ctx.fillStyle='#FFD700';ctx.font='8px Galmuri11, monospace';ctx.fillText('💤 휴식 '+S.restT+'s',8,15);}
+  if(S.dopT>0){p(4,3,162,16,'rgba(200,80,0,.82)');ctx.fillStyle='#FFE082';ctx.font='bold 8px Galmuri11, monospace';ctx.fillText('⚡ BOOST '+S.dopT+'s',8,15);}
   // 7대죄 저주 상태 — 활성 패널티의 남은 시간/조건 표시(언제 끝나는지)
   (function(){
     const now=Date.now(), cur=[];
@@ -147,7 +148,7 @@ function drawScene(){
     if(S.lustUntil>now)  cur.push('💋색욕 -50% '+mmss(S.lustUntil-now));
     if(S.disasterFred){const rem=Math.ceil(1000-(S.totKm-S.disasterFred.kmStart));if(rem>0)cur.push('💸프레드 '+rem+'km');}
     if(S.prideNextCity)  cur.push('🦚교만 다음도시까지');
-    let yy=(S.dopT>0||S.restT>0)?44:25;
+    let yy=(S.dopT>0||S.restT>0)?22:3;
     for(let k=0;k<cur.length;k++){
       const t=cur[k], w=Math.min(210, 16+t.length*7);
       p(4,yy,w,15,'rgba(120,0,40,.82)');
