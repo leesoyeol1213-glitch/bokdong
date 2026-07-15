@@ -10,6 +10,7 @@ function cv2(){return VEHS.find(v=>v.id===S.vId)||VEHS[0];}
 var _rideStartTracked=false;  // 계측: 활성화(첫 라이딩) — 세션당 1회만 기록
 function toggleRide(){
   enforceJapanRule();  // 출발 직전 일본 규칙 강제
+  enforceChinaRule();  // 중국 규칙도 강제
   // 1번: 목적지 없고 한국 일반 도시면 자동 랜덤 목적지 (컨셉: 충동적 세계일주)
   if(!S.dest && S.city!=='달' && !S.trapZone) autoPickNextDestination();
   S.riding=!S.riding;document.getElementById('ride-btn').textContent=S.riding?'■ 정지':'▶ 출발!';
@@ -39,8 +40,26 @@ function enforceJapanRule(){
   }
   return false;
 }
+// 중국 진입 규칙 강제: 중국은 인천 페리(buyChinaFerryFromModal)로만 진입 가능. 일본 규칙의 미러.
+// 단, 정식 페리 탑승(S.onFerryToChina=true)으로 인천→상하이(CHINA_PORT) 가는 중은 예외.
+function enforceChinaRule(){
+  if(S.onFerryToChina && S.dest===CHINA_PORT) return false;
+  const cur = CITIES.find(c=>c.n===S.city);
+  const notInChina = cur && cur.region !== '중국';
+  if(notInChina && S.dest){
+    const destCity = CITIES.find(c=>c.n===S.dest);
+    if(destCity && destCity.region === '중국'){
+      addLog('bad','⚠️ 중국은 인천 페리로만! 잘못된 목적지('+S.dest+') 취소');
+      S.dest = null; S.sgKm = 0;
+      if(!S.riding) autoPickNextDestination();
+      return true;
+    }
+  }
+  return false;
+}
 function tick(){
   enforceJapanRule();  // 매 tick마다 일본 규칙 강제
+  enforceChinaRule();  // 중국 규칙도 강제
   if(S.hp<=0){
     S.riding=false;clearInterval(tickIv);tickIv=null;clearTimeout(npcIv);
     document.getElementById('ride-btn').textContent='▶ 출발!';
@@ -201,6 +220,8 @@ function tick(){
     }
     // 일본 도착 완료 → 페리 플래그 해제 (이후 일본 내 이동은 currentInJapan 로직이 담당)
     if(ci.region==='일본') S.onFerryToJapan = false;
+    // 중국 도착 완료 → 페리 플래그 해제 (이후 중국 내 이동은 currentInChina 로직이 담당)
+    if(ci.region==='중국') S.onFerryToChina = false;
     if(!S.visited.includes(S.city)){
       S.visited.push(S.city);
       // #6 여행 엽서 수집(도시별 1장, 첫 도착 시)
@@ -562,6 +583,34 @@ function showHistModal(ci){
       </div>
       ${canAfford
         ? `<button class="px-btn" style="width:100%;font-size:calc(10px * var(--u));padding:calc(10px * var(--u));background:#0277BD;border-color:#01579B;margin-bottom:6px;box-shadow:calc(3px * var(--u)) calc(3px * var(--u)) 0 #002F5F;color:#FFF;" onclick="buyFerryFromModal(${wr})">⛴️ 구매하시겠습니까? (₩${ferryPrice.toLocaleString()})</button>`
+        : `<div style="font-size:calc(9px * var(--u));color:#B71C1C;background:#FFE0E0;border:2px solid #E53935;border-radius:6px;padding:8px;text-align:center;margin-bottom:6px;line-height:1.8;">자금 부족!<br>보유: ₩${S.money.toLocaleString()} / 필요: ₩${ferryPrice.toLocaleString()}</div>`}
+      <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(9px * var(--u));" onclick="closeModal(${wr})">다음 기회에... ▶</button>
+    </div>`;
+    return;
+    }
+  }
+
+  // 🇨🇳 인천 도착 — 중국행 페리 팝업 (프레스티지 1회차 이상 = 중국 해금 시에만 등장). 일본 페리의 미러.
+  if(ci.special==='ferry_china' && isRegionUnlocked('중국')){
+    if(S.justReturnedFromChina){
+      S.justReturnedFromChina = false;
+      addLog('good','🇰🇷 중국 코스 완주 후 인천 귀국! 잠시 쉬어가자.');
+      // 일반 OX 퀴즈로 fall through
+    } else {
+    const ferryPrice = 300000;
+    const canAfford = S.money >= ferryPrice;
+    const chinaN = CITIES.filter(c=>c.region==='중국').length;
+    document.getElementById('modal-area').innerHTML=`
+    <div class="px-panel" style="border-color:#C62828;background:linear-gradient(135deg,#FFEBEE,#FFF8E1);margin-bottom:5px;box-shadow:0 0 calc(12px * var(--u)) #EF5350;">
+      <div style="font-size:calc(11px * var(--u));color:#B71C1C;text-align:center;margin-bottom:6px;">⛴️ 인천항 도착!</div>
+      <div style="font-size:calc(8px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid #C62828;border-radius:5px;padding:6px;margin-bottom:8px;line-height:2;">📜 ${ci.hist}</div>
+      <div style="font-size:calc(9px * var(--u));color:#B71C1C;background:linear-gradient(135deg,#FFEBEE,#FFCDD2);border:3px dashed #C62828;border-radius:8px;padding:10px;margin-bottom:8px;text-align:center;line-height:2;">
+        🇨🇳 <b>중국행 페리 출항 가능!</b><br>
+        <span style="font-size:calc(10px * var(--u));color:#B71C1C;">₩${ferryPrice.toLocaleString()}</span><br>
+        <span style="font-size:calc(7px * var(--u));color:#8B6340;line-height:1.6;">⛴️ 인천 ↔ ${CHINA_PORT} 페리<br>🏮 ${chinaN}개 중국 도시 탐험 가능<br>🛒 인천에서만 구매 가능!</span>
+      </div>
+      ${canAfford
+        ? `<button class="px-btn" style="width:100%;font-size:calc(10px * var(--u));padding:calc(10px * var(--u));background:#C62828;border-color:#8E0000;margin-bottom:6px;box-shadow:calc(3px * var(--u)) calc(3px * var(--u)) 0 #5E0000;color:#FFF;" onclick="buyChinaFerryFromModal(${wr})">⛴️ 구매하시겠습니까? (₩${ferryPrice.toLocaleString()})</button>`
         : `<div style="font-size:calc(9px * var(--u));color:#B71C1C;background:#FFE0E0;border:2px solid #E53935;border-radius:6px;padding:8px;text-align:center;margin-bottom:6px;line-height:1.8;">자금 부족!<br>보유: ₩${S.money.toLocaleString()} / 필요: ₩${ferryPrice.toLocaleString()}</div>`}
       <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(9px * var(--u));" onclick="closeModal(${wr})">다음 기회에... ▶</button>
     </div>`;
@@ -1211,30 +1260,36 @@ function autoPickNextDestination(){
   if(S.trapZone) return;
   // 후보: 현재 도시 제외, 달 제외, 진천 제외(특수)
   const isJapan = c => c.region==='일본';
-  const currentInJapan = isJapan(CITIES.find(c=>c.n===S.city)||{});
+  const isChina = c => c.region==='중국';
+  const cur = CITIES.find(c=>c.n===S.city)||{};
+  const currentInJapan = isJapan(cur);
+  const currentInChina = isChina(cur);
   let others=CITIES.filter(c=>c.n!==S.city && c.n!=='달' && c.n!=='진천' && isRegionUnlocked(c.region));
   if(currentInJapan){
     // 3번 fix: 일본 5개 도시 모두 방문해야 부산으로 귀국 가능 (코스 완주 룰)
     const japanCities = CITIES.filter(c=>isJapan(c)).map(c=>c.n);
-    const visitedJapan = japanCities.filter(c=>S.visited.includes(c));
-    const allJapanDone = visitedJapan.length >= japanCities.length;
+    const allJapanDone = japanCities.filter(c=>S.visited.includes(c)).length >= japanCities.length;
     if(allJapanDone){
-      // 모든 일본 도시 방문 완료 → 부산으로 귀국 강제
       others = [CITIES.find(c=>c.n==='부산')];
       S.justReturnedFromJapan = true;  // 3번 fix: 페리 쿨다운 플래그
     } else {
-      // 아직 일본 코스 미완 → 미방문 일본 도시만 후보
       const unvisited = others.filter(c=>isJapan(c) && !S.visited.includes(c.n));
-      if(unvisited.length > 0){
-        others = unvisited;
-      } else {
-        // 전부 방문했으면 부산
-        others = [CITIES.find(c=>c.n==='부산')];
-      }
+      others = unvisited.length > 0 ? unvisited : [CITIES.find(c=>c.n==='부산')];
+    }
+  } else if(currentInChina){
+    // 중국 도시 모두 방문해야 인천으로 귀국 (일본 코스의 미러)
+    const chinaCities = CITIES.filter(c=>isChina(c)).map(c=>c.n);
+    const allChinaDone = chinaCities.filter(c=>S.visited.includes(c)).length >= chinaCities.length;
+    if(allChinaDone){
+      others = [CITIES.find(c=>c.n==='인천')];
+      S.justReturnedFromChina = true;  // 페리 쿨다운 플래그
+    } else {
+      const unvisited = others.filter(c=>isChina(c) && !S.visited.includes(c.n));
+      others = unvisited.length > 0 ? unvisited : [CITIES.find(c=>c.n==='인천')];
     }
   } else {
-    // 한국에 있으면 한국 도시만. 일본 진입은 부산 도착 시 페리 팝업으로만 가능
-    others = others.filter(c=>!isJapan(c));
+    // 한국: 한국 도시만. 일본은 부산 페리, 중국은 인천 페리로만 진입.
+    others = others.filter(c=>!isJapan(c) && !isChina(c));
   }
   if(!others.length) return;
   const pick=others[Math.floor(Math.random()*others.length)];
@@ -1246,6 +1301,10 @@ function autoPickNextDestination(){
     addLog('good','⛴️ 일본 코스 완주! 부산으로 귀국! ('+S.sgTot+'km)');
   } else if(currentInJapan){
     addLog('neutral','🚴 일본 코스 진행 중... '+S.city+'→'+pick.n+' ('+S.sgTot+'km)');
+  } else if(currentInChina && pick.n==='인천'){
+    addLog('good','⛴️ 중국 코스 완주! 인천으로 귀국! ('+S.sgTot+'km)');
+  } else if(currentInChina){
+    addLog('neutral','🚴 중국 코스 진행 중... '+S.city+'→'+pick.n+' ('+S.sgTot+'km)');
   } else {
     addLog('neutral','🎲 충동! '+S.city+'→'+pick.n+' ('+S.sgTot+'km)');
   }
@@ -2693,6 +2752,13 @@ function doLoad(parsedD){
         }
         // 페리 플래그 정리: 한국에 있으면서 후쿠오카행이 아니면 플래그 해제
         if(!_isJapanCity(S.city) && S.dest!=='후쿠오카') S.onFerryToJapan = false;
+        // 중국도 동일: 중국 밖인데 중국이 목적지면 초기화(페리로만 진입). 기존 자유풀 세이브 자동 복구.
+        const _isChinaCity = n => CITIES.some(c=>c.n===n && c.region==='중국');
+        if(S.dest && _isChinaCity(S.dest) && !_isChinaCity(S.city)){
+          addLog('bad','⚠️ 저장된 목적지('+S.dest+') 초기화 — 중국은 인천 페리로만!');
+          S.dest = null; S.sgKm = 0;
+        }
+        if(!_isChinaCity(S.city) && S.dest!==CHINA_PORT) S.onFerryToChina = false;
         // 충주에 있는데 아무 목적지도 없으면 정상 (toggleRide 시 자동 설정됨)
         logs=d.log||[];document.getElementById('ride-btn').textContent='▶ 출발!';
         if(d.lpt)applyOfflineReward(d.lpt, !!(d.S && d.S.riding));
@@ -2718,6 +2784,29 @@ function buyFerryFromModal(wr){
   S.sgKm = 0;
   S.sgTot = getCityDist('부산', '후쿠오카');
   // 모달 닫고 자동 라이딩 시작
+  document.getElementById('modal-area').innerHTML='';
+  if(wr || !S.riding){
+    S.riding = true;
+    document.getElementById('ride-btn').textContent = '■ 정지';
+    if(!tickIv){tickIv=setInterval(tick,1000);startNpcTimer();}
+  }
+  update();
+}
+
+// 🇨🇳 중국 페리 구매 함수 (일본 페리의 미러) — 인천→상하이(CHINA_PORT) 출항
+function buyChinaFerryFromModal(wr){
+  const price = 300000;
+  if(S.money < price){addLog('bad','자금 부족!');return;}
+  S.money -= price;
+  // 페리 탈 때마다 중국 도시 visited 리셋 — 매번 코스 새로 진행
+  const chinaCities = CITIES.filter(c=>c.region==='중국').map(c=>c.n);
+  S.visited = (S.visited||[]).filter(c => !chinaCities.includes(c));
+  addLog('good','⛴️ 중국행 페리 구매! '+CHINA_PORT+'로 출항! 중국 코스 '+chinaCities.length+'개 도시 시작!');
+  playSfx('arrive');
+  S.onFerryToChina = true;   // 정식 페리 탑승 — enforceChinaRule 예외 허용
+  S.dest = CHINA_PORT;
+  S.sgKm = 0;
+  S.sgTot = getCityDist('인천', CHINA_PORT);
   document.getElementById('modal-area').innerHTML='';
   if(wr || !S.riding){
     S.riding = true;

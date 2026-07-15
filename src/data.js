@@ -16,7 +16,7 @@ const CITIES=[
   {n:'목포',   region:'전라',bg:'coast',     hist:'유달산 — 임진왜란 이순신 주둔지'},
   {n:'군산',   region:'전라',bg:'city',      hist:'근대역사박물관 — 일제강점기 수탈 역사'},
   {n:'태안',   region:'충청',bg:'coast',     hist:'백화산성 — 백제시대 산성 유적'},
-  {n:'인천',   region:'경기',bg:'city',      hist:'자유공원 — 인천상륙작전, 맥아더 동상'},
+  {n:'인천',   region:'경기',bg:'city',      hist:'자유공원 — 인천상륙작전, 맥아더 동상. 인천항에서 중국행 페리가 출항한다.', special:'ferry_china'},
   {n:'서울',   region:'경기',bg:'city',      hist:'경복궁 — 조선왕조 정궁, 500년 역사'},
   {n:'나로호발사센터',region:'전라',bg:'coast',hist:'나로우주센터 — 대한민국 최초 우주발사체 나로호 발사 기지. 임복동1호의 꿈이 시작되는 곳!', special:'rocket'},
   {n:'달',region:'우주',bg:'space',hist:'🌕 히든스페이스! 달에 도착했다!! 절구질하는 토끼가 반긴다. 200km를 달리면 충주로 귀환한다.', special:'moon'},
@@ -774,9 +774,12 @@ const CITY_DIST={
 function getCityDist(a,b){
   const explicit = CITY_DIST[a+'-'+b]||CITY_DIST[b+'-'+a];
   if(explicit) return explicit;
-  // 중국은 바다 건너 먼 대륙 — 더 긴 여정(300~600km)으로 순환 길이 확장(테스터 "1회 순환 짧다" 대응)
-  const isFar = c => (CITIES.find(x=>x.n===c)||{}).region==='중국';
-  return (isFar(a)||isFar(b)) ? Math.floor(300+Math.random()*300) : Math.floor(80+Math.random()*180);
+  // 중국: 인천↔중국 바다 건너는 먼 여정(300~600), 중국 내 이동은 중거리(150~350). 순환 길이 확장.
+  const isCN = c => (CITIES.find(x=>x.n===c)||{}).region==='중국';
+  const aC=isCN(a), bC=isCN(b);
+  if(aC && bC) return Math.floor(150+Math.random()*200);
+  if(aC || bC) return Math.floor(300+Math.random()*300);
+  return Math.floor(80+Math.random()*180);
 }
 
 // 3번: 로켓 발사 함수
@@ -808,6 +811,7 @@ function setVehOwned(id,val){const v=S.vehs.find(v=>v.id===id);if(v)v.owned=val;
 // 🌏 세계 지역 해금 — 프레스티지 회차마다 새 대륙(매 회차 신규맵). key=도시 region 값.
 // 국내 각 도(道)·일본·우주·함정은 0(기본 해금). 미래 대륙은 회차 게이트.
 var REGION_UNLOCK = { '중국':1, '동남아':2, '유럽':3, '아메리카':4, '아프리카':5, '오세아니아':6 };
+var CHINA_PORT = '상하이';  // 인천 페리로 도착하는 중국 관문(항구도시). 일본의 후쿠오카에 해당.
 function regionUnlockLevel(region){ return REGION_UNLOCK[region] || 0; }
 function isRegionUnlocked(region){ return (typeof S!=='undefined' ? (S.prestige||0) : 0) >= regionUnlockLevel(region); }
 // 세계지도 표시용 대륙 목록(현재/미래). soon=콘텐츠 준비중.
