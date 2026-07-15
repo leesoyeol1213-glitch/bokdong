@@ -138,7 +138,7 @@ function tick(){
       playSfx('levelup');
     }
   });
-  const speedHpDrain = 0.30 * (v.sp / 6);
+  const speedHpDrain = 0.175 * v.sp; // 신 sp 스케일(km/h) 대응 — 과거 0.05*구sp와 동일 소모(HP/km ≈ 1.54 보존)
   const boostDrain = S.dopT > 0 ? 0.4 : 0;
   // 분노 시 체력 소모 ↑ (속도 +50%만큼 추가 소모)
   const wrathDrain = (S.wrathUntil && Date.now() < S.wrathUntil) ? 0.5 : 0;
@@ -467,7 +467,7 @@ function applyOfflineReward(lastTime, wasRiding){
   window._offlineSim=true;
   const v=cv2();
   const kmPerSec=v.sp*0.05*prestigeMult()*SPEED_SCALE; // 프레스티지 배수 + 전역 속도배율(온라인과 일치)
-  const drainPerSec=Math.max(0.05, 0.05*v.sp); // tick과 동일한 ≈1HP/km
+  const drainPerSec=Math.max(0.05, 0.175*v.sp); // tick과 동일한 소모(신 sp 스케일)
   let hp=S.hp, dist=0, moneyGain=0, xpGain=0, applesUsed=0, levelsUp=0, stoppedNoApple=false, arrivedCount=0;
   const arrived=[];
   let t=0;
@@ -2834,6 +2834,26 @@ function savePostcardImage(i){
 
 // ── 프레스티지(2회차 세계일주) — 콘텐츠 소진 해결. 진행 리셋 + 영구 배수 ──
 function prestigeMult(){ return 1 + 0.25*(S.prestige||0); } // 속도·수입 +25%/회차
+// 실효 속도 계산(기본 + ⚡부스터·🎁장비·🌏프레스티지·😡7대죄·☁️날씨) — 스탯/메인 공용
+function effSpeed(){
+  const v=cv2(), now=Date.now();
+  const base=v.sp;
+  const eqSp=(getEquippedBonus().speedBonus)||0;
+  const boostSp=S.dopT>0?(S.dopSp||0):0;
+  let sinM=1; if(S.wrathUntil>now)sinM*=1.5; if(S.lustUntil>now)sinM*=0.5;
+  const pM=prestigeMult();
+  const w=WEATHER_TYPES.find(x=>x.key===(S.weather&&S.weather.key))||WEATHER_TYPES[0];
+  const wM=(w.mod&&w.mod.speedMult)||1;
+  const eff=Math.round((base+boostSp+eqSp)*sinM*pM*wM);
+  const parts=['기본 '+base];
+  if(boostSp>0)parts.push('⚡부스터 +'+boostSp);
+  if(eqSp>0)parts.push('🎁장비 +'+eqSp);
+  if(pM>1)parts.push('🌏프레스티지 ×'+pM.toFixed(2));
+  if(sinM>1)parts.push('😡분노 ×1.5');
+  if(sinM<1)parts.push('💋색욕 ×0.5');
+  if(wM!==1)parts.push('☁️날씨 ×'+wM.toFixed(2));
+  return {base, eff, add:eff-base, boostSp, eqSp, sinM, pM, wM, parts};
+}
 // 🌏 세계지도 — 대륙별 해금 현황(프레스티지 회차마다 새 대륙). 콘텐츠 준비 전엔 '준비중'.
 function showWorldMap(){
   if(modalOpen()){showSt('진행 중인 선택을 먼저 마쳐주세요');return;}
@@ -3156,7 +3176,7 @@ function renderVehs(){
           <canvas id="${canvasId}" width="80" height="50" class="veh-canvas"></canvas>
           <div style="flex:1;">
             <div style="font-size:calc(9px * var(--u));color:#3D2510;">${v.n}${owned&&!cur&&v.cat!=='rocket'?' <span style="font-size:calc(9px * var(--u));color:#1976D2;">[보유]</span>':''}</div>
-            <div style="font-size:calc(9px * var(--u));color:#8B6340;margin-top:2px;">🏎️ ${v.sp}km/h &nbsp; ❤️+${v.hb} &nbsp; <span style="color:#B71C1C;">💔${(0.30 * (v.sp/6)).toFixed(2)}/s</span></div>
+            <div style="font-size:calc(9px * var(--u));color:#8B6340;margin-top:2px;">🏎️ ${v.sp}km/h &nbsp; ❤️+${v.hb} &nbsp; <span style="color:#B71C1C;">💔${(0.175 * v.sp).toFixed(2)}/s</span></div>
             ${rocketNote}
             ${locked?`<div style="font-size:calc(9px * var(--u));color:#8B6340;">🔒 ${v.km.toLocaleString()}km 필요</div>`:''}
           </div>
@@ -3342,23 +3362,9 @@ function renderStat(){
     </div>
 
     ${(()=>{
-      const now=Date.now();
-      const eqSp=(getEquippedBonus().speedBonus)||0;
-      const boostSp=S.dopT>0?(S.dopSp||0):0;
-      let sinM=1; if(S.wrathUntil>now)sinM*=1.5; if(S.lustUntil>now)sinM*=0.5;
-      const pM=prestigeMult();
-      const w=WEATHER_TYPES.find(x=>x.key===(S.weather&&S.weather.key))||WEATHER_TYPES[0];
-      const wM=(w.mod&&w.mod.speedMult)||1;
-      const eff=Math.round((v.sp+boostSp+eqSp)*sinM*pM*wM);
-      const parts=['기본 '+v.sp];
-      if(boostSp>0)parts.push('⚡부스터 +'+boostSp);
-      if(eqSp>0)parts.push('🎁장비 +'+eqSp);
-      if(pM>1)parts.push('🌏프레스티지 ×'+pM.toFixed(2));
-      if(sinM>1)parts.push('😡분노 ×1.5');
-      if(sinM<1)parts.push('💋색욕 ×0.5');
-      if(wM!==1)parts.push('☁️날씨 ×'+wM.toFixed(2));
-      const col=eff>v.sp?'#1B5E20':(eff<v.sp?'#B71C1C':'#3D2510');
-      return `<div class="stat-row"><div><div style="${fs(6)};color:#8B6340;">🏎️ 속도 <span style="${fs(4)};color:#AAA;">(실효)</span></div><div style="${fs(5)};color:#AAAAAA;margin-top:2px;">${parts.join(' · ')}</div></div><div style="${fs(6)};color:${col};font-weight:bold;">${eff} km/h</div></div>`;
+      const e=effSpeed();
+      const col=e.eff>e.base?'#1B5E20':(e.eff<e.base?'#B71C1C':'#3D2510');
+      return `<div class="stat-row"><div><div style="${fs(6)};color:#8B6340;">🏎️ 속도 <span style="${fs(4)};color:#AAA;">(실효)</span></div><div style="${fs(5)};color:#AAAAAA;margin-top:2px;">${e.parts.join(' · ')}</div></div><div style="${fs(6)};color:${col};font-weight:bold;">${e.eff} km/h</div></div>`;
     })()}
 
     <div class="stat-row">
@@ -3512,7 +3518,7 @@ function update(){
   document.getElementById('hp-v').textContent=Math.round(S.hp)+'/'+S.mhp;document.getElementById('hp-b').style.width=Math.round(S.hp/S.mhp*100)+'%';
   document.getElementById('xp-v').textContent=Math.round(S.xp)+'/'+S.xpMax;document.getElementById('xp-b').style.width=Math.round(S.xp/S.xpMax*100)+'%';
   document.getElementById('dop-v').textContent=S.dopT>0?S.dopT+'s':'OFF';document.getElementById('dop-b').style.width=Math.round(S.dopT/40*100)+'%';
-  if(S.dest){const pct=Math.min(100,Math.round(S.sgKm/S.sgTot*100));document.getElementById('seg-lbl').textContent=S.city+'→'+S.dest;document.getElementById('seg-info').textContent=Math.round(S.sgKm)+'/'+S.sgTot+'km · '+v.sp+'km/h';document.getElementById('seg-pct').textContent=pct+'%';document.getElementById('seg-b').style.width=pct+'%';}
+  if(S.dest){const pct=Math.min(100,Math.round(S.sgKm/S.sgTot*100));const _e=effSpeed();const _spd='🏎️'+_e.eff+'km/h'+(_e.add>0?' (+'+_e.add+')':(_e.add<0?' ('+_e.add+')':''));document.getElementById('seg-lbl').textContent=S.city+'→'+S.dest;document.getElementById('seg-info').textContent=Math.round(S.sgKm)+'/'+S.sgTot+'km · '+_spd;document.getElementById('seg-pct').textContent=pct+'%';document.getElementById('seg-b').style.width=pct+'%';}
   else if(S.city==='달'){const pct=Math.min(100,Math.round((S.moonKm||0)/200*100));document.getElementById('seg-lbl').textContent='🌕 달 라이딩 (귀환까지)';document.getElementById('seg-info').textContent=Math.round(S.moonKm||0)+'/200km · 우주 컨셉 이벤트';document.getElementById('seg-pct').textContent=pct+'%';document.getElementById('seg-b').style.width=pct+'%';}
   else{document.getElementById('seg-lbl').textContent='목적지 없음';document.getElementById('seg-info').textContent='충동적으로 어딜 갈까...';document.getElementById('seg-pct').textContent='';document.getElementById('seg-b').style.width='0%';}
   // 2번: 누적 거리

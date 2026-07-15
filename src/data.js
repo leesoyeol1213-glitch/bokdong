@@ -44,23 +44,23 @@ const CITIES=[
 // ── 탈것 (v4.1 확장: 자전거→킥보드→오토바이→닌자→하야부사→차량 라인) ──
 const VEHS=[
   // 자전거 15단계 업그레이드 트리 (전부 cat:'bike')
-  {id:'v1',  n:'세발자전거',           cat:'bike', sp:6,   hb:0,  km:0,      cost:0,         owned:true},
-  {id:'v2',  n:'보조바퀴 자전거',       cat:'bike', sp:11,  hb:3,  km:80,     cost:25000,     owned:false},
-  {id:'v3',  n:'아동용 두발자전거',     cat:'bike', sp:17,  hb:6,  km:300,    cost:70000,     owned:false},
-  {id:'v4',  n:'어린이 BMX',           cat:'bike', sp:24,  hb:9,  km:700,    cost:150000,    owned:false},
-  {id:'v5',  n:'하이브리드 자전거',     cat:'bike', sp:32,  hb:12, km:1500,   cost:300000,    owned:false},
-  {id:'v6',  n:'크로스바이크',         cat:'bike', sp:42,  hb:16, km:2800,   cost:550000,    owned:false},
-  {id:'v7',  n:'그래블 바이크',         cat:'bike', sp:54,  hb:20, km:5000,   cost:950000,    owned:false},
-  {id:'v8',  n:'카본 로드바이크',       cat:'bike', sp:68,  hb:24, km:8500,   cost:1600000,   owned:false},
-  {id:'v9',  n:'에어로 로드바이크',     cat:'bike', sp:84,  hb:28, km:14000,  cost:2800000,   owned:false},
-  {id:'v10', n:'경량 클라이밍 로드',    cat:'bike', sp:102, hb:32, km:22000,  cost:4800000,   owned:false},
-  {id:'v11', n:'카본 픽시',            cat:'bike', sp:122, hb:36, km:33000,  cost:8500000,   owned:false},
-  {id:'v12', n:'프로급 에어로 로드',    cat:'bike', sp:150, hb:42, km:50000,  cost:16000000,  owned:false},
-  {id:'v13', n:'커스텀 핸드메이드',     cat:'bike', sp:185, hb:48, km:80000,  cost:32000000,  owned:false},
-  {id:'v14', n:'임복동의 황금로드',     cat:'bike', sp:250, hb:56, km:140000, cost:75000000,  owned:false},
-  {id:'v15', n:'임복동 전설의 서퍼티지',cat:'bike', sp:350, hb:64, km:250000, cost:200000000, owned:false},
+  {id:'v1',  n:'세발자전거',           cat:'bike', sp:2,   hb:0,  km:0,      cost:0,         owned:true},
+  {id:'v2',  n:'보조바퀴 자전거',       cat:'bike', sp:3,  hb:3,  km:80,     cost:25000,     owned:false},
+  {id:'v3',  n:'아동용 두발자전거',     cat:'bike', sp:5,  hb:6,  km:300,    cost:70000,     owned:false},
+  {id:'v4',  n:'어린이 BMX',           cat:'bike', sp:7,  hb:9,  km:700,    cost:150000,    owned:false},
+  {id:'v5',  n:'하이브리드 자전거',     cat:'bike', sp:9,  hb:12, km:1500,   cost:300000,    owned:false},
+  {id:'v6',  n:'크로스바이크',         cat:'bike', sp:12,  hb:16, km:2800,   cost:550000,    owned:false},
+  {id:'v7',  n:'그래블 바이크',         cat:'bike', sp:15,  hb:20, km:5000,   cost:950000,    owned:false},
+  {id:'v8',  n:'카본 로드바이크',       cat:'bike', sp:19,  hb:24, km:8500,   cost:1600000,   owned:false},
+  {id:'v9',  n:'에어로 로드바이크',     cat:'bike', sp:24,  hb:28, km:14000,  cost:2800000,   owned:false},
+  {id:'v10', n:'경량 클라이밍 로드',    cat:'bike', sp:29, hb:32, km:22000,  cost:4800000,   owned:false},
+  {id:'v11', n:'카본 픽시',            cat:'bike', sp:35, hb:36, km:33000,  cost:8500000,   owned:false},
+  {id:'v12', n:'프로급 에어로 로드',    cat:'bike', sp:43, hb:42, km:50000,  cost:16000000,  owned:false},
+  {id:'v13', n:'커스텀 핸드메이드',     cat:'bike', sp:53, hb:48, km:80000,  cost:32000000,  owned:false},
+  {id:'v14', n:'임복동의 황금로드',     cat:'bike', sp:71, hb:56, km:140000, cost:75000000,  owned:false},
+  {id:'v15', n:'임복동 전설의 서퍼티지',cat:'bike', sp:100, hb:64, km:250000, cost:200000000, owned:false},
   // 1회용 특수 (나로호발사센터 전용)
-  {id:'rocket', n:'임복동1호 🚀', cat:'rocket',sp:500, hb:0,  km:0,     cost:80000,    owned:false, oneshot:true},
+  {id:'rocket', n:'임복동1호 🚀', cat:'rocket',sp:143, hb:0,  km:0,     cost:80000,    owned:false, oneshot:true},
 ];
 
 // NPC 등급 시스템: normal(일반) / rare(레어) / unique(유니크) / legend(전설) / epic(에픽) / god(신) / disaster(재앙)
@@ -803,6 +803,9 @@ var WORLD_MAP = [
 ];
 
 // 전역 속도 배율 — 이동거리·애니메이션 모두에 곱해 일관되게 느리게/빠르게. 1=원래, 0.65=35% 느리게. ★조정 지점★
-var SPEED_SCALE = 0.65;
-function animSpeedMult(){return Math.max(0.5,cv2().sp/26) * SPEED_SCALE;}
+// 실 km/h 스케일(서퍼티지 v15=100km/h) 재조정에 맞춘 이동 보정 배율.
+// 과거 sp(6~350)·SPEED_SCALE 0.65 → 신 sp(2~100)로 3.5배 축소하며 SPEED_SCALE ×3.5 보정 → 실제 이동/HP소모 체감 보존.
+var SPEED_SCALE = 2.275;
+// 애니메이션 속도는 이동 SPEED_SCALE와 분리(자체 상수). 신 sp 스케일에 맞춰 divisor 26→7.4, 상수 0.65 고정 → 과거 시각 속도 정확히 보존.
+function animSpeedMult(){return Math.max(0.5,cv2().sp/7.4) * 0.65;}
 
