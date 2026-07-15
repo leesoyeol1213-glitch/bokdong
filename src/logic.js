@@ -644,7 +644,7 @@ function showHistModal(ci){
 
   // 4번: 달 특별 도착 화면
   if(ci.special==='moon'){
-    S.moonRpsDone=false;   // 달 방문 시작 → 가위바위보 1회 게이트 리셋
+    S.moonRpsWon=false; S.moonRpsTries=0;   // 달 방문 시작 → 가위바위보 게이트 리셋(승리 전까지 최대 MOON_RPS_MAX판 재도전)
     document.getElementById('modal-area').innerHTML=`
     <div class="px-panel" style="border-color:#FFD700;background:linear-gradient(135deg,#0A0A2E,#1A1A4E);margin-bottom:5px;">
       <div style="font-size:calc(11px * var(--u));color:#FFD700;text-align:center;margin-bottom:8px;">🌕 달 도착!!</div>
@@ -1126,16 +1126,16 @@ function openFood(){
   const food=FOODS.find(f=>f.c===S.city);
   if(!food){ if(!modalOpen())addLog('neutral','등록된 맛집 없음'); return; }
   ensureMissions();  // 자정 지났으면 오늘 방문 기록(foodToday) 리셋
-  // 달토끼 가위바위보: 방문당 1회(달 도착 시 리셋). 일반 맛집: 하루 1회(자정 리셋).
+  // 달토끼 가위바위보: 방문당 승리 1회 또는 최대 MOON_RPS_MAX판(패배 시 재도전). 일반 맛집: 하루 1회(자정 리셋).
   if(S.city==='달'){
-    if(S.moonRpsDone){ if(!modalOpen())addLog('neutral','🐰 이번 방문엔 이미 놀았어요! (다음에 또 와요)'); return; }
+    if(S.moonRpsWon){ if(!modalOpen())addLog('neutral','🐰 이미 떡을 받았어요! (다음에 또 와요)'); return; }
+    if((S.moonRpsTries||0) >= MOON_RPS_MAX){ if(!modalOpen())addLog('neutral','🐰 오늘은 여기까지! 다음 방문에 또 도전해요'); return; }
   } else if((S.foodToday||[]).includes(S.city)){ if(!modalOpen())addLog('neutral','오늘 이미 방문! (자정에 초기화돼요)'); return; }
   // 특수 이벤트 모달이 열린 채 맛집을 누르면, 맛집이 끝난 뒤 그 이벤트를 다시 띄운다(이벤트 손실 방지)
   const ci=CITIES.find(c=>c.n===S.city);
   if(modalOpen() && ci && ci.special && !['moon','trap_shinhan','trap_cheonghak'].includes(ci.special)){
     pendingSpecial = ci;
   }
-  if(S.city==='달') S.moonRpsDone=true;   // 열면 이번 방문 소진(무제한 반복 방지)
   const wr=S.riding;if(S.riding){S.riding=false;isResting=false;clearInterval(tickIv);tickIv=null;}
   if(food.type==='timing')showTimingGame(food,wr);
   else if(food.type==='rps')showRpsGame(food,wr);
@@ -1192,13 +1192,40 @@ function doRps(myPick){
   // 2선승 결과 처리
   if(rpsState.my>=2 || rpsState.op>=2){
     rpsState.finished = true;
+    const won = rpsState.my>=2;
+    const food = rpsState.food, wr = rpsState.wr;
     setTimeout(()=>{
-      if(rpsState.my>=2) foodOk(rpsState.food, rpsState.wr, isMoon?2000:1500);
-      else foodFail(rpsState.food, rpsState.wr);
       rpsState=null;
+      if(won){
+        if(isMoon) S.moonRpsWon = true;   // 달: 승리 시 이번 방문 종료(떡 획득)
+        foodOk(food, wr, isMoon?2000:1500);
+        return;
+      }
+      // 패배 — 달은 제한적 재도전 제공(무제한 아님), 그 외(나로호)는 기존대로 종료
+      if(isMoon){
+        S.moonRpsTries = (S.moonRpsTries||0) + 1;
+        const remaining = MOON_RPS_MAX - S.moonRpsTries;
+        if(remaining > 0){ showRpsRetry(food, wr, remaining); return; }
+      }
+      foodFail(food, wr);
     }, 900);
   }
 }
+const MOON_RPS_MAX = 3;   // 달 가위바위보: 방문당 최대 시도 판수(승리 전까지). 무제한 방지.
+// 달 가위바위보 패배 시 재도전 안내(남은 기회 표시). 재도전=다시 3판 2선승, 포기=그냥 종료.
+var rpsRetryCtx = null;
+function showRpsRetry(food, wr, remaining){
+  rpsRetryCtx = {food, wr};
+  document.getElementById('modal-area').innerHTML = `
+  <div class="px-panel" style="background:linear-gradient(135deg,#FFE0F0,#FFF8DC);border-color:#FFB6C1;margin-bottom:5px;text-align:center;">
+    <div style="font-size:calc(11px * var(--u));color:#B71C1C;margin-bottom:6px;">😢 아쉽게 졌어요!</div>
+    <div style="font-size:calc(9px * var(--u));color:#5C3D1E;margin-bottom:10px;line-height:1.8;">🐰 달토끼 사장 — "한 번 더 해볼래?"<br><span style="color:#8B6340;font-size:calc(8px * var(--u));">남은 재도전 기회 <b>${remaining}</b>번</span></div>
+    <button class="px-btn px-btn-green" style="width:100%;font-size:calc(9px * var(--u));padding:calc(10px * var(--u));margin-bottom:6px;" onclick="rpsRetryGo()">🔄 재도전!</button>
+    <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(9px * var(--u));" onclick="rpsGiveUp()">포기하고 계속 ▶</button>
+  </div>`;
+}
+function rpsRetryGo(){ if(!rpsRetryCtx)return; const c=rpsRetryCtx; rpsRetryCtx=null; showRpsGame(c.food, c.wr); }
+function rpsGiveUp(){ if(!rpsRetryCtx)return; const c=rpsRetryCtx; rpsRetryCtx=null; foodFail(c.food, c.wr); }
 function showTimingGame(food,wr){
   let pos=0,dir=1,spd=2.8,running=true,iv;
   document.getElementById('modal-area').innerHTML=`<div class="px-panel" style="margin-bottom:5px;"><div style="text-align:center;font-size:calc(9px * var(--u));margin-bottom:4px;">${food.e}</div><div style="font-size:calc(9px * var(--u));color:#3D2510;text-align:center;margin-bottom:2px;">${food.n}</div><div style="font-size:calc(9px * var(--u));color:#8B6340;text-align:center;margin-bottom:9px;">초록 구간에서 클릭!</div><div style="position:relative;background:#5C3D1E;border:3px solid #3D2510;border-radius:3px;height:20px;margin-bottom:11px;overflow:hidden;"><div style="position:absolute;top:3px;bottom:3px;left:38%;width:24%;background:#4CAF50;border-radius:2px;"></div><div id="t-ind" style="position:absolute;top:2px;bottom:2px;width:14px;background:#E53935;border-radius:2px;left:0%;transition:none;"></div></div><button class="px-btn px-btn-blue" style="width:100%;font-size:calc(9px * var(--u));padding:12px;" onclick="doTiming()">지금!</button></div>`;
