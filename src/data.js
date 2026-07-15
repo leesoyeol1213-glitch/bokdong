@@ -16,7 +16,7 @@ const CITIES=[
   {n:'목포',   region:'전라',bg:'coast',     hist:'유달산 — 임진왜란 이순신 주둔지'},
   {n:'군산',   region:'전라',bg:'city',      hist:'근대역사박물관 — 일제강점기 수탈 역사'},
   {n:'태안',   region:'충청',bg:'coast',     hist:'백화산성 — 백제시대 산성 유적'},
-  {n:'인천',   region:'경기',bg:'city',      hist:'자유공원 — 인천상륙작전, 맥아더 동상. 인천항에서 중국행 페리가 출항한다.', special:'ferry_china'},
+  {n:'인천',   region:'경기',bg:'city',      hist:'자유공원 — 인천상륙작전, 맥아더 동상. 인천항에서 중국행 페리가 출항한다.'},
   {n:'서울',   region:'경기',bg:'city',      hist:'경복궁 — 조선왕조 정궁, 500년 역사'},
   {n:'나로호발사센터',region:'전라',bg:'coast',hist:'나로우주센터 — 대한민국 최초 우주발사체 나로호 발사 기지. 임복동1호의 꿈이 시작되는 곳!', special:'rocket'},
   {n:'달',region:'우주',bg:'space',hist:'🌕 히든스페이스! 달에 도착했다!! 절구질하는 토끼가 반긴다. 200km를 달리면 충주로 귀환한다.', special:'moon'},
@@ -50,6 +50,14 @@ const CITIES=[
   {n:'구이린',  region:'중국',bg:'coast',     hist:'🇨🇳 구이린! "계림산수 갑천하". 이강을 따라 카르스트 봉우리가 수묵화처럼 솟아 있다.'},
   {n:'홍콩',    region:'중국',bg:'city',      hist:'🇨🇳 홍콩! 빅토리아 피크의 백만불 야경. 이층 트램과 딤섬, 마천루의 불빛이 항구를 채운다.'},
   {n:'하얼빈',  region:'중국',bg:'snow',      hist:'🇨🇳 하얼빈! 얼음과 눈의 도시. 세계 최대 빙설제, 얼음궁전이 밤을 환히 밝힌다.'},
+  // 🌴 동남아 — 2회차 프레스티지 해금(제주 페리). 세계일주 두 번째 대륙.
+  {n:'싱가포르',region:'동남아',bg:'city',    hist:'🌴 싱가포르! 마리나베이 샌즈와 머라이언, 가든스 바이 더 베이의 슈퍼트리가 빛난다.'},
+  {n:'방콕',    region:'동남아',bg:'city',    hist:'🌴 방콕! 왓 아룬 사원과 수상시장, 툭툭이 골목을 누비고 팟타이 향이 퍼진다.'},
+  {n:'하롱베이',region:'동남아',bg:'coast',   hist:'🌴 하롱베이! 에메랄드 바다 위로 수천 개 석회암 봉우리가 솟은 베트남의 절경.'},
+  {n:'발리',    region:'동남아',bg:'coast',   hist:'🌴 발리! 계단식 논과 힌두 사원, 야자수 해변. 신들의 섬이 반겨준다.'},
+  {n:'앙코르와트',region:'동남아',bg:'mountain',hist:'🌴 앙코르와트! 정글 속 거대한 크메르 사원. 새벽 실루엣이 연못에 비친다.'},
+  {n:'세부',    region:'동남아',bg:'coast',   hist:'🌴 세부! 새하얀 백사장과 청록 바다, 지프니와 레촌(돼지구이)의 필리핀 낙원.'},
+  {n:'쿠알라룸푸르',region:'동남아',bg:'city', hist:'🌴 쿠알라룸푸르! 페트로나스 트윈타워가 하늘을 찌르는 말레이시아의 수도.'},
 ];
 
 // ── 탈것 (v4.1 확장: 자전거→킥보드→오토바이→닌자→하야부사→차량 라인) ──
@@ -568,6 +576,14 @@ const FOODS=[
   {c:'구이린',  n:'구이린 쌀국수',    e:'🍜',type:'tap'},
   {c:'홍콩',    n:'홍콩 딤섬',        e:'🫖',type:'timing'},
   {c:'하얼빈',  n:'궈바오러우(찹쌀탕수육)',e:'🍖',type:'tap'},
+  // 🌴 동남아 맛집 7종
+  {c:'싱가포르',n:'칠리크랩',        e:'🦀',type:'tap'},
+  {c:'방콕',    n:'팟타이',          e:'🍤',type:'timing'},
+  {c:'하롱베이',n:'베트남 쌀국수(포)',e:'🍜',type:'tap'},
+  {c:'발리',    n:'나시고렝',        e:'🍛',type:'timing'},
+  {c:'앙코르와트',n:'피시 아목(크메르 커리)',e:'🍲',type:'tap'},
+  {c:'세부',    n:'레촌(돼지구이)',  e:'🐷',type:'timing'},
+  {c:'쿠알라룸푸르',n:'나시르막',    e:'🍚',type:'tap'},
 ];
 const FOOD_QUIZ={
   '제천':{q:'의림지는 어느 시대 저수지?',opts:['삼한시대','고려시대','조선시대','일제시대'],ans:0},
@@ -780,11 +796,11 @@ const CITY_DIST={
 function getCityDist(a,b){
   const explicit = CITY_DIST[a+'-'+b]||CITY_DIST[b+'-'+a];
   if(explicit) return explicit;
-  // 중국: 인천↔중국 바다 건너는 먼 여정(300~600), 중국 내 이동은 중거리(150~350). 순환 길이 확장.
-  const isCN = c => (CITIES.find(x=>x.n===c)||{}).region==='중국';
-  const aC=isCN(a), bC=isCN(b);
-  if(aC && bC) return Math.floor(150+Math.random()*200);
-  if(aC || bC) return Math.floor(300+Math.random()*300);
+  // 페리 대륙: 바다 건너 crossing(관문↔대륙)은 먼 여정(300~600), 같은 대륙 내 이동은 중거리(150~350).
+  const regOf = c => (CITIES.find(x=>x.n===c)||{}).region;
+  const ra=regOf(a), rb=regOf(b), fa=isFerryRegion(ra), fb=isFerryRegion(rb);
+  if(fa && fb && ra===rb) return Math.floor(150+Math.random()*200);
+  if(fa || fb) return Math.floor(300+Math.random()*300);
   return Math.floor(80+Math.random()*180);
 }
 
@@ -817,7 +833,14 @@ function setVehOwned(id,val){const v=S.vehs.find(v=>v.id===id);if(v)v.owned=val;
 // 🌏 세계 지역 해금 — 프레스티지 회차마다 새 대륙(매 회차 신규맵). key=도시 region 값.
 // 국내 각 도(道)·일본·우주·함정은 0(기본 해금). 미래 대륙은 회차 게이트.
 var REGION_UNLOCK = { '중국':1, '동남아':2, '유럽':3, '아메리카':4, '아프리카':5, '오세아니아':6 };
-var CHINA_PORT = '상하이';  // 인천 페리로 도착하는 중국 관문(항구도시). 일본의 후쿠오카에 해당.
+// 🌏 페리로만 진입하는 프레스티지 해금 대륙 — 데이터 기반(대륙 추가 시 여기 한 줄 + WORLD_MAP·CITIES만).
+//   gateway=한국 관문 도시(도착 시 페리 팝업), port=상륙 도시(코스 시작), price=요금, accent/soft/...=팝업 색.
+var FERRY_REGIONS = {
+  '중국':   { gateway:'인천', port:'상하이',   price:300000, flag:'🇨🇳', name:'중국',     accent:'#C62828', soft:'#FFEBEE', softer:'#FFCDD2', glow:'#EF5350', shadow:'#5E0000', spot:'🏮' },
+  '동남아': { gateway:'제주', port:'싱가포르', price:400000, flag:'🌴',  name:'동남아', accent:'#00897B', soft:'#E0F2F1', softer:'#B2DFDB', glow:'#26A69A', shadow:'#004D40', spot:'🌴' },
+};
+function ferryRegionByGateway(cityName){ for(var r in FERRY_REGIONS){ if(FERRY_REGIONS[r].gateway===cityName) return r; } return null; }
+function isFerryRegion(region){ return !!FERRY_REGIONS[region]; }
 function regionUnlockLevel(region){ return REGION_UNLOCK[region] || 0; }
 function isRegionUnlocked(region){ return (typeof S!=='undefined' ? (S.prestige||0) : 0) >= regionUnlockLevel(region); }
 // 세계지도 표시용 대륙 목록(현재/미래). soon=콘텐츠 준비중.
@@ -825,7 +848,7 @@ var WORLD_MAP = [
   { key:'국내',     flag:'🇰🇷', name:'대한민국',     unlock:0 },
   { key:'일본',     flag:'🇯🇵', name:'일본',         unlock:0 },
   { key:'중국',     flag:'🇨🇳', name:'중국',         unlock:1, cities:7 },
-  { key:'동남아',   flag:'🌴', name:'동남아시아',     unlock:2, soon:true },
+  { key:'동남아',   flag:'🌴', name:'동남아시아',     unlock:2, cities:7 },
   { key:'유럽',     flag:'🇪🇺', name:'유럽',         unlock:3, soon:true },
   { key:'아메리카', flag:'🗽', name:'아메리카',       unlock:4, soon:true },
   { key:'아프리카', flag:'🦁', name:'아프리카',       unlock:5, soon:true },

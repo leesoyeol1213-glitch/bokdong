@@ -56,7 +56,10 @@ function drawScene(){
       '삿포로':'bg_sapporo', '나라':'bg_nara', '히로시마':'bg_hiroshima', '오키나와':'bg_okinawa',
       // 🇨🇳 중국 전용 배경 (v9.84 실연결)
       '베이징':'bg_beijing', '상하이':'bg_shanghai', '시안':'bg_xian', '청두':'bg_chengdu',
-      '구이린':'bg_guilin', '홍콩':'bg_hongkong', '하얼빈':'bg_harbin'
+      '구이린':'bg_guilin', '홍콩':'bg_hongkong', '하얼빈':'bg_harbin',
+      // 🌴 동남아 전용 배경 (에셋 대기)
+      '싱가포르':'bg_singapore', '방콕':'bg_bangkok', '하롱베이':'bg_halong', '발리':'bg_bali',
+      '앙코르와트':'bg_angkor', '세부':'bg_cebu', '쿠알라룸푸르':'bg_kualalumpur'
     };
     // trapZone 활성 시 함정 배경
     if(S.trapZone){
@@ -1310,6 +1313,9 @@ var ASSETS_SOURCES = {
   // 🇯🇵 일본 전용 배경 예약 (bg_tokyo는 위에 이미 있음)
   bg_fukuoka: null, bg_osaka: null, bg_kyoto: null, bg_sapporo: null,
   bg_nara: null, bg_hiroshima: null, bg_okinawa: null,
+  // 🌴 동남아 전용 배경 예약
+  bg_singapore: null, bg_bangkok: null, bg_halong: null, bg_bali: null,
+  bg_angkor: null, bg_cebu: null, bg_kualalumpur: null,
   rocket: "./assets/rocket.png",  // 나로호(임복동1호) 발사 스프라이트 (태극기 로켓)
 
   // NPC 픽셀 초상화 (배경 투명) — 모달 + 카드용
