@@ -1285,14 +1285,14 @@ var ASSETS_SOURCES = {
   bg_moon: "./assets/bg_moon.webp",  // 달 우주
   bg_shinhan: "./assets/bg_shinhan.webp",  // 신한 함정 (염전)
   bg_cheonghak: "./assets/bg_cheonghak.webp",  // 청학동 함정 (훈장)
-  // 🇨🇳 중국 전용 배경 — 이미지 도착 시 null을 "./assets/bg_xxx.webp"로 교체(현재 null=범용 폴백, 로더가 스킵)
-  bg_beijing:  null,  // 베이징 — 만리장성·자금성
-  bg_shanghai: null,  // 상하이 — 와이탄·동방명주 야경
-  bg_xian:     null,  // 시안 — 병마용·성벽
-  bg_chengdu:  null,  // 청두 — 판다·대나무숲
-  bg_guilin:   null,  // 구이린 — 계림산수 카르스트
-  bg_hongkong: null,  // 홍콩 — 빅토리아항 야경·트램
-  bg_harbin:   null,  // 하얼빈 — 빙설제 얼음궁전
+  // 🇨🇳 중국 전용 배경 (v9.84 실연결 — 사용자 AI 생성 → WebP 압축)
+  bg_beijing:  "./assets/bg_beijing.webp",   // 베이징 — 만리장성·자금성
+  bg_shanghai: "./assets/bg_shanghai.webp",  // 상하이 — 와이탄·동방명주 야경
+  bg_xian:     "./assets/bg_xian.webp",      // 시안 — 병마용·성벽
+  bg_chengdu:  "./assets/bg_chengdu.webp",   // 청두 — 판다·대나무숲
+  bg_guilin:   "./assets/bg_guilin.webp",    // 구이린 — 계림산수 카르스트
+  bg_hongkong: "./assets/bg_hongkong.webp",  // 홍콩 — 빅토리아항 야경·트램
+  bg_harbin:   "./assets/bg_harbin.webp",    // 하얼빈 — 빙설제 얼음궁전
   rocket: "./assets/rocket.png",  // 나로호(임복동1호) 발사 스프라이트 (태극기 로켓)
 
   // NPC 픽셀 초상화 (배경 투명) — 모달 + 카드용
