@@ -6,7 +6,7 @@
 const cv=document.getElementById('cv');
 const ctx=cv.getContext('2d');
 // 논리 캔버스 크기(모든 그리기 좌표의 기준). 백킹은 이 크기의 SS배로 슈퍼샘플링.
-const CV_W=420, CV_H=210;
+const CV_W=420, CV_H=236;  // 16:9 전체 시야(과거 210 크롭으로 잘리던 배경 하단 26px 복원)
 // 슈퍼샘플링 배율 — 백킹 해상도를 논리 크기의 SS배로 키워 화면 확대 시 글씨 깨짐 방지.
 // (스프라이트는 imageSmoothingEnabled=false로 선명 유지, 텍스트는 고해상도로 매끄럽게)
 const SS=Math.max(3, Math.min(4, Math.ceil(window.devicePixelRatio||1)+1));  // #5: 최소 3배로 상향(전체 선명도↑)
@@ -1738,7 +1738,7 @@ function animLoop(){
 
     root.style.setProperty('--u', u.toFixed(4));
 
-    // 캔버스 CSS 크기 (내부 해상도 420×210은 항상 고정)
+    // 캔버스 CSS 크기 (내부 해상도 420×236 = 16:9, 0.562 비율과 일치 → 세로 왜곡 없음)
     const cvEl = document.getElementById('cv');
     if(cvEl){
       const cvW = Math.min(winW, 420 * u, 420);   // 앱 최대폭(420)을 넘지 않게 → 태블릿 캔버스 오버플로우 방지
