@@ -39,6 +39,14 @@ const CITIES=[
   {n:'교토',    region:'일본',bg:'mountain', hist:'🇯🇵 교토! 후시미이나리의 천 개의 도리이가 산을 덮고 있다. 시간이 멈춘 듯하다.'},
   {n:'도쿄',    region:'일본',bg:'industrial',hist:'🇯🇵 도쿄! 시부야 스크램블 교차로! 인파 속에서도 자전거 한 대가 우뚝 서 있다.'},
   {n:'삿포로',  region:'일본',bg:'snow',     hist:'🇯🇵 삿포로! 눈으로 덮인 도시. 징기스칸(양고기구이)과 미소라멘이 손짓한다.'},
+  // 🇨🇳 중국 — 1회차 프레스티지 해금(isRegionUnlocked). 세계일주 첫 대륙 확장.
+  {n:'베이징',  region:'중국',bg:'city',      hist:'🇨🇳 베이징! 자금성의 붉은 담과 천안문 광장. 북쪽으로는 만리장성이 끝없이 이어진다.'},
+  {n:'상하이',  region:'중국',bg:'industrial',hist:'🇨🇳 상하이! 와이탄의 야경과 동방명주 타워. 황푸강 위로 네온이 일렁인다.'},
+  {n:'시안',    region:'중국',bg:'mountain',  hist:'🇨🇳 시안! 진시황 병마용의 도시. 실크로드가 시작된 천년 고도(古都), 성벽이 도시를 감싼다.'},
+  {n:'청두',    region:'중국',bg:'mountain',  hist:'🇨🇳 청두! 판다의 고향. 매콤한 훠궈와 마파두부 향이 골목마다 피어오른다.'},
+  {n:'구이린',  region:'중국',bg:'coast',     hist:'🇨🇳 구이린! "계림산수 갑천하". 이강을 따라 카르스트 봉우리가 수묵화처럼 솟아 있다.'},
+  {n:'홍콩',    region:'중국',bg:'city',      hist:'🇨🇳 홍콩! 빅토리아 피크의 백만불 야경. 이층 트램과 딤섬, 마천루의 불빛이 항구를 채운다.'},
+  {n:'하얼빈',  region:'중국',bg:'snow',      hist:'🇨🇳 하얼빈! 얼음과 눈의 도시. 세계 최대 빙설제, 얼음궁전이 밤을 환히 밝힌다.'},
 ];
 
 // ── 탈것 (v4.1 확장: 자전거→킥보드→오토바이→닌자→하야부사→차량 라인) ──
@@ -546,6 +554,14 @@ const FOODS=[
   {c:'교토',   n:'가이세키',   e:'🍱',type:'timing'},
   {c:'도쿄',   n:'에도마에 스시',e:'🍣',type:'tap'},
   {c:'삿포로', n:'징기스칸(양고기)',e:'🐑',type:'tap'},
+  // 🇨🇳 중국 맛집 7종
+  {c:'베이징',  n:'베이징 카오야(오리구이)',e:'🦆',type:'timing'},
+  {c:'상하이',  n:'샤오롱바오',       e:'🥟',type:'tap'},
+  {c:'시안',    n:'로우자모',         e:'🥙',type:'tap'},
+  {c:'청두',    n:'마파두부 훠궈',    e:'🌶️',type:'timing'},
+  {c:'구이린',  n:'구이린 쌀국수',    e:'🍜',type:'tap'},
+  {c:'홍콩',    n:'홍콩 딤섬',        e:'🫖',type:'timing'},
+  {c:'하얼빈',  n:'궈바오러우(찹쌀탕수육)',e:'🍖',type:'tap'},
 ];
 const FOOD_QUIZ={
   '제천':{q:'의림지는 어느 시대 저수지?',opts:['삼한시대','고려시대','조선시대','일제시대'],ans:0},
@@ -756,7 +772,11 @@ const CITY_DIST={
   '부산-제주':300,'목포-제주':160,'여수-제주':210,'서울-제주':450,'대구-제주':330,'제주-전주':270,
 };
 function getCityDist(a,b){
-  return CITY_DIST[a+'-'+b]||CITY_DIST[b+'-'+a]||Math.floor(80+Math.random()*180);
+  const explicit = CITY_DIST[a+'-'+b]||CITY_DIST[b+'-'+a];
+  if(explicit) return explicit;
+  // 중국은 바다 건너 먼 대륙 — 더 긴 여정(300~600km)으로 순환 길이 확장(테스터 "1회 순환 짧다" 대응)
+  const isFar = c => (CITIES.find(x=>x.n===c)||{}).region==='중국';
+  return (isFar(a)||isFar(b)) ? Math.floor(300+Math.random()*300) : Math.floor(80+Math.random()*180);
 }
 
 // 3번: 로켓 발사 함수
@@ -794,7 +814,7 @@ function isRegionUnlocked(region){ return (typeof S!=='undefined' ? (S.prestige|
 var WORLD_MAP = [
   { key:'국내',     flag:'🇰🇷', name:'대한민국',     unlock:0 },
   { key:'일본',     flag:'🇯🇵', name:'일본',         unlock:0 },
-  { key:'중국',     flag:'🇨🇳', name:'중국',         unlock:1, soon:true },
+  { key:'중국',     flag:'🇨🇳', name:'중국',         unlock:1, cities:7 },
   { key:'동남아',   flag:'🌴', name:'동남아시아',     unlock:2, soon:true },
   { key:'유럽',     flag:'🇪🇺', name:'유럽',         unlock:3, soon:true },
   { key:'아메리카', flag:'🗽', name:'아메리카',       unlock:4, soon:true },

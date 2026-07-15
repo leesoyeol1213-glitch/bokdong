@@ -2863,7 +2863,8 @@ function showWorldMap(){
   WORLD_MAP.forEach(r=>{
     const unlocked = pr >= r.unlock;
     const isNext = !unlocked && r.unlock === pr+1;
-    const status = r.unlock===0 ? '기본 지역' : (unlocked ? (r.soon?'✅ 해금됨 · 콘텐츠 준비중':'✅ 해금됨') : (r.unlock+'회차 프레스티지 해금'+(r.soon?' · 준비중':'')));
+    const cityNote = r.cities ? ' · 도시 '+r.cities+'곳' : '';
+    const status = r.unlock===0 ? '기본 지역' : (unlocked ? (r.soon?'✅ 해금됨 · 콘텐츠 준비중':'✅ 해금됨'+cityNote) : (r.unlock+'회차 프레스티지 해금'+(r.soon?' · 준비중':cityNote)));
     const bg = unlocked ? (r.soon?'#FFF3E0':'#E8F5E9') : '#EEEEEE';
     const bd = unlocked ? (r.soon?'#FB8C00':'#4CAF50') : (isNext?'#0284c7':'#CCCCCC');
     rows += `<div style="display:flex;align-items:center;gap:calc(8px * ${u});padding:calc(6px * ${u});margin-bottom:calc(4px * ${u});border:2px solid ${bd};background:${bg};border-radius:calc(6px * ${u});${isNext?'box-shadow:0 0 calc(6px * '+u+') #0284c7;':''}">
@@ -2884,7 +2885,8 @@ function showWorldMap(){
 }
 function canPrestige(){
   if(vehOwned('v15')) return true; // 전설의 서퍼티지(₩2억) 보유 = 사실상 완주
-  return CITIES.filter(c=>c.region!=='우주').every(c=>S.visited.includes(c.n)); // 또는 전 도시 방문
+  // 또는 '현재 해금된' 전 도시 방문(우주 제외). 미해금 대륙(중국 등)은 다음 회차에 열리므로 제외.
+  return CITIES.filter(c=>c.region!=='우주' && isRegionUnlocked(c.region)).every(c=>S.visited.includes(c.n));
 }
 function doPrestige(){
   if(modalOpen()){showSt('진행 중인 선택을 먼저 마쳐주세요');return;}
