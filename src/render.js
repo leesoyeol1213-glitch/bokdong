@@ -44,7 +44,10 @@ function drawScene(){
     // 1순위: 특정 도시 전용 배경
     const specificMap = {
       '서울':'bg_seoul', '충주':'bg_chungju', '제주':'bg_jeju',
-      '달':'bg_moon', '신한':'bg_shinhan', '지리산청학동':'bg_cheonghak'
+      '달':'bg_moon', '신한':'bg_shinhan', '지리산청학동':'bg_cheonghak',
+      // 🇨🇳 중국 전용 배경 — 에셋 도착 시 ASSETS_SOURCES의 null을 경로로 교체하면 자동 적용(없으면 범용 폴백)
+      '베이징':'bg_beijing', '상하이':'bg_shanghai', '시안':'bg_xian', '청두':'bg_chengdu',
+      '구이린':'bg_guilin', '홍콩':'bg_hongkong', '하얼빈':'bg_harbin'
     };
     // trapZone 활성 시 함정 배경
     if(S.trapZone){
@@ -1282,6 +1285,14 @@ var ASSETS_SOURCES = {
   bg_moon: "./assets/bg_moon.webp",  // 달 우주
   bg_shinhan: "./assets/bg_shinhan.webp",  // 신한 함정 (염전)
   bg_cheonghak: "./assets/bg_cheonghak.webp",  // 청학동 함정 (훈장)
+  // 🇨🇳 중국 전용 배경 — 이미지 도착 시 null을 "./assets/bg_xxx.webp"로 교체(현재 null=범용 폴백, 로더가 스킵)
+  bg_beijing:  null,  // 베이징 — 만리장성·자금성
+  bg_shanghai: null,  // 상하이 — 와이탄·동방명주 야경
+  bg_xian:     null,  // 시안 — 병마용·성벽
+  bg_chengdu:  null,  // 청두 — 판다·대나무숲
+  bg_guilin:   null,  // 구이린 — 계림산수 카르스트
+  bg_hongkong: null,  // 홍콩 — 빅토리아항 야경·트램
+  bg_harbin:   null,  // 하얼빈 — 빙설제 얼음궁전
   rocket: "./assets/rocket.png",  // 나로호(임복동1호) 발사 스프라이트 (태극기 로켓)
 
   // NPC 픽셀 초상화 (배경 투명) — 모달 + 카드용
