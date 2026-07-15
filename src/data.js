@@ -39,6 +39,9 @@ const CITIES=[
   {n:'교토',    region:'일본',bg:'mountain', hist:'🇯🇵 교토! 후시미이나리의 천 개의 도리이가 산을 덮고 있다. 시간이 멈춘 듯하다.'},
   {n:'도쿄',    region:'일본',bg:'industrial',hist:'🇯🇵 도쿄! 시부야 스크램블 교차로! 인파 속에서도 자전거 한 대가 우뚝 서 있다.'},
   {n:'삿포로',  region:'일본',bg:'snow',     hist:'🇯🇵 삿포로! 눈으로 덮인 도시. 징기스칸(양고기구이)과 미소라멘이 손짓한다.'},
+  {n:'나라',    region:'일본',bg:'mountain', hist:'🇯🇵 나라! 사슴들이 자유로이 노니는 고도(古都). 도다이지 대불과 오층탑이 우뚝하다.'},
+  {n:'히로시마',region:'일본',bg:'coast',    hist:'🇯🇵 히로시마! 이쓰쿠시마 신사의 바다 위 붉은 도리이. 평화의 도시, 잔잔한 물결.'},
+  {n:'오키나와',region:'일본',bg:'coast',    hist:'🇯🇵 오키나와! 에메랄드빛 열대 바다. 슈리성의 붉은 문과 야자수, 새하얀 백사장.'},
   // 🇨🇳 중국 — 1회차 프레스티지 해금(isRegionUnlocked). 세계일주 첫 대륙 확장.
   {n:'베이징',  region:'중국',bg:'city',      hist:'🇨🇳 베이징! 자금성의 붉은 담과 천안문 광장. 북쪽으로는 만리장성이 끝없이 이어진다.'},
   {n:'상하이',  region:'중국',bg:'industrial',hist:'🇨🇳 상하이! 와이탄의 야경과 동방명주 타워. 황푸강 위로 네온이 일렁인다.'},
@@ -554,6 +557,9 @@ const FOODS=[
   {c:'교토',   n:'가이세키',   e:'🍱',type:'timing'},
   {c:'도쿄',   n:'에도마에 스시',e:'🍣',type:'tap'},
   {c:'삿포로', n:'징기스칸(양고기)',e:'🐑',type:'tap'},
+  {c:'나라',    n:'카키노하즈시(감잎초밥)',e:'🍱',type:'tap'},
+  {c:'히로시마',n:'히로시마 오코노미야키',e:'🥘',type:'timing'},
+  {c:'오키나와',n:'오키나와 타코라이스',e:'🌮',type:'tap'},
   // 🇨🇳 중국 맛집 7종
   {c:'베이징',  n:'베이징 카오야(오리구이)',e:'🦆',type:'timing'},
   {c:'상하이',  n:'샤오롱바오',       e:'🥟',type:'tap'},
@@ -634,8 +640,8 @@ const ACHIEVEMENTS=[
   {id:'reg_master',grp:'지역',emoji:'👑',name:'오도 정복 마스터',desc:'강원·경기·경상·전라·충청 각 10회 도착',check:s=>['강원','경기','경상','전라','충청'].every(r=>(s.regionVisits||{})[r]>=10),  rw:{money:1000000,sp:5,xp:1000}},
   // 일본
   {id:'jp_first', grp:'일본',emoji:'⛴️',name:'페리 출항',     desc:'후쿠오카 도착',           check:s=>s.visited.includes('후쿠오카'),  rw:{money:100000,xp:200}},
-  {id:'jp_all',   grp:'일본',emoji:'🇯🇵',name:'일본 완전 정복', desc:'일본 도시 5곳 모두 방문',  check:s=>['후쿠오카','오사카','교토','도쿄','삿포로'].every(c=>s.visited.includes(c)), rw:{money:1500000,sp:8,xp:2000}},
-  {id:'jp_food',  grp:'일본',emoji:'🍣',name:'일본 미식회',    desc:'일본 맛집 5곳 클리어',     check:s=>['후쿠오카','오사카','교토','도쿄','삿포로'].every(c=>s.foodDone.includes(c)), rw:{money:800000,sp:3}},
+  {id:'jp_all',   grp:'일본',emoji:'🇯🇵',name:'일본 완전 정복', desc:'일본 도시 모두 방문',  check:s=>CITIES.filter(c=>c.region==='일본').every(c=>s.visited.includes(c.n)), rw:{money:1500000,sp:8,xp:2000}},
+  {id:'jp_food',  grp:'일본',emoji:'🍣',name:'일본 미식회',    desc:'일본 맛집 모두 클리어',     check:s=>CITIES.filter(c=>c.region==='일본').every(c=>s.foodDone.includes(c.n)), rw:{money:800000,sp:3}},
   {id:'kimri_meet',grp:'특별',emoji:'🤺',name:'검도왕과 대련',  desc:'검도왕 김리 만나기',     check:s=>s.npcs.find(n=>n.id==='kimri')?.met, rw:{money:200000,xp:300}},
   // 7대죄
   {id:'sin_greed', grp:'7대죄',emoji:'💸',name:'탐욕을 견디다',  desc:'탐욕의 프레드 만나기',  check:s=>s.npcs.find(n=>n.id==='fred')?.met,    rw:{money:200000,xp:300}},

@@ -572,6 +572,7 @@ function showHistModal(ci){
     } else {
     const ferryPrice = 200000;
     const canAfford = S.money >= ferryPrice;
+    const japanN = CITIES.filter(c=>c.region==='일본').length;
     document.getElementById('modal-area').innerHTML=`
     <div class="px-panel" style="border-color:#0277BD;background:linear-gradient(135deg,#E1F5FE,#FFF8E1);margin-bottom:5px;box-shadow:0 0 calc(12px * var(--u)) #29B6F6;">
       <div style="font-size:calc(11px * var(--u));color:#01579B;text-align:center;margin-bottom:6px;">⛴️ 부산 도착!</div>
@@ -579,7 +580,7 @@ function showHistModal(ci){
       <div style="font-size:calc(9px * var(--u));color:#01579B;background:linear-gradient(135deg,#E1F5FE,#B3E5FC);border:3px dashed #0277BD;border-radius:8px;padding:10px;margin-bottom:8px;text-align:center;line-height:2;">
         🇯🇵 <b>일본행 페리 출항 가능!</b><br>
         <span style="font-size:calc(10px * var(--u));color:#B71C1C;">₩${ferryPrice.toLocaleString()}</span><br>
-        <span style="font-size:calc(7px * var(--u));color:#8B6340;line-height:1.6;">⛴️ 부산 ↔ 후쿠오카 페리<br>🍣 5개 일본 도시 탐험 가능<br>🛒 부산에서만 구매 가능!</span>
+        <span style="font-size:calc(7px * var(--u));color:#8B6340;line-height:1.6;">⛴️ 부산 ↔ 후쿠오카 페리<br>🍣 ${japanN}개 일본 도시 탐험 가능<br>🛒 부산에서만 구매 가능!</span>
       </div>
       ${canAfford
         ? `<button class="px-btn" style="width:100%;font-size:calc(10px * var(--u));padding:calc(10px * var(--u));background:#0277BD;border-color:#01579B;margin-bottom:6px;box-shadow:calc(3px * var(--u)) calc(3px * var(--u)) 0 #002F5F;color:#FFF;" onclick="buyFerryFromModal(${wr})">⛴️ 구매하시겠습니까? (₩${ferryPrice.toLocaleString()})</button>`

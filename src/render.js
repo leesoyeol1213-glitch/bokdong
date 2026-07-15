@@ -45,7 +45,16 @@ function drawScene(){
     const specificMap = {
       '서울':'bg_seoul', '충주':'bg_chungju', '제주':'bg_jeju',
       '달':'bg_moon', '신한':'bg_shinhan', '지리산청학동':'bg_cheonghak',
-      // 🇨🇳 중국 전용 배경 — 에셋 도착 시 ASSETS_SOURCES의 null을 경로로 교체하면 자동 적용(없으면 범용 폴백)
+      // 🇰🇷 국내 전용 배경 — 에셋 도착 시 ASSETS_SOURCES의 null을 경로로 교체하면 자동 적용(없으면 범용 폴백)
+      '제천':'bg_jecheon', '강릉':'bg_gangneung', '속초':'bg_sokcho', '고성':'bg_goseong',
+      '포항':'bg_pohang', '부산':'bg_busan', '여수':'bg_yeosu', '목포':'bg_mokpo', '군산':'bg_gunsan',
+      '태안':'bg_taean', '인천':'bg_incheon', '나로호발사센터':'bg_naro', '진천':'bg_jinchon',
+      '대구':'bg_daegu', '수원':'bg_suwon', '춘천':'bg_chuncheon', '경주':'bg_gyeongju',
+      '전주':'bg_jeonju', '대전':'bg_daejeon',
+      // 🇯🇵 일본 전용 배경
+      '후쿠오카':'bg_fukuoka', '오사카':'bg_osaka', '교토':'bg_kyoto', '도쿄':'bg_tokyo',
+      '삿포로':'bg_sapporo', '나라':'bg_nara', '히로시마':'bg_hiroshima', '오키나와':'bg_okinawa',
+      // 🇨🇳 중국 전용 배경 (v9.84 실연결)
       '베이징':'bg_beijing', '상하이':'bg_shanghai', '시안':'bg_xian', '청두':'bg_chengdu',
       '구이린':'bg_guilin', '홍콩':'bg_hongkong', '하얼빈':'bg_harbin'
     };
@@ -1293,6 +1302,14 @@ var ASSETS_SOURCES = {
   bg_guilin:   "./assets/bg_guilin.webp",    // 구이린 — 계림산수 카르스트
   bg_hongkong: "./assets/bg_hongkong.webp",  // 홍콩 — 빅토리아항 야경·트램
   bg_harbin:   "./assets/bg_harbin.webp",    // 하얼빈 — 빙설제 얼음궁전
+  // 🇰🇷 국내 전용 배경 예약 — 이미지 도착 시 null을 "./assets/bg_xxx.webp"로 교체(bg_busan은 위에 이미 있음)
+  bg_jecheon: null, bg_gangneung: null, bg_sokcho: null, bg_goseong: null, bg_pohang: null,
+  bg_yeosu: null, bg_mokpo: null, bg_gunsan: null, bg_taean: null, bg_incheon: null,
+  bg_naro: null, bg_jinchon: null, bg_daegu: null, bg_suwon: null, bg_chuncheon: null,
+  bg_gyeongju: null, bg_jeonju: null, bg_daejeon: null,
+  // 🇯🇵 일본 전용 배경 예약 (bg_tokyo는 위에 이미 있음)
+  bg_fukuoka: null, bg_osaka: null, bg_kyoto: null, bg_sapporo: null,
+  bg_nara: null, bg_hiroshima: null, bg_okinawa: null,
   rocket: "./assets/rocket.png",  // 나로호(임복동1호) 발사 스프라이트 (태극기 로켓)
 
   // NPC 픽셀 초상화 (배경 투명) — 모달 + 카드용
