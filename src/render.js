@@ -132,6 +132,7 @@ function drawScene(){
   // ✨ 프레스티지 상시 오라 — 회차가 오를수록 화려해짐(캐릭터 뒤에 깔림)
   // 신규 배경은 도로가 하단(≈y205)이라 캐릭터를 y165로 내려 바퀴가 도로에 닿게 함(구 배경 145 → +20).
   if((S.prestige||0)>0 && !isResting) drawPrestigeAura(bikeX,165);
+  if(S.dopT>0 && S.riding && !isResting) drawBoostStreaks(bikeX,165);  // 부스트 속도선(코드 오버레이 — bikeX 기준이라 들썩임 없음)
   if(isResting)drawRestScene();
   else         drawBokdong(bikeX,165,asp);
 
@@ -704,6 +705,27 @@ function drawNpcRewardAnim(){
     ctx.beginPath();ctx.arc(Math.cos(a)*70,Math.sin(a)*52,4,0,Math.PI*2);ctx.fill();
   }
   ctx.restore();ctx.globalAlpha=1;
+}
+// ⚡ 부스트 속도선 — 캐릭터 뒤(왼쪽)로 흐르는 스피드 라인. bikeX 기준 고정이라 좌우 들썩임 없음.
+function drawBoostStreaks(cx, cy){
+  ctx.save();
+  ctx.lineCap='round';
+  // 은은한 부스트 글로우(캐릭터 하단 뒤)
+  const g=ctx.createRadialGradient(cx-6,cy+6,0,cx-6,cy+6,44);
+  g.addColorStop(0,'rgba(255,196,90,0.16)'); g.addColorStop(1,'rgba(255,196,90,0)');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(cx-6,cy+8,44,20,0,0,Math.PI*2); ctx.fill();
+  // 스피드 라인 (몸통~바퀴 높이에 분산, 왼쪽으로 흐름)
+  for(let i=0;i<9;i++){
+    const phase=(frame*3 + i*11) % 58;
+    const sx = cx + 22 - phase*1.7;
+    const sy = cy + 24 - i*5;
+    const len = 12 + (i%3)*9;
+    const a = 0.6 * Math.max(0, 1 - phase/58);
+    ctx.strokeStyle = (i%3===0) ? 'rgba(255,210,120,'+a+')' : 'rgba(195,238,255,'+a+')';
+    ctx.lineWidth = (i%2)?2:1.4;
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx-len, sy); ctx.stroke();
+  }
+  ctx.restore();
 }
 function drawBoosterBubble(x,y){
   const alpha=Math.min(1,boosterBubble/25);
