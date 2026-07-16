@@ -132,7 +132,6 @@ function drawScene(){
   // ✨ 프레스티지 상시 오라 — 회차가 오를수록 화려해짐(캐릭터 뒤에 깔림)
   // 신규 배경은 도로가 하단(≈y205)이라 캐릭터를 y165로 내려 바퀴가 도로에 닿게 함(구 배경 145 → +20).
   if((S.prestige||0)>0 && !isResting) drawPrestigeAura(bikeX,165);
-  if(S.dopT>0 && S.riding && !isResting) drawBoostStreaks(bikeX,165);  // 부스트 속도선(코드 오버레이 — bikeX 기준이라 들썩임 없음)
   if(isResting)drawRestScene();
   else         drawBokdong(bikeX,165,asp);
 
@@ -705,27 +704,6 @@ function drawNpcRewardAnim(){
     ctx.beginPath();ctx.arc(Math.cos(a)*70,Math.sin(a)*52,4,0,Math.PI*2);ctx.fill();
   }
   ctx.restore();ctx.globalAlpha=1;
-}
-// ⚡ 부스트 속도선 — 캐릭터 뒤(왼쪽)로 흐르는 스피드 라인. bikeX 기준 고정이라 좌우 들썩임 없음.
-function drawBoostStreaks(cx, cy){
-  ctx.save();
-  ctx.lineCap='round';
-  // 은은한 부스트 글로우(캐릭터 하단 뒤)
-  const g=ctx.createRadialGradient(cx-6,cy+6,0,cx-6,cy+6,44);
-  g.addColorStop(0,'rgba(255,196,90,0.16)'); g.addColorStop(1,'rgba(255,196,90,0)');
-  ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(cx-6,cy+8,44,20,0,0,Math.PI*2); ctx.fill();
-  // 스피드 라인 (몸통~바퀴 높이에 분산, 왼쪽으로 흐름)
-  for(let i=0;i<9;i++){
-    const phase=(frame*3 + i*11) % 58;
-    const sx = cx + 22 - phase*1.7;
-    const sy = cy + 24 - i*5;
-    const len = 12 + (i%3)*9;
-    const a = 0.6 * Math.max(0, 1 - phase/58);
-    ctx.strokeStyle = (i%3===0) ? 'rgba(255,210,120,'+a+')' : 'rgba(195,238,255,'+a+')';
-    ctx.lineWidth = (i%2)?2:1.4;
-    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx-len, sy); ctx.stroke();
-  }
-  ctx.restore();
 }
 function drawBoosterBubble(x,y){
   const alpha=Math.min(1,boosterBubble/25);
@@ -1553,13 +1531,14 @@ function drawBokdongSprite(ctx2, cx, cy, scale, isRiding){
   if(!isRiding){
     frameNum = 1;
   } else {
-    const speed = isBoost ? 5 : 7;   // cyc 페달 사이클(부스트 시 살짝 빠르게 — cyc는 프레임별 위치가 일정해 들썩임 없음)
+    const speed = isBoost ? 6 : 7;   // 부스트 페달링(6 — 과거 4보다 느려 좌우 들썩임 완화)
     const cycleLen = 5;              // 5프레임 루프
     frameNum = (Math.floor(frame / speed) % cycleLen) + 1;
   }
-  // 부스트에서도 일반(cyc) 스프라이트 사용 — b스프라이트는 프레임별 위치편차로 좌우 들썩임을 유발했음.
-  // 부스트 속도감은 '배경 스크롤 가속'(drawScene)으로 표현. (b1~b5 에셋은 보존, 현재 미사용)
-  let key = 'cyc_' + frameNum;
+  // 부스트: 자전거 단계별 부스트 이미지(b{tier}_{frame}), 일반: cyc_{frame}
+  let key;
+  if(isBoost){ const tier = getBoostTier(); key = 'b' + tier + '_' + frameNum; }
+  else { key = 'cyc_' + frameNum; }
   if(window.bokdongDebug && key !== _lastPhaseLog){
     console.log('[bokdong] frame='+frame+' key='+key+' boost='+isBoost+' tier='+(isBoost?getBoostTier():'-'));
     _lastPhaseLog = key;
@@ -1582,7 +1561,7 @@ function drawBokdongSprite(ctx2, cx, cy, scale, isRiding){
   ctx2.imageSmoothingEnabled = false;  // #A: 크리스프(픽셀) 렌더 — 배경처럼 쨍하게. (부드럽게 되돌리려면 true)
   // 발끝(바퀴 바닥) 기준 정렬 — 바퀴가 화면 아래로 안 잘리게.
   // 일반(cyc) 스프라이트는 바퀴가 프레임 하단에 더 붙어있어 도로에 ~1/5 잠김 → 7px 올림. 부스트는 그대로.
-  const footY = cy + 34 - 7;  // 바퀴 바닥선(cyc 스프라이트 기준 — 부스트도 cyc라 항상 동일)
+  const footY = cy + 34 - (isBoost ? 0 : 7);  // 바퀴 바닥선(부스트 b스프라이트는 자체 여백 기준)
   ctx2.drawImage(img, Math.round(cx - sz/2), Math.round(footY - sz), sz, sz);
   return true;
 }
