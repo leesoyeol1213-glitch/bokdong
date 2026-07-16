@@ -1788,10 +1788,10 @@ function challengeSin(id){
       playSfx('good');
       if(S.sinRush.defeated.length>=SIN_RUSH_IDS.length){
         S.money+=1000000; S.sp+=2;
-        addLog('good','👑 7대죄 완전 정화! 그랜드 보상 ₩1,000,000 + SP+2 · 🌟신화 장비 0.3% 도전!');
-        showSt('👑 7대죄 완전 정화! ₩100만 + SP+2 + 🌟신화 0.3%');
+        addLog('good','👑 7대죄 완전 정화! 그랜드 보상 ₩1,000,000 + SP+2 · 🌟신화 장비 5% 도전!');
+        showSt('👑 7대죄 완전 정화! ₩100만 + SP+2 + 🌟신화 5%');
         playSfx('levelup');
-        awardMythicIfLucky('legend');   // 신화 장비 0.3% 확률(tryDropMythic legend)
+        awardMythicIfLucky('god');   // 신화 장비 5% 확률(주간 완전정화 노력 보상 — tryDropMythic god)
       }
     } else {
       addLog('bad','😈 '+npc.n+'에게 당했다! (🎲'+diceVal+') '+npc.reward);
@@ -1820,7 +1820,7 @@ function renderSinRushHTML(){
   });
   return `<div class="px-panel" style="margin-bottom:calc(6px * ${u});border-color:#B71C1C;">
     <div style="${fs(9)};color:#B71C1C;text-align:center;margin-bottom:calc(3px * ${u});">😈 주간 7대죄 보스 러시 <span style="${fs(5)};color:#8B6340;">(${done}/${total})</span></div>
-    <div style="${fs(5)};color:#8B6340;text-align:center;margin-bottom:calc(6px * ${u});">🎲 주사위 3+로 정화(66%) · 실패 시 저주 · ${allDone?'✅ 완전 정화 달성!':'전원 정화 → ₩100만 + SP+2 + 🌟신화 장비 0.3%'}</div>
+    <div style="${fs(5)};color:#8B6340;text-align:center;margin-bottom:calc(6px * ${u});">🎲 주사위 3+로 정화(66%) · 실패 시 저주 · ${allDone?'✅ 완전 정화 달성!':'전원 정화 → ₩100만 + SP+2 + 🌟신화 장비 5%'}</div>
     ${items}
   </div>`;
 }

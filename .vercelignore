@@ -10,3 +10,5 @@ package.json
 package-lock.json
 .github
 원본소재
+resources
+gen_assets.html
