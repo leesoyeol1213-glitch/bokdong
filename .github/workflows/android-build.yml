@@ -27,12 +27,15 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'   # Capacitor 최신 CLI가 Node >=22 요구
+          node-version: '24'   # Capacitor 최신 CLI가 Node >=22 요구 (로컬과 동일한 24로 고정)
 
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+
+      - name: Show tool versions
+        run: node -v && npm -v && java -version
 
       - name: Install npm deps
         run: npm ci || npm install
