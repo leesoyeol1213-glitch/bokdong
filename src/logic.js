@@ -721,9 +721,9 @@ function showHistModal(ci){
       <button class="px-btn px-btn-red" style="font-size:calc(9px * var(--u));padding:12px;" onclick="ansOX(false)">X</button>
     </div>
     <div style="font-size:calc(9px * var(--u));color:#8B6340;text-align:center;">정답시 ₩5,000 + XP+20</div>
-    ${wr?`<div id="ox-auto" style="text-align:center;margin-top:calc(6px * var(--u));font-size:calc(7px * var(--u));color:#8B6340;">⏱️ 6초 후 넘어감(무응답)</div>`:''}
+    ${wr&&S.idleMode!==false?`<div id="ox-auto" style="text-align:center;margin-top:calc(6px * var(--u));font-size:calc(7px * var(--u));color:#8B6340;">⏱️ 6초 후 넘어감(무응답)</div>`:''}
   </div>`;
-  if(wr) startOXAuto(6);
+  if(wr && S.idleMode!==false) startOXAuto(6);  // 방치모드에서만 자동 스킵(끄면 멈춰서 퀴즈·맛집 챙김)
 }
 
 // ── 3번(재설계): 함정 도시 — 시간 기반 탈출 주사위 + 천장(실패할수록 쉬워짐) ─────
@@ -920,9 +920,9 @@ function showDisasterNpcModal(npc){
     <div style="font-size:calc(8px * var(--u));color:#3D2510;background:#FFF8DC;border:2px solid #5D0303;border-radius:5px;padding:7px;margin-bottom:8px;line-height:2;">"${line}"</div>
     <div style="font-size:calc(8px * var(--u));color:#FFE082;background:rgba(255,255,255,.1);border:2px solid #FFE082;border-radius:6px;padding:6px;margin-bottom:8px;text-align:center;">⚠️ ${npc.reward}</div>
     <button class="px-btn px-btn-red" style="width:100%;font-size:calc(9px * var(--u));" onclick="acceptNpc('${npc.id}',${wr})">…피할 수 없다</button>
-    ${wr?`<div id="npc-auto" style="text-align:center;margin-top:calc(6px * var(--u));font-size:calc(7px * var(--u));color:#FFCDD2;">⏱️ 6초 후 자동 진행</div>`:''}
+    ${wr&&S.idleMode!==false?`<div id="npc-auto" style="text-align:center;margin-top:calc(6px * var(--u));font-size:calc(7px * var(--u));color:#FFCDD2;">⏱️ 6초 후 자동 진행</div>`:''}
   </div>`;
-  if(wr) startNpcAutoContinue(npc.id, wr, 6);
+  if(wr && S.idleMode!==false) startNpcAutoContinue(npc.id, wr, 6);
 }
 
 // ── 5번: 사과즙 박스 ───────────────────────────────────
@@ -1053,9 +1053,9 @@ function showNpcModal(npc){
     <div style="font-size:calc(9px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid #D4B483;border-left:4px solid ${gc};border-radius:0 6px 6px 0;padding:7px 9px;margin-bottom:8px;line-height:2;">"${line}"</div>
     <div style="font-size:calc(9px * var(--u));color:#8B6340;margin-bottom:10px;">보상: <span style="color:#3D2510;">${npc.reward}</span></div>
     <button class="px-btn" style="width:100%;font-size:calc(9px * var(--u));" onclick="acceptNpc('${npc.id}',${wr})">${isCV?'...잘 가. (음료를 받는다)':'고마워! 계속 달리자! ▶'}</button>
-    ${wr?`<div id="npc-auto" style="text-align:center;margin-top:calc(6px * var(--u));font-size:calc(7px * var(--u));color:#8B6340;">⏱️ 6초 후 자동 진행</div>`:''}
+    ${wr&&S.idleMode!==false?`<div id="npc-auto" style="text-align:center;margin-top:calc(6px * var(--u));font-size:calc(7px * var(--u));color:#8B6340;">⏱️ 6초 후 자동 진행</div>`:''}
   </div>`;
-  if(wr) startNpcAutoContinue(npc.id, wr, 6);
+  if(wr && S.idleMode!==false) startNpcAutoContinue(npc.id, wr, 6);
 }
 // 방치형: NPC 만남 시 몇 초 뒤 자동 수락·재개 (탭하면 즉시). 자리를 비워도 진행이 안 멈춤.
 var npcAutoTimer=null;
@@ -1788,10 +1788,10 @@ function challengeSin(id){
       playSfx('good');
       if(S.sinRush.defeated.length>=SIN_RUSH_IDS.length){
         S.money+=1000000; S.sp+=2;
-        addLog('good','👑 7대죄 완전 정화! 그랜드 보상 ₩1,000,000 + SP+2');
-        showSt('👑 7대죄 완전 정화! ₩1,000,000 + SP+2');
+        addLog('good','👑 7대죄 완전 정화! 그랜드 보상 ₩1,000,000 + SP+2 · 🌟신화 장비 0.3% 도전!');
+        showSt('👑 7대죄 완전 정화! ₩100만 + SP+2 + 🌟신화 0.3%');
         playSfx('levelup');
-        awardMythicIfLucky('legend');
+        awardMythicIfLucky('legend');   // 신화 장비 0.3% 확률(tryDropMythic legend)
       }
     } else {
       addLog('bad','😈 '+npc.n+'에게 당했다! (🎲'+diceVal+') '+npc.reward);
@@ -1820,7 +1820,7 @@ function renderSinRushHTML(){
   });
   return `<div class="px-panel" style="margin-bottom:calc(6px * ${u});border-color:#B71C1C;">
     <div style="${fs(9)};color:#B71C1C;text-align:center;margin-bottom:calc(3px * ${u});">😈 주간 7대죄 보스 러시 <span style="${fs(5)};color:#8B6340;">(${done}/${total})</span></div>
-    <div style="${fs(5)};color:#8B6340;text-align:center;margin-bottom:calc(6px * ${u});">🎲 주사위 3+로 정화 · 실패 시 저주 · ${allDone?'✅ 완전 정화 달성!':'전원 정화 → ₩100만 + SP+2 + 신화 확률'}</div>
+    <div style="${fs(5)};color:#8B6340;text-align:center;margin-bottom:calc(6px * ${u});">🎲 주사위 3+로 정화(66%) · 실패 시 저주 · ${allDone?'✅ 완전 정화 달성!':'전원 정화 → ₩100만 + SP+2 + 🌟신화 장비 0.3%'}</div>
     ${items}
   </div>`;
 }
@@ -2733,7 +2733,7 @@ function doLoad(parsedD){
           const _cv = VEHS.find(v=>v.id===S.vId); if(_cv) S.speed = _cv.sp;
           addLog('neutral','🚲 탈것 체계 정비(15단계)! 자전거 '+newOwned+'단계로 이전됐어요');
         }
-        if(!S.achievements)S.achievements=[];if(!S.boostCount)S.boostCount=0;if(!S.offlineCount)S.offlineCount=0;if(typeof S.autoApple!=='boolean')S.autoApple=false;if(typeof S.prestige!=='number')S.prestige=0;
+        if(!S.achievements)S.achievements=[];if(!S.boostCount)S.boostCount=0;if(!S.offlineCount)S.offlineCount=0;if(typeof S.autoApple!=='boolean')S.autoApple=false;if(typeof S.idleMode!=='boolean')S.idleMode=true;if(typeof S.prestige!=='number')S.prestige=0;
         if(!S.regionVisits)S.regionVisits={}; // #3 지역별 도착 회수
         // #6 엽서 마이그레이션: 없으면 이미 방문한 도시들로 소급 생성
         if(!Array.isArray(S.postcards)){ S.postcards=[]; (S.visited||[]).forEach(c=>collectPostcard(c)); }
@@ -2883,7 +2883,7 @@ function closeModalAndLaunch(wr){
 }
 // 새 게임 초기 상태(공통). resetGame·doPrestige가 공유한다.
 function freshState(){
-  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[]},playerId:'',nickname:'',postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
+  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,idleMode:true,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[]},playerId:'',nickname:'',postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
 }
 // 초기화 후 공통 뒷정리(뱃지·애니메이션·루프)
 function afterReset(){
@@ -3021,11 +3021,20 @@ function doPrestige(){
   showConfirmModal({
     title:'🌏 '+((S.prestige||0)+1)+'회차 세계일주?',
     message:`지금까지의 진행(레벨·돈·자전거·장비·방문)이 초기화됩니다.\n대신 영구 보너스 "여행 노하우"를 얻어요:\n\n🚀 속도·수입 +${Math.round((nextMult-1)*100)}% (영구)\n🏆 업적·프레스티지 횟수는 유지\n👥 NPC를 다시 만나 보상을 또 받습니다`,
-    okText:'2회차 출발! 🌏', cancelText:'아직...', color:'#8B5CF6',
+    okText:((S.prestige||0)+1)+'회차 출발! 🌏', cancelText:'아직...', color:'#8B5CF6',
     onOk:()=>{
-      const keep={ prestige:(S.prestige||0)+1, achievements:S.achievements||[], paints:S.paints||['gray'], activePaint:S.activePaint||'gray', autoApple:!!S.autoApple };
+      const keep={ prestige:(S.prestige||0)+1, achievements:S.achievements||[], paints:S.paints||['gray'], activePaint:S.activePaint||'gray', autoApple:!!S.autoApple,
+        // 전국 레이드 정체성·주간 기여도 — 환생(게임 내 리셋)과 무관하게 플레이어 단위로 유지
+        playerId:S.playerId, nickname:S.nickname, course:S.course, sinRush:S.sinRush,
+        raidRewardClaimed:S.raidRewardClaimed, raidRankClaimedWeek:S.raidRankClaimedWeek };
       S=freshState();
       S.prestige=keep.prestige; S.achievements=keep.achievements; S.paints=keep.paints; S.activePaint=keep.activePaint; S.autoApple=keep.autoApple;
+      // 레이드/주간 콘텐츠 복원(기여도 리셋 버그 수정)
+      if(keep.playerId) S.playerId=keep.playerId;
+      S.nickname=keep.nickname||'';
+      if(keep.course) S.course=keep.course;
+      if(keep.sinRush) S.sinRush=keep.sinRush;
+      S.raidRewardClaimed=keep.raidRewardClaimed||''; S.raidRankClaimedWeek=keep.raidRankClaimedWeek||'';
       afterReset();
       addLog('good','🌏✨ '+S.prestige+'회차 세계일주 시작! 여행 노하우: 속도·수입 +'+Math.round((prestigeMult()-1)*100)+'% (영구)');
       track('prestige',{n:S.prestige});
@@ -3094,6 +3103,13 @@ function playSfx(name){
 function toggleAutoApple(){
   S.autoApple = !S.autoApple;
   addLog(S.autoApple?'good':'neutral', S.autoApple?'🍎 자동 사과 ON — 체력 30% 이하면 자동 섭취':'🍎 자동 사과 OFF');
+  update();
+}
+// 방치모드 on/off — ON(기본): NPC·OX 자동진행(핸즈프리). OFF: 멈춰서 전설 NPC·맛집·퀴즈를 직접 챙김.
+function toggleIdleMode(){
+  S.idleMode = (S.idleMode===false);   // 기본 ON(undefined=on). 토글.
+  if(S.idleMode){ addLog('neutral','🎮 방치모드 ON — NPC·퀴즈 자동 진행(핸즈프리)'); }
+  else { clearNpcAuto(); clearOXAuto(); addLog('good','🎮 방치모드 OFF — 멈춰서 전설 NPC·맛집·퀴즈를 직접 챙기세요!'); }
   update();
 }
 function toggleSound(){
@@ -3666,6 +3682,13 @@ function update(){
     aaBtn.innerHTML = S.autoApple ? '🍎 자동 ON' : '🍎 자동 OFF';
     aaBtn.classList.toggle('px-btn-green', !!S.autoApple);
     aaBtn.classList.toggle('px-btn-gray', !S.autoApple);
+  }
+  const imBtn = document.getElementById('idlemode-btn');
+  if(imBtn){
+    const idleOn = S.idleMode!==false;
+    imBtn.innerHTML = idleOn ? '🎮 방치 ON' : '🎮 방치 OFF';
+    imBtn.classList.toggle('px-btn-green', !idleOn);   // OFF(직접 챙김)일 때 강조
+    imBtn.classList.toggle('px-btn-gray', idleOn);
   }
   // 3번: 탈출 주사위 버튼 (함정 도시 + 50km 누적 시)
   const trapBtn = document.getElementById('trapDiceBtn');
