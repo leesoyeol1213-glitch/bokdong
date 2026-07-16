@@ -90,7 +90,8 @@ function drawScene(){
   if(hasCityBg){
     // #5: 배경 패럴럭스 — 라이딩 시 좌측으로 흐름. 장면 이미지는 좌우 끝이 안 맞으므로
     //     '미러 타일링'(홀수 구간 좌우반전)으로 이음새 없이 무한 스크롤.
-    if(S.riding && !isResting) bgScrollX = (bgScrollX + (0.7 + asp*0.9)) % 840;
+    const _boostMul = (S.dopT>0) ? 1.8 : 1;   // 부스트 시 배경 스크롤 가속 → 속도감(복동이 모션은 cyc 유지)
+    if(S.riding && !isResting) bgScrollX = (bgScrollX + (0.7 + asp*0.9)*_boostMul) % 840;
     const img = ASSETS_IMG[bgKey];
     const sx = ((bgScrollX % 840) + 840) % 840;
     const k0 = Math.floor(sx/420);
@@ -1530,18 +1531,13 @@ function drawBokdongSprite(ctx2, cx, cy, scale, isRiding){
   if(!isRiding){
     frameNum = 1;
   } else {
-    const speed = isBoost ? 6 : 7;   // 부스터 페달링(6). 과거 4는 프레임별 위치편차와 겹쳐 좌우로 과하게 들썩여 완화.
-    const cycleLen = 5;              // 일반·부스터 모두 5프레임 루프
+    const speed = isBoost ? 5 : 7;   // cyc 페달 사이클(부스트 시 살짝 빠르게 — cyc는 프레임별 위치가 일정해 들썩임 없음)
+    const cycleLen = 5;              // 5프레임 루프
     frameNum = (Math.floor(frame / speed) % cycleLen) + 1;
   }
-  // 부스터 시: 자전거 단계에 맞는 부스트 오라 (b{tier}_{frame}), 일반: cyc_{frame}
-  let key;
-  if(isBoost){
-    const tier = getBoostTier();
-    key = 'b' + tier + '_' + frameNum;
-  } else {
-    key = 'cyc_' + frameNum;
-  }
+  // 부스트에서도 일반(cyc) 스프라이트 사용 — b스프라이트는 프레임별 위치편차로 좌우 들썩임을 유발했음.
+  // 부스트 속도감은 '배경 스크롤 가속'(drawScene)으로 표현. (b1~b5 에셋은 보존, 현재 미사용)
+  let key = 'cyc_' + frameNum;
   if(window.bokdongDebug && key !== _lastPhaseLog){
     console.log('[bokdong] frame='+frame+' key='+key+' boost='+isBoost+' tier='+(isBoost?getBoostTier():'-'));
     _lastPhaseLog = key;
@@ -1564,7 +1560,7 @@ function drawBokdongSprite(ctx2, cx, cy, scale, isRiding){
   ctx2.imageSmoothingEnabled = false;  // #A: 크리스프(픽셀) 렌더 — 배경처럼 쨍하게. (부드럽게 되돌리려면 true)
   // 발끝(바퀴 바닥) 기준 정렬 — 바퀴가 화면 아래로 안 잘리게.
   // 일반(cyc) 스프라이트는 바퀴가 프레임 하단에 더 붙어있어 도로에 ~1/5 잠김 → 7px 올림. 부스트는 그대로.
-  const footY = cy + 34 - (isBoost ? 0 : 7);  // 바퀴 바닥선
+  const footY = cy + 34 - 7;  // 바퀴 바닥선(cyc 스프라이트 기준 — 부스트도 cyc라 항상 동일)
   ctx2.drawImage(img, Math.round(cx - sz/2), Math.round(footY - sz), sz, sz);
   return true;
 }
