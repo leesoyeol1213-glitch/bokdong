@@ -982,19 +982,21 @@ function dismissJuiceBoxResult(){
 }
 var curOX=null;  // 현재 도착 OX 퀴즈 문제(정답 a·해설 ex·라이딩중 wr). ansOX가 여기서 읽는다.
 // 방치형: OX 퀴즈도 몇 초 무응답이면 자동으로 넘어감(스킵·보상없음). 탭하면 즉시 응답.
-var oxAutoTimer=null;
-function clearOXAuto(){ if(oxAutoTimer){clearInterval(oxAutoTimer);oxAutoTimer=null;} }
-function startOXAuto(secs){
-  clearOXAuto();
-  let left=secs;
-  oxAutoTimer=setInterval(function(){
-    const el=document.getElementById('ox-auto');
-    if(!el){ clearOXAuto(); return; }   // 모달 닫힘/교체 → 중단
-    left--;
-    if(left<=0){ clearOXAuto(); skipOX(); return; }
-    el.textContent='⏱️ '+left+'초 후 넘어감(무응답)';
-  }, 1000);
+// ── 방치 자동진행: 벽시계 데드라인 기반(견고) ─────────────────────
+// 과거 setInterval+DOM요소 의존 → 모바일 백그라운드 스로틀·요소 잠깐 소실 시 영구 멈춤(자동진행 종종 실패).
+// 이제 데드라인만 두고 매 프레임(animLoop→checkAuto)이 벽시계로 판정 → 자리를 비웠다 와도 즉시 진행. OX·NPC 공용(동시 1개만 뜸).
+var _autoDeadline=0, _autoAction=null;
+function cancelAuto(){ _autoDeadline=0; _autoAction=null; }
+function scheduleAuto(secs, action){ _autoDeadline=Date.now()+secs*1000; _autoAction=action; }
+function checkAuto(){
+  if(!_autoDeadline) return;
+  const remain=Math.max(0, Math.ceil((_autoDeadline-Date.now())/1000));
+  const oxEl=document.getElementById('ox-auto'); if(oxEl) oxEl.textContent='⏱️ '+remain+'초 후 넘어감(무응답)';
+  const npEl=document.getElementById('npc-auto'); if(npEl) npEl.textContent='⏱️ '+remain+'초 후 자동 진행';
+  if(Date.now()>=_autoDeadline){ const a=_autoAction; cancelAuto(); if(typeof a==='function') a(); }
 }
+function clearOXAuto(){ cancelAuto(); }
+function startOXAuto(secs){ scheduleAuto(secs, skipOX); }
 function skipOX(){
   clearOXAuto();
   const wr = curOX ? curOX.wr : false;
@@ -1058,19 +1060,8 @@ function showNpcModal(npc){
   if(wr && S.idleMode!==false) startNpcAutoContinue(npc.id, wr, 6);
 }
 // 방치형: NPC 만남 시 몇 초 뒤 자동 수락·재개 (탭하면 즉시). 자리를 비워도 진행이 안 멈춤.
-var npcAutoTimer=null;
-function clearNpcAuto(){ if(npcAutoTimer){clearInterval(npcAutoTimer);npcAutoTimer=null;} }
-function startNpcAutoContinue(id, wr, secs){
-  clearNpcAuto();
-  let left=secs;
-  npcAutoTimer=setInterval(function(){
-    const el=document.getElementById('npc-auto');
-    if(!el){ clearNpcAuto(); return; }   // 모달이 닫히거나 바뀌면 중단
-    left--;
-    if(left<=0){ clearNpcAuto(); acceptNpc(id, wr); return; }
-    el.textContent='⏱️ '+left+'초 후 자동 진행';
-  }, 1000);
-}
+function clearNpcAuto(){ cancelAuto(); }
+function startNpcAutoContinue(id, wr, secs){ scheduleAuto(secs, function(){ acceptNpc(id, wr); }); }
 function acceptNpc(id,wr){
   clearNpcAuto();
   const n=S.npcs.find(x=>x.id===id);

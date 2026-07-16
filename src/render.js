@@ -1744,6 +1744,7 @@ function drawRestScene(){
 // ── 애니메이션 루프 (속도 연동) ────────────────────────
 function animLoop(){
   drawScene();
+  if(typeof checkAuto==='function') checkAuto();   // 방치 자동진행: 벽시계 데드라인 확인(setInterval 스로틀 무관)
   if(S.riding&&!isResting){
     // #5: 배경·도로가 흐르므로 캐릭터는 화면 중앙 부근에서 페달만(가로 횡단 제거)
     const sway = (S.dopT>0) ? 2 : 4;                 // 부스터 시 앞뒤 흔들림 절반(스프라이트 위치편차와 겹쳐 과했던 진동 완화)
