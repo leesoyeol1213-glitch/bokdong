@@ -32,7 +32,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'   # Capacitor 7 안드로이드 라이브러리가 JDK 21 요구(source release 21)
 
       - name: Show tool versions
         run: node -v && npm -v && java -version
