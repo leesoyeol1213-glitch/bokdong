@@ -1,0 +1,12 @@
+# Vercel은 순수 정적 사이트(index.html+src+assets)만 배포.
+# 앱 패키징(Capacitor/Node) 관련은 배포에서 제외 → package.json 미감지 → 기존 정적 배포 그대로 유지.
+node_modules
+www
+android
+ios
+build-www.js
+capacitor.config.json
+package.json
+package-lock.json
+.github
+원본소재

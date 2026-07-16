@@ -1,3 +1,19 @@
 .DS_Store
 node_modules/
 *.log
+
+# Capacitor 앱 번들(build-www.js 생성, CI에서 재생성) — 커밋 안 함
+www/
+
+# Android 빌드 산출물 (android/.gitignore가 대부분 처리, 보강)
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+*.apk
+*.aab
+
+# iOS 빌드 산출물
+ios/App/build/
+ios/App/Pods/
+ios/DerivedData/

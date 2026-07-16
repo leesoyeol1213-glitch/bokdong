@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">임복동 세계일주</string>
+    <string name="title_activity_main">임복동 세계일주</string>
+    <string name="package_name">app.bokdong.game</string>
+    <string name="custom_url_scheme">app.bokdong.game</string>
+</resources>
