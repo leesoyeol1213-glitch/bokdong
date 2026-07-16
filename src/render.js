@@ -1530,7 +1530,7 @@ function drawBokdongSprite(ctx2, cx, cy, scale, isRiding){
   if(!isRiding){
     frameNum = 1;
   } else {
-    const speed = isBoost ? 4 : 7;   // 부스터는 더 빠른 페달링
+    const speed = isBoost ? 6 : 7;   // 부스터 페달링(6). 과거 4는 프레임별 위치편차와 겹쳐 좌우로 과하게 들썩여 완화.
     const cycleLen = 5;              // 일반·부스터 모두 5프레임 루프
     frameNum = (Math.floor(frame / speed) % cycleLen) + 1;
   }
@@ -1746,7 +1746,8 @@ function animLoop(){
   drawScene();
   if(S.riding&&!isResting){
     // #5: 배경·도로가 흐르므로 캐릭터는 화면 중앙 부근에서 페달만(가로 횡단 제거)
-    const targetX = 185 + Math.sin(frame*0.12)*4;   // 중앙 + 살짝 앞뒤 흔들림(페달감)
+    const sway = (S.dopT>0) ? 2 : 4;                 // 부스터 시 앞뒤 흔들림 절반(스프라이트 위치편차와 겹쳐 과했던 진동 완화)
+    const targetX = 185 + Math.sin(frame*0.12)*sway; // 중앙 + 살짝 앞뒤 흔들림(페달감)
     bikeX += (targetX - bikeX) * 0.12;               // 부드럽게 추종(정착 시 스냅 없음)
   }
   // 정지 시엔 bikeX 그대로 유지 (멈춘 위치)

@@ -771,14 +771,16 @@ function rollEscapeDice(){
 function showEscapeDestModal(){
   const wr = S.riding;
   if(S.riding){S.riding=false;clearInterval(tickIv);tickIv=null;}
-  // 이동 가능한 도시 목록 (현재 도시·달·일본·진천·함정 제외)
+  // 이동 가능한 도시 목록 (현재 도시·달·일본·진천·함정·해외 페리대륙 제외)
+  // 해외(중국·동남아·…)는 관문 페리로만 진입 — 함정 탈출로 국내에서 바로 못 가게 제외.
   const isJapan = c => c.region==='일본';
   const candidates = CITIES.filter(c =>
     c.n !== S.city &&
     c.n !== '달' &&
     c.n !== '진천' &&
     c.region !== '함정' &&
-    !isJapan(c)
+    !isJapan(c) &&
+    !isFerryRegion(c.region)
   );
   // #4: 안 가본 도시를 최소 1곳 보장(도시 컬렉션 유도), 나머지는 랜덤
   const visited = S.visited || [];
