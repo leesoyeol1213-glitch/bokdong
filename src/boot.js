@@ -33,10 +33,11 @@ requestAnimationFrame(animLoop);
   }
   if(typeof checkDailyLoginReward==='function') checkDailyLoginReward();  // 일일 출석 스트릭 보상(하루 1회, 새 날마다)
   if(typeof ensureTesterGift==='function') ensureTesterGift();            // 일회성 테스터 감사 선물(신화 1개) — 미수령이면 메인 버튼 노출
+  if(typeof scheduleReminders==='function') scheduleReminders();          // P1-1 로컬 알림 예약(네이티브 앱만; 웹은 무동작)
   if(typeof cloudInit==='function') cloudInit();  // 클라우드 계정: 매직링크 복귀·세션 복원·최신본 pull (로그인 안 했으면 무동작)
   setInterval(()=>doSave(false),30000);                                                  // 30초 주기
-  document.addEventListener('visibilitychange',()=>{if(document.hidden)doSave(false);}); // 탭 이탈·홈버튼(모바일)
-  window.addEventListener('pagehide',()=>doSave(false));                                 // 페이지 종료(모바일 신뢰)
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){doSave(false); if(typeof scheduleReminders==='function') scheduleReminders();}}); // 탭 이탈·홈버튼(모바일) + 알림 재예약
+  window.addEventListener('pagehide',()=>{doSave(false); if(typeof scheduleReminders==='function') scheduleReminders();}); // 페이지 종료(모바일 신뢰)
   window.addEventListener('beforeunload',()=>doSave(false));                             // 데스크톱 창 닫기
 })();
 

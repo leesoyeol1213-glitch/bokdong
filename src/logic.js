@@ -1544,6 +1544,45 @@ function flushPendingModals(){
     showLoginRewardModal(p.cyc, p.streak);
   }
 }
+// ── P1-1: 로컬 알림(복귀 유인) — 네이티브 앱(Capacitor) 전용. 웹/PWA에선 플러그인 부재로 전부 무동작(안전) ──
+var _NOTIF_IDS={ offlineCap:8801, streak:8802, raid:8803 };
+function _localNotif(){ try{ return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) || null; }catch(e){ return null; } }
+async function ensureNotifPermission(){
+  const LN=_localNotif(); if(!LN) return false;
+  try{
+    let p = await LN.checkPermissions();
+    if(!p || p.display!=='granted'){ p = await LN.requestPermissions(); }
+    return !!p && p.display==='granted';
+  }catch(e){ return false; }
+}
+// 알림 3종 예약: ①오프라인 8h 캡(라이딩 중 백그라운드 시) ②출석 스트릭 저녁 ③레이드 주간 마감 전(토요일 저녁).
+// 매번 기존 예약을 취소하고 다시 잡아 중복 방지. 웹에선 즉시 return.
+async function scheduleReminders(){
+  const LN=_localNotif(); if(!LN) return;                 // 웹/비네이티브 → 무동작
+  try{
+    if(!(await ensureNotifPermission())) return;
+    try{ await LN.cancel({notifications:[{id:_NOTIF_IDS.offlineCap},{id:_NOTIF_IDS.streak},{id:_NOTIF_IDS.raid}]}); }catch(e){}
+    const now=Date.now(), notifs=[];
+    // ① 오프라인 캡(8시간) — 라이딩 중 앱을 떠날 때만(그 시점에 성장이 멈추는 시각을 알려줌)
+    if(S && S.riding && S.dest){
+      notifs.push({id:_NOTIF_IDS.offlineCap, title:'임복동 세계일주',
+        body:'🚴 여행일지가 가득 찼어요! 복동이가 기다리고 있어요.', schedule:{at:new Date(now+8*3600*1000)}});
+    }
+    // ② 출석 스트릭 — 저녁 20시(오늘 이미 받았거나 지난 시각이면 내일)
+    const streakAt=new Date(); streakAt.setHours(20,0,0,0);
+    const gotToday = S && S.loginStreak && S.loginStreak.last===new Date().toDateString();
+    if(streakAt.getTime()<=now || gotToday) streakAt.setDate(streakAt.getDate()+1);
+    notifs.push({id:_NOTIF_IDS.streak, title:'출석 체크',
+      body:'🔥 출석 보상 받으러 오세요! 연속 기록이 끊기기 전에.', schedule:{at:streakAt}});
+    // ③ 레이드 마감 — 이번 주 일요일 리셋 전(토요일 19시)
+    const raidAt=new Date(); const dow=raidAt.getDay();    // 0=일
+    raidAt.setDate(raidAt.getDate()+((6-dow+7)%7)); raidAt.setHours(19,0,0,0);
+    if(raidAt.getTime()<=now) raidAt.setDate(raidAt.getDate()+7);
+    notifs.push({id:_NOTIF_IDS.raid, title:'전국 레이드',
+      body:'🌏 이번 주 레이드 마감 임박! 달려서 기여하고 보상 받으세요.', schedule:{at:raidAt}});
+    await LN.schedule({notifications:notifs});
+  }catch(e){}
+}
 function showLoginRewardModal(cycIdx, streak){
   const u='var(--u)'; const fs=px=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
   const cells=LOGIN_REWARDS.map((rw,i)=>{
