@@ -567,6 +567,9 @@ function applyOfflineReward(lastTime, wasRiding){
   S.offlineCount=(S.offlineCount||0)+1;
   if(typeof track==='function') track('offline_reward',{sec:Math.floor(sec), levelsUp:levelsUp, arrived:arrivedCount||0});
   window._offlineSim=false;
+  // P1: 오프라인 주행도 일일/주간/월간 미션·특별코스에 반영(방치 유저가 리텐션 장치 수혜). 레이드 제출은 서버검증 전까지 온라인만.
+  if(dist>0) trackMission('km', Math.floor(dist));
+  for(let _ai=0; _ai<arrivedCount; _ai++) trackMission('arrive');
   showTravelLog({resting:false, timeStr:hm(sec), dist:Math.floor(dist), arrived, arrivedCount,
     moneyGain, xpGain:Math.floor(xpGain), applesUsed, applesBought, levelsUp, stoppedNoApple, capped});
 }
@@ -602,8 +605,14 @@ function showTravelLog(info){
   <div class="px-panel" style="border-color:#1976D2;margin-bottom:5px;box-shadow:0 0 calc(10px * var(--u)) #64B5F6;">
     <div style="font-size:${T};color:#1976D2;text-align:center;margin-bottom:calc(8px * var(--u));">📖 여행 일지</div>
     <div style="background:#FFF8DC;border:2px solid #D4B483;border-radius:6px;padding:calc(8px * var(--u));margin-bottom:calc(8px * var(--u));">${body}</div>
-    <button class="px-btn px-btn-green" style="width:100%;font-size:calc(9px * var(--u));padding:calc(10px * var(--u));" onclick="document.getElementById('modal-area').innerHTML='';if(typeof update==='function')update();">확인 ▶</button>
+    <button class="px-btn px-btn-green" style="width:100%;font-size:calc(9px * var(--u));padding:calc(10px * var(--u));" onclick="closeTravelLog()">확인 ▶</button>
   </div>`;
+}
+// 여행일지 닫기 → 대기 중 출석 모달이 있으면 이어서 표시(P1)
+function closeTravelLog(){
+  document.getElementById('modal-area').innerHTML='';
+  if(typeof update==='function') update();
+  if(typeof flushPendingModals==='function') flushPendingModals();
 }
 
 // ── 팝업 ───────────────────────────────────────────────
@@ -1525,7 +1534,15 @@ function checkDailyLoginReward(){
   addLog('good','📅 출석 '+S.loginStreak.count+'일차! 보상: '+rw.label);
   showSt('📅 출석 '+S.loginStreak.count+'일차 보상!');
   if(typeof track==='function') track('login_streak',{day:S.loginStreak.count, cyc:cyc+1});
-  if(!modalOpen()) showLoginRewardModal(cyc, S.loginStreak.count);  // 다른 모달(오프라인·온보딩) 중이면 로그로 대신
+  if(!modalOpen()) showLoginRewardModal(cyc, S.loginStreak.count);
+  else window._pendingLoginModal={cyc:cyc, streak:S.loginStreak.count};  // P1: 다른 모달(오프라인 여행일지·온보딩) 뒤에 순차 표시(놓치지 않게)
+}
+// P1: 대기 중인 출석 모달을 모달이 비면 표시 — 여행일지/온보딩 닫힐 때 호출
+function flushPendingModals(){
+  if(window._pendingLoginModal && !modalOpen()){
+    const p=window._pendingLoginModal; window._pendingLoginModal=null;
+    showLoginRewardModal(p.cyc, p.streak);
+  }
 }
 function showLoginRewardModal(cycIdx, streak){
   const u='var(--u)'; const fs=px=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
@@ -2836,6 +2853,7 @@ function obFinish(skip){
   showSt('🚴 아래 ▶ 초록 버튼을 눌러 첫 라이딩을 시작해요!');
   addLog('good','🚲 여행 시작! 아래 ▶ 버튼으로 달려보세요.');
   update();
+  if(typeof flushPendingModals==='function') flushPendingModals();  // P1: 온보딩 뒤 대기중 출석 모달 표시
 }
 
 // ── 저장코드 백업/복원 (v9.19) ──────────────────────────
@@ -3168,11 +3186,35 @@ function showPostcardBig(i){
   el.innerHTML=`
     <div class="px-panel" style="margin-bottom:5px;">
       <canvas id="pc-big" width="360" height="234" style="width:100%;height:auto;border-radius:8px;image-rendering:pixelated;display:block;margin-bottom:9px;"></canvas>
+      <button class="px-btn px-btn-green" style="width:100%;font-size:calc(12px * var(--u));margin-bottom:6px;" onclick="sharePostcard(${i})">📤 친구에게 자랑하기</button>
       <button class="px-btn px-btn-blue" style="width:100%;font-size:calc(12px * var(--u));margin-bottom:6px;" onclick="savePostcardImage(${i})">🖼 이미지 저장</button>
       <button class="px-btn" style="width:100%;font-size:calc(12px * var(--u));" onclick="renderPostcards()">◀ 앨범으로</button>
     </div>`;
   const cv=document.getElementById('pc-big');
   renderPostcardTo(cv.getContext('2d'), cv.width, cv.height, p.city, p.date);
+}
+// P1: 엽서 공유(바이럴·$0 UA) — Web Share API로 엽서 PNG+초대문구 공유. 파일공유 미지원 시 텍스트+링크, 그것도 없으면 저장으로 폴백.
+function sharePostcard(i){
+  const p=(S.postcards||[])[i]; if(!p) return;
+  const shareText='🚴 임복동 세계일주에서 "'+p.city+'" 도착! 나랑 같이 전국+세계 자전거 여행 떠나요 → https://bokdong.vercel.app';
+  const cv=document.createElement('canvas'); cv.width=600; cv.height=390;
+  renderPostcardTo(cv.getContext('2d'), cv.width, cv.height, p.city, p.date);
+  try{
+    cv.toBlob(function(blob){
+      try{
+        const file = blob ? new File([blob], '임복동_엽서_'+p.city+'.png', {type:'image/png'}) : null;
+        if(file && navigator.canShare && navigator.canShare({files:[file]})){
+          navigator.share({files:[file], title:'임복동 세계일주', text:shareText})
+            .then(()=>{ if(typeof track==='function') track('postcard_share',{city:p.city, mode:'file'}); }).catch(()=>{});
+        } else if(navigator.share){
+          navigator.share({title:'임복동 세계일주', text:shareText, url:'https://bokdong.vercel.app'})
+            .then(()=>{ if(typeof track==='function') track('postcard_share',{city:p.city, mode:'text'}); }).catch(()=>{});
+        } else {
+          savePostcardImage(i); showSt('공유 미지원 기기 — 이미지로 저장했어요');
+        }
+      }catch(e){ savePostcardImage(i); }
+    },'image/png');
+  }catch(e){ savePostcardImage(i); }
 }
 function savePostcardImage(i){
   const p=(S.postcards||[])[i]; if(!p) return;
