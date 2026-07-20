@@ -3248,7 +3248,7 @@ function doPrestige(){
   const nextMult = 1 + 0.25*((S.prestige||0)+1);
   showConfirmModal({
     title:'🌏 '+((S.prestige||0)+1)+'회차 세계일주?',
-    message:`지금까지의 진행(레벨·돈·자전거·장비·방문)이 초기화됩니다.\n대신 영구 보너스 "여행 노하우"를 얻어요:\n\n🚀 속도·수입 +${Math.round((nextMult-1)*100)}% (영구)\n🗡️ 영구 속도 노하우 +${(S.prestigeSpdTotal||0)+1}\n🎟️ 가챠권 3장 지급\n🏆 업적·프레스티지 횟수는 유지\n👥 NPC를 다시 만나 보상을 또 받습니다`,
+    message:`지금까지의 진행(레벨·돈·자전거·방문)이 초기화됩니다.\n대신 영구 보너스 "여행 노하우"를 얻어요:\n\n🚀 속도·수입 +${Math.round((nextMult-1)*100)}% (영구)\n🗡️ 영구 속도 노하우 +${(S.prestigeSpdTotal||0)+1}\n🎒 장비·강화 수준은 그대로 유지!\n🎟️ 가챠권 3장 지급\n🏆 업적·프레스티지 횟수는 유지\n👥 NPC를 다시 만나 보상을 또 받습니다`,
     okText:((S.prestige||0)+1)+'회차 출발! 🌏', cancelText:'아직...', color:'#8B5CF6',
     onOk:()=>{
       const keep={ prestige:(S.prestige||0)+1, achievements:S.achievements||[], paints:S.paints||['gray'], activePaint:S.activePaint||'gray', autoApple:!!S.autoApple,
@@ -3259,6 +3259,8 @@ function doPrestige(){
         raidRankPending:S.raidRankPending, raidGoalPending:S.raidGoalPending,
         // 일회성 테스터 선물 수령 여부 — 환생해도 중복 지급 방지
         testerGiftClaimed:S.testerGiftClaimed, testerGiftPending:S.testerGiftPending,
+        // 장비·강화 수준·강화석 유지(사용자 요청) — 인벤(각 아이템 .plus 포함)·장착·강화석 이월
+        inventory:S.inventory||[], equipped:S.equipped||{head:null,eyes:null,hands:null,feet:null,body:null}, gearDust:S.gearDust||0,
         // 프레스티지 강화: 영구 속도 노하우(회차마다 +1 누적) — 다음 회차로 이월
         prestigeSpdTotal:(S.prestigeSpdTotal||0)+1 };
       S=freshState();
@@ -3274,6 +3276,9 @@ function doPrestige(){
       S.raidRewardClaimed=keep.raidRewardClaimed||''; S.raidRankClaimedWeek=keep.raidRankClaimedWeek||'';
       S.raidRankPending=keep.raidRankPending||null; S.raidGoalPending=keep.raidGoalPending||'';
       S.testerGiftClaimed=!!keep.testerGiftClaimed; S.testerGiftPending=keep.testerGiftClaimed?false:true;
+      // 장비·강화 수준·강화석 이월 후 장착 헬멧 체력 보너스 재적용(mhp 갱신)
+      S.inventory=keep.inventory; S.equipped=keep.equipped; S.gearDust=keep.gearDust;
+      refreshMhpFromHelmet();
       afterReset();
       addLog('good','🌏✨ '+S.prestige+'회차 세계일주 시작! 여행 노하우: 속도·수입 +'+Math.round((prestigeMult()-1)*100)+'% · 🗡️속도 노하우 +'+S.prestigeSpdTotal+' · 🎟️가챠권 +3');
       track('prestige',{n:S.prestige});
