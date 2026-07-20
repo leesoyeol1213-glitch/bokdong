@@ -6,7 +6,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>임복동 세계일주 v9.98</title>
+<title>임복동 세계일주 v9.99</title>
 <!-- 갈무리(Galmuri) 픽셀폰트를 최우선·병렬 로드 — @import 직렬 로딩으로 인한 폰트 폴백(상단/하단 글씨체 불일치) 방지 -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/quiple/galmuri/dist/galmuri.css">
@@ -84,6 +84,9 @@ posthog.init('phc_yh8nk7vukT9U4p8jGU4rHTbbHFzNgSTYFCQDqLyB3woL',{api_host:'https
   </div>
   <div id="course-main" style="margin:0 6px calc(4px * var(--u));"></div>
   <div id="modal-area"></div>
+  <div style="padding:0 6px;margin-bottom:calc(5px * var(--u));">
+    <button class="px-btn" id="tester-gift-btn" onclick="claimTesterGift()" style="display:none;width:100%;font-size:calc(8px * var(--u));padding:calc(11px * var(--u));background:#7C3AED;border-color:#4C1D95;color:#fff;box-shadow:calc(3px * var(--u)) calc(3px * var(--u)) 0 #2E1065;">🎁 테스터 감사 선물 — 신화 아이템 받기!</button>
+  </div>
   <div style="padding:0 6px;margin-bottom:calc(5px * var(--u));">
     <button class="px-btn" id="ride-btn" onclick="toggleRide()" style="width:100%;font-size:calc(8px * var(--u));padding:calc(12px * var(--u));">▶ 출발!</button>
   </div>

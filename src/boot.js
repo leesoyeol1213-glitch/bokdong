@@ -32,6 +32,7 @@ requestAnimationFrame(animLoop);
     if(typeof showOnboarding==='function') showOnboarding();  // 첫 실행 온보딩(환영·닉네임). 자기 가드 있음.
   }
   if(typeof checkDailyLoginReward==='function') checkDailyLoginReward();  // 일일 출석 스트릭 보상(하루 1회, 새 날마다)
+  if(typeof ensureTesterGift==='function') ensureTesterGift();            // 일회성 테스터 감사 선물(신화 1개) — 미수령이면 메인 버튼 노출
   if(typeof cloudInit==='function') cloudInit();  // 클라우드 계정: 매직링크 복귀·세션 복원·최신본 pull (로그인 안 했으면 무동작)
   setInterval(()=>doSave(false),30000);                                                  // 30초 주기
   document.addEventListener('visibilitychange',()=>{if(document.hidden)doSave(false);}); // 탭 이탈·홈버튼(모바일)

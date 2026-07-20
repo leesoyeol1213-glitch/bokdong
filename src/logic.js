@@ -1523,6 +1523,37 @@ function showLoginRewardModal(cycIdx, streak){
     <button class="px-btn px-btn-green" style="width:100%;${fs(8)};padding:calc(9px * ${u});" onclick="document.getElementById('modal-area').innerHTML='';if(typeof update==='function')update();">받기 ▶</button>
   </div>`;
 }
+// ── 일회성 테스터 감사 선물(신화 아이템 1개) — 모든 세이브당 1회 수령 ──
+function ensureTesterGift(){
+  if(!S.testerGiftClaimed) S.testerGiftPending=true;   // 아직 안 받았으면 수령 대기(메인 탭 버튼 노출)
+}
+function claimTesterGift(){
+  if(S.testerGiftClaimed){ showSt('이미 받은 선물이에요'); return; }
+  const item=generateGear('mythic');
+  const r=GEAR_RARITY.find(x=>x.key==='mythic');
+  S.inventory=S.inventory||[];
+  if(S.inventory.length < BAG_CAPACITY){
+    S.inventory.push(item);
+  } else {
+    // 가방 가득 → 최저 등급 분해 후 보관(유실 방지, 랭커 박스와 동일 정책)
+    const order={common:0,rare:1,unique:2,legend:3,epic:4,mythic:5};
+    let lo=0; for(let i=1;i<S.inventory.length;i++){ if(order[S.inventory[i].rarity]<order[S.inventory[lo].rarity]) lo=i; }
+    if(order.mythic > order[S.inventory[lo].rarity]){
+      const dumped=S.inventory[lo]; S.gearDust=(S.gearDust||0)+RARITY_DUST[dumped.rarity];
+      if(S.equipped && S.equipped[dumped.slot]===dumped.id) S.equipped[dumped.slot]=null;
+      S.inventory[lo]=item; addLog('neutral','가방 가득 → 최저 등급 '+dumped.name+' 분해하고 선물 보관');
+    } else {
+      S.gearDust=(S.gearDust||0)+RARITY_DUST.mythic; addLog('neutral','가방 가득 → 선물 강화석 전환');
+    }
+  }
+  S.testerGiftClaimed=true; S.testerGiftPending=false;
+  addLog('good','🎁 테스터 감사 선물! ['+(r?r.label:'신화')+'] '+getSlotIcon(item.slot)+' '+item.name+' 획득! 함께해줘서 고마워요 🙏');
+  showSt('🎁 테스터 선물 ['+(r?r.label:'신화')+'] '+item.name+' 획득!');
+  playSfx('mythic'); if(typeof showGearDropAnim==='function') showGearDropAnim(item);
+  if(typeof track==='function') track('tester_gift_claim',{rarity:'mythic', slot:item.slot});
+  if(typeof save==='function') save(); update();
+  if(curTab==='gear') renderGear();
+}
 function trackMission(type, amount){
   ensureMissions();
   amount = amount || 1;
@@ -3063,7 +3094,7 @@ function closeModalAndLaunch(wr){
 }
 // 새 게임 초기 상태(공통). resetGame·doPrestige가 공유한다.
 function freshState(){
-  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,spdBonus:0,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,idleMode:true,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,gachaEpicCount:0,prestigeSpdTotal:0,loginStreak:{last:'',count:0},foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[],lastTry:{}},playerId:'',nickname:'',postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
+  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,spdBonus:0,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,idleMode:true,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,gachaEpicCount:0,prestigeSpdTotal:0,loginStreak:{last:'',count:0},testerGiftClaimed:false,testerGiftPending:false,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[],lastTry:{}},playerId:'',nickname:'',postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
 }
 // 초기화 후 공통 뒷정리(뱃지·애니메이션·루프)
 function afterReset(){
@@ -3226,6 +3257,8 @@ function doPrestige(){
         raidRewardClaimed:S.raidRewardClaimed, raidRankClaimedWeek:S.raidRankClaimedWeek,
         // 미수령 레이드 보상(순위·목표) — 환생과 무관하게 플레이어 단위로 유지(유실 방지)
         raidRankPending:S.raidRankPending, raidGoalPending:S.raidGoalPending,
+        // 일회성 테스터 선물 수령 여부 — 환생해도 중복 지급 방지
+        testerGiftClaimed:S.testerGiftClaimed, testerGiftPending:S.testerGiftPending,
         // 프레스티지 강화: 영구 속도 노하우(회차마다 +1 누적) — 다음 회차로 이월
         prestigeSpdTotal:(S.prestigeSpdTotal||0)+1 };
       S=freshState();
@@ -3240,6 +3273,7 @@ function doPrestige(){
       if(keep.sinRush) S.sinRush=keep.sinRush;
       S.raidRewardClaimed=keep.raidRewardClaimed||''; S.raidRankClaimedWeek=keep.raidRankClaimedWeek||'';
       S.raidRankPending=keep.raidRankPending||null; S.raidGoalPending=keep.raidGoalPending||'';
+      S.testerGiftClaimed=!!keep.testerGiftClaimed; S.testerGiftPending=keep.testerGiftClaimed?false:true;
       afterReset();
       addLog('good','🌏✨ '+S.prestige+'회차 세계일주 시작! 여행 노하우: 속도·수입 +'+Math.round((prestigeMult()-1)*100)+'% · 🗡️속도 노하우 +'+S.prestigeSpdTotal+' · 🎟️가챠권 +3');
       track('prestige',{n:S.prestige});
@@ -3864,6 +3898,9 @@ function update(){
   // #8: 크로스바이크(v6) 보유 후 메인 사과 버튼을 사과박스 구매로 전환
   const _apBtn=document.getElementById('apple-btn');
   if(_apBtn){ const _box=ownsVeh('v6'); const _html=_box?'📦 사과박스<br><span style="font-size:calc(6px * var(--u));opacity:.85;">랜덤 ₩15k</span>':'🍎<br>사과'; if(_apBtn.innerHTML!==_html)_apBtn.innerHTML=_html; }
+  // 테스터 감사 선물 버튼 — 미수령 시에만 노출
+  const _giftBtn=document.getElementById('tester-gift-btn');
+  if(_giftBtn){ const _show=S.testerGiftPending?'block':'none'; if(_giftBtn.style.display!==_show)_giftBtn.style.display=_show; }
   renderCourseWidget();   // 메인 화면 특별코스 위젯 갱신
   document.getElementById('hp-v').textContent=Math.round(S.hp)+'/'+S.mhp;document.getElementById('hp-b').style.width=Math.round(S.hp/S.mhp*100)+'%';
   document.getElementById('xp-v').textContent=Math.round(S.xp)+'/'+S.xpMax;document.getElementById('xp-b').style.width=Math.round(S.xp/S.xpMax*100)+'%';
