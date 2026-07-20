@@ -1778,7 +1778,7 @@ function drawMascotMiniGame(elapsed){
   ctx.fillStyle='#8B7355'; ctx.fillRect(0,200,420,4);
   // 목표 마스코트(오른쪽에서 둥실)
   ctx.font='24px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText(g.mascot.emoji, 385, 58+Math.sin(frame*0.1)*6);
+  ctx.fillText(g.emoji, 385, 58+Math.sin(frame*0.1)*6);
   ctx.textBaseline='alphabetic';
   // 장애물
   g.obstacles.forEach(o=>{
@@ -1801,7 +1801,7 @@ function drawMascotMiniGame(elapsed){
   ctx.fillStyle='#1B5E20'; ctx.font='bold 10px sans-serif'; ctx.textAlign='left';
   ctx.fillText(Math.max(0,Math.ceil((20000-elapsed)/1000))+'s', 218, 21);
   // 남은 기회(하트)
-  const maxH=(typeof MG_MAXHITS==='number')?MG_MAXHITS:3;
+  const maxH=(typeof g.maxHits==='number')?g.maxHits:3;
   ctx.font='15px serif'; ctx.textAlign='right';
   let hearts=''; for(let i=0;i<Math.max(0,maxH-g.hits);i++) hearts+='❤'; for(let i=0;i<g.hits;i++) hearts+='🖤';
   ctx.fillStyle='#B71C1C'; ctx.fillText(hearts, 408, 22);

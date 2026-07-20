@@ -2055,42 +2055,47 @@ function ensureSinRush(){
   const wk=getWeekKey();
   if(S.sinRush.weekKey!==wk){ S.sinRush.weekKey=wk; S.sinRush.defeated=[]; S.sinRush.lastTry={}; }
 }
+// 7대죄 도전 — 주사위(RNG) 대신 추격 미니게임(실력)으로 전환. 실패 시 저주가 리스크, 재도전은 자유.
 function challengeSin(id){
   ensureSinRush();
   if(modalOpen()){ showSt('진행 중인 선택을 먼저 마쳐주세요'); return; }
   if(S.sinRush.defeated.includes(id)){ showSt('이미 정화했어요'); return; }
-  // 일일 게이트: 실패한 죄악은 하루 1회만 도전 가능(무한 리롤로 저주-무시 브루트포스 방지)
-  const _dk=new Date().toDateString();
-  S.sinRush.lastTry=S.sinRush.lastTry||{};
-  if(S.sinRush.lastTry[id]===_dk){ showSt('😈 오늘은 이미 도전했어요 — 내일 다시 시도!'); return; }
   const npc=S.npcs.find(n=>n.id===id); if(!npc) return;
-  S.sinRush.lastTry[id]=_dk;   // 도전 기록(성공 시 어차피 정화되어 무의미)
-  diceAnim=60; diceVal=Math.ceil(Math.random()*6);
-  const win = diceVal>=3;   // 3~6 정화(66%)
-  update();
-  setTimeout(()=>{
-    if(win){
-      if(!S.sinRush.defeated.includes(id)) S.sinRush.defeated.push(id);
-      const reward=50000; S.money+=reward; S.xp+=100;
-      addLog('good','😇 '+npc.n+' 정화! (🎲'+diceVal+') ₩'+reward.toLocaleString()+' XP+100');
-      showSt('😇 '+npc.n+' 정화! (+₩'+reward.toLocaleString()+')');
-      playSfx('good');
-      if(S.sinRush.defeated.length>=SIN_RUSH_IDS.length){
-        S.money+=1000000; S.sp+=2;
-        addLog('good','👑 7대죄 완전 정화! 그랜드 보상 ₩1,000,000 + SP+2 · 🌟신화 장비 5% 도전!');
-        showSt('👑 7대죄 완전 정화! ₩100만 + SP+2 + 🌟신화 5%');
-        playSfx('levelup');
-        awardMythicIfLucky('god');   // 신화 장비 5% 확률(주간 완전정화 노력 보상 — tryDropMythic god)
-      }
-    } else {
-      addLog('bad','😈 '+npc.n+'에게 당했다! (🎲'+diceVal+') '+npc.reward);
-      showSt('😈 '+npc.n+' 도전 실패… 저주!');
-      playSfx('bad');
-      if(typeof npc.eff==='function') npc.eff(S);   // 죄악의 저주(리스크)
-    }
-    if(curTab==='mission') renderMission();
-    update(); refreshTabBadges();
-  }, 800);
+  const em=(typeof NPC_EMOJI!=='undefined' && NPC_EMOJI[id])||'😈';
+  const isLast = S.sinRush.defeated.length+1 >= SIN_RUSH_IDS.length;
+  startMiniGame({ emoji:em, name:npc.n, intro:npc.n+' 정화 추격전!', diff:'sin', accent:'#B71C1C',
+    winTitle:'😇 '+em+' '+npc.n+' 정화!', loseTitle:'😈 '+npc.n+'에게 당했다…',
+    winText:'죄악을 정화했어요! ₩50,000 + XP+100'+(isLast?'<br>👑 7대죄 완전 정화 그랜드 보상!':''),
+    loseText:'저주에 걸렸어요… ('+npc.reward+')<br>다시 도전할 수 있어요.',
+    onWin:function(){ defeatSin(id); }, onLose:function(){ sinCurse(id); } });
+}
+// 정화 성공 처리(보상 + 완전정화 그랜드)
+function defeatSin(id){
+  ensureSinRush();
+  const npc=S.npcs.find(n=>n.id===id); if(!npc) return;
+  if(!S.sinRush.defeated.includes(id)) S.sinRush.defeated.push(id);
+  const reward=50000; S.money+=reward; S.xp+=100;
+  addLog('good','😇 '+npc.n+' 정화! ₩'+reward.toLocaleString()+' XP+100');
+  showSt('😇 '+npc.n+' 정화! (+₩'+reward.toLocaleString()+')');
+  if(typeof playSfx==='function') playSfx('good');
+  if(S.sinRush.defeated.length>=SIN_RUSH_IDS.length){
+    S.money+=1000000; S.sp+=2;
+    addLog('good','👑 7대죄 완전 정화! 그랜드 보상 ₩1,000,000 + SP+2 · 🌟신화 장비 5% 도전!');
+    showSt('👑 7대죄 완전 정화! ₩100만 + SP+2 + 🌟신화 5%');
+    if(typeof playSfx==='function') playSfx('levelup');
+    awardMythicIfLucky('god');   // 신화 장비 5% 확률(주간 완전정화 노력 보상)
+  }
+  if(curTab==='mission') renderMission();
+  refreshTabBadges();
+}
+// 정화 실패 처리(죄악의 저주 — 리스크 유지)
+function sinCurse(id){
+  const npc=S.npcs.find(n=>n.id===id); if(!npc) return;
+  addLog('bad','😈 '+npc.n+'에게 당했다! '+npc.reward);
+  showSt('😈 '+npc.n+' 정화 실패… 저주!');
+  if(typeof npc.eff==='function') npc.eff(S);   // 죄악의 저주(리스크)
+  if(curTab==='mission') renderMission();
+  refreshTabBadges();
 }
 function renderSinRushHTML(){
   ensureSinRush();
@@ -2102,15 +2107,14 @@ function renderSinRushHTML(){
     const npc=S.npcs.find(n=>n.id===id)||{n:id,reward:''};
     const em=NPC_EMOJI[id]||'😈';
     const cleared=S.sinRush.defeated.includes(id);
-    const triedToday=!cleared && S.sinRush.lastTry && S.sinRush.lastTry[id]===new Date().toDateString();
     items+=`<div style="display:flex;justify-content:space-between;align-items:center;border:2px solid ${cleared?'#8B6340':'#B71C1C'};background:${cleared?'#EFE8DC':'#FFF3E0'};border-radius:calc(6px * ${u});padding:calc(5px * ${u});margin-bottom:calc(4px * ${u});">
       <div><div style="${fs(7)};color:#3D2510;">${em} ${npc.n}</div><div style="${fs(5)};color:#B71C1C;">${cleared?'':'실패 시: '+npc.reward}</div></div>
-      ${cleared?`<span style="${fs(6)};color:#1B5E20;padding:0 calc(6px * ${u});">정화 ✓</span>`:(triedToday?`<span style="${fs(5)};color:#8B6340;padding:0 calc(6px * ${u});">내일 재도전</span>`:`<button class="px-btn px-btn-sm px-btn-red" style="${fs(6)};" onclick="challengeSin('${id}')">🎲 도전</button>`)}
+      ${cleared?`<span style="${fs(6)};color:#1B5E20;padding:0 calc(6px * ${u});">정화 ✓</span>`:`<button class="px-btn px-btn-sm px-btn-red" style="${fs(6)};" onclick="challengeSin('${id}')">🏃 추격</button>`}
     </div>`;
   });
   return `<div class="px-panel" style="margin-bottom:calc(6px * ${u});border-color:#B71C1C;">
     <div style="${fs(9)};color:#B71C1C;text-align:center;margin-bottom:calc(3px * ${u});">😈 주간 7대죄 보스 러시 <span style="${fs(5)};color:#8B6340;">(${done}/${total})</span></div>
-    <div style="${fs(5)};color:#8B6340;text-align:center;margin-bottom:calc(6px * ${u});">🎲 주사위 3+로 정화(66%) · 실패 시 저주 · 죄악당 하루 1회 · ${allDone?'✅ 완전 정화 달성!':'전원 정화 → ₩100만 + SP+2 + 🌟신화 장비 5%'}</div>
+    <div style="${fs(5)};color:#8B6340;text-align:center;margin-bottom:calc(6px * ${u});">🏃 추격 미니게임 20초 생존으로 정화(실력) · 실패 시 저주 · 재도전 자유 · ${allDone?'✅ 완전 정화 달성!':'전원 정화 → ₩100만 + SP+2 + 🌟신화 장비 5%'}</div>
     ${items}
   </div>`;
 }
@@ -2482,26 +2486,45 @@ function catchMascot(id){
   checkAchievements();
 }
 
-// ── 🐾 마스코트 추격 미니게임(원버튼 점프·20초·보통 난이도) ──
-var MG_GROUND=200, MG_BOKX=95, MG_JUMPV=-9.6, MG_GRAV=0.56, MG_OBSPEED=3.9, MG_MAXHITS=3, MG_DUR=20000;
+// ── 🏃 원버튼 점프 추격 미니게임 엔진(마스코트 포획·7대죄 정화 공용) ──
+var MG_GROUND=200, MG_BOKX=95, MG_JUMPV=-9.6, MG_GRAV=0.56;
+// 난이도 프리셋(튜닝 지점): 마스코트=보통+1단계, 7대죄 보스=한 단계 더.
+var MG_DIFF={
+  mascot:{obSpeed:4.5, spawnBase:840, spawnRand:480, maxHits:3, dur:20000},
+  sin:   {obSpeed:5.1, spawnBase:720, spawnRand:420, maxHits:3, dur:20000},
+};
 function huntMascot(){ const m=getAvailableMascot(); if(m) startMascotMiniGame(m.id); else showSt('추격할 마스코트가 없어요'); }
-function startMascotMiniGame(id){
-  const m=MASCOTS.find(x=>x.id===id); if(!m) return;
-  if(modalOpen()){ showSt('진행 중인 걸 먼저 마쳐주세요'); return; }
-  if((S.mascots||[]).includes(id)){ showSt('이미 포획했어요'); return; }
+// 공용 시작 — cfg:{emoji,name,intro,diff,winTitle,loseTitle,winText,loseText,onWin,onLose,accent}
+function startMiniGame(cfg){
+  if(modalOpen()){ showSt('진행 중인 걸 먼저 마쳐주세요'); return false; }
+  const d=MG_DIFF[cfg.diff]||MG_DIFF.mascot;
   const wr=S.riding; if(S.riding){ S.riding=false; isResting=false; clearInterval(tickIv); tickIv=null; }
-  window.miniGame={ active:true, id:id, mascot:m, start:Date.now(),
-    bokFeetY:MG_GROUND, vy:0, onGround:true, obstacles:[], hits:0, passed:0,
+  window.miniGame={ active:true, emoji:cfg.emoji, name:cfg.name,
+    winTitle:cfg.winTitle, loseTitle:cfg.loseTitle, winText:cfg.winText, loseText:cfg.loseText,
+    onWin:cfg.onWin, onLose:cfg.onLose,
+    obSpeed:d.obSpeed, spawnBase:d.spawnBase, spawnRand:d.spawnRand, maxHits:d.maxHits, dur:d.dur,
+    start:Date.now(), bokFeetY:MG_GROUND, vy:0, onGround:true, obstacles:[], hits:0, passed:0,
     nextSpawn:Date.now()+900, flash:0, ended:false, wasRiding:wr };
-  const u='var(--u)';
+  const u='var(--u)', ac=cfg.accent||'#43A047';
   document.getElementById('modal-area').innerHTML=`
-  <div class="px-panel" style="border-color:#43A047;background:linear-gradient(135deg,#E8F5E9,#FFFDE7);margin-bottom:5px;text-align:center;">
-    <div style="font-size:calc(9px * ${u});color:#1B5E20;margin-bottom:calc(4px * ${u});">${m.emoji} ${m.name} 추격전!</div>
-    <div style="font-size:calc(6px * ${u});color:#5C3D1E;margin-bottom:calc(6px * ${u});">위 화면에서 20초간 장애물을 피하세요! (${MG_MAXHITS}번 부딪히면 놓침)</div>
+  <div class="px-panel" style="border-color:${ac};background:linear-gradient(135deg,#E8F5E9,#FFFDE7);margin-bottom:5px;text-align:center;">
+    <div style="font-size:calc(9px * ${u});color:#1B5E20;margin-bottom:calc(4px * ${u});">${cfg.emoji} ${cfg.intro||(cfg.name+' 추격전!')}</div>
+    <div style="font-size:calc(6px * ${u});color:#5C3D1E;margin-bottom:calc(6px * ${u});">위 화면에서 ${Math.round(d.dur/1000)}초간 장애물을 피하세요! (${d.maxHits}번 부딪히면 실패)</div>
     <button class="px-btn px-btn-green" style="width:100%;font-size:calc(12px * ${u});padding:calc(15px * ${u});" onclick="mascotJump()">🔼 점프! (위 화면 탭도 가능)</button>
   </div>`;
   if(typeof ST==='function') ST('main');   // 메인 탭으로(캔버스가 보여야 함)
   update();
+  return true;
+}
+function startMascotMiniGame(id){
+  const m=MASCOTS.find(x=>x.id===id); if(!m) return;
+  if((S.mascots||[]).includes(id)){ showSt('이미 포획했어요'); return; }
+  startMiniGame({ emoji:m.emoji, name:m.name, intro:m.name+' 추격전!', diff:'mascot', accent:'#43A047',
+    winTitle:'🎉 '+m.emoji+' '+m.name+' 포획!', loseTitle:'😢 '+m.name+' 놓침…',
+    winText:m.desc+'<br>스탯 보조가 적용됐어요!',
+    loseText:'괜찮아요! 메인 화면 추격 버튼으로<br>언제든 다시 도전할 수 있어요.',
+    onWin:function(){ catchMascot(id); },
+    onLose:function(){ addLog('neutral','🐾 '+m.name+' 놓쳤다! 메인 화면에서 다시 추격할 수 있어요.'); } });
 }
 function mascotJump(){
   const g=window.miniGame; if(!g||!g.active||g.ended) return;
@@ -2510,17 +2533,17 @@ function mascotJump(){
 // animLoop가 매 프레임 호출 — 물리·충돌·타이머 갱신 후 그리기
 function stepMascotMiniGame(){
   const g=window.miniGame; if(!g||!g.active) return;
-  if(typeof frame==='number') frame++;    // 페달링·마스코트 애니메이션용 프레임 진행
+  if(typeof frame==='number') frame++;    // 페달링·애니메이션용 프레임 진행
   const now=Date.now();
   g.vy+=MG_GRAV; g.bokFeetY+=g.vy;
   if(g.bokFeetY>=MG_GROUND){ g.bokFeetY=MG_GROUND; g.vy=0; g.onGround=true; } else g.onGround=false;
   if(now>=g.nextSpawn){
     g.obstacles.push({x:432, w:16, h:20+Math.floor(Math.random()*15), hit:false, counted:false});
-    g.nextSpawn=now+950+Math.random()*600;
+    g.nextSpawn=now+g.spawnBase+Math.random()*g.spawnRand;
   }
   const jumpOffset=MG_GROUND-g.bokFeetY;
   for(const o of g.obstacles){
-    o.x-=MG_OBSPEED;
+    o.x-=g.obSpeed;
     if(!o.hit && o.x<MG_BOKX+14 && o.x+o.w>MG_BOKX-14 && jumpOffset<o.h){ o.hit=true; g.hits++; g.flash=8; if(typeof playSfx==='function') playSfx('bad'); }
     if(!o.counted && o.x+o.w<MG_BOKX-14){ o.counted=true; if(!o.hit) g.passed++; }
   }
@@ -2528,25 +2551,26 @@ function stepMascotMiniGame(){
   if(g.flash>0) g.flash--;
   const elapsed=now-g.start;
   if(!g.ended){
-    if(g.hits>=MG_MAXHITS){ endMascotMiniGame(false); return; }
-    if(elapsed>=MG_DUR){ endMascotMiniGame(true); return; }
+    if(g.hits>=g.maxHits){ endMascotMiniGame(false); return; }
+    if(elapsed>=g.dur){ endMascotMiniGame(true); return; }
   }
   if(typeof drawMascotMiniGame==='function') drawMascotMiniGame(elapsed);
 }
 function endMascotMiniGame(success){
   const g=window.miniGame; if(!g||g.ended) return; g.ended=true; g.active=false;
-  const m=g.mascot; window._miniWasRiding=g.wasRiding;
-  if(success){ catchMascot(g.id); }
-  else { addLog('neutral','🐾 '+m.name+' 놓쳤다! 메인 화면에서 다시 추격할 수 있어요.'); if(typeof playSfx==='function') playSfx('bad'); }
+  window._miniWasRiding=g.wasRiding;
+  const info={winTitle:g.winTitle, loseTitle:g.loseTitle, winText:g.winText, loseText:g.loseText};
+  if(success){ if(typeof g.onWin==='function') g.onWin(); }
+  else { if(typeof g.onLose==='function') g.onLose(); if(typeof playSfx==='function') playSfx('bad'); }
   window.miniGame=null;
-  showMascotResult(success, m);
+  showMascotResult(success, info);
 }
-function showMascotResult(success, m){
+function showMascotResult(success, info){
   const u='var(--u)';
   document.getElementById('modal-area').innerHTML=`
   <div class="px-panel" style="border-color:${success?'#43A047':'#B71C1C'};background:${success?'linear-gradient(135deg,#E8F5E9,#FFFDE7)':'#FFF3E0'};margin-bottom:5px;text-align:center;box-shadow:0 0 calc(10px * ${u}) ${success?'#66BB6A':'#EF9A9A'};">
-    <div style="font-size:calc(11px * ${u});color:${success?'#1B5E20':'#B71C1C'};margin-bottom:calc(6px * ${u});">${success?'🎉 '+m.emoji+' '+m.name+' 포획!':'😢 '+m.name+' 놓침…'}</div>
-    <div style="font-size:calc(7px * ${u});color:#5C3D1E;margin-bottom:calc(8px * ${u});line-height:1.8;">${success?m.desc+'<br>스탯 보조가 적용됐어요!':'괜찮아요! 메인 화면 추격 버튼으로<br>언제든 다시 도전할 수 있어요.'}</div>
+    <div style="font-size:calc(11px * ${u});color:${success?'#1B5E20':'#B71C1C'};margin-bottom:calc(6px * ${u});">${success?info.winTitle:info.loseTitle}</div>
+    <div style="font-size:calc(7px * ${u});color:#5C3D1E;margin-bottom:calc(8px * ${u});line-height:1.8;">${success?info.winText:info.loseText}</div>
     <button class="px-btn px-btn-green" style="width:100%;font-size:calc(9px * ${u});padding:calc(10px * ${u});" onclick="closeMascotResult()">확인 ▶</button>
   </div>`;
   update();
