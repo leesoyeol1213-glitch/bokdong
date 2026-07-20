@@ -1739,9 +1739,16 @@ function drawRestScene(){
 }
 
 // ── 애니메이션 루프 (속도 연동) ────────────────────────
+var _idleFrame=0;
 function animLoop(){
+  requestAnimationFrame(animLoop);
+  if(typeof checkAuto==='function') checkAuto();   // 방치 자동진행: 벽시계 데드라인 확인(매 프레임 — 스로틀 무관)
+  // P0: 정지 중엔 프레임 1/3만 그림(~20fps) — 배터리 절약(저가 안드로이드 삭제 사유 1순위). 라이딩 중엔 풀레이트로 스크롤 부드럽게.
+  if(!S.riding && !isResting){
+    _idleFrame=(_idleFrame+1)%3;
+    if(_idleFrame!==0) return;
+  }
   drawScene();
-  if(typeof checkAuto==='function') checkAuto();   // 방치 자동진행: 벽시계 데드라인 확인(setInterval 스로틀 무관)
   if(S.riding&&!isResting){
     // #5: 배경·도로가 흐르므로 캐릭터는 화면 중앙 부근에서 페달만(가로 횡단 제거)
     const sway = (S.dopT>0) ? 2 : 4;                 // 부스터 시 앞뒤 흔들림 절반(스프라이트 위치편차와 겹쳐 과했던 진동 완화)
@@ -1749,7 +1756,7 @@ function animLoop(){
     bikeX += (targetX - bikeX) * 0.12;               // 부드럽게 추종(정착 시 스냅 없음)
   }
   // 정지 시엔 bikeX 그대로 유지 (멈춘 위치)
-  requestAnimationFrame(animLoop);
+
 }
 // (rAF 킥오프는 boot.js로 이동 — 모든 파일 로드 후 시작 보장)
 

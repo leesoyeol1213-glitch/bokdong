@@ -20,6 +20,20 @@ function toggleRide(){
   }else{clearInterval(tickIv);tickIv=null;clearTimeout(npcIv);}
 }
 function startNpcTimer(){clearTimeout(npcIv);npcIv=setTimeout(()=>{if(S.riding)fireNpc();startNpcTimer();},60000+Math.random()*60000);}
+// P0: 로드 시 자동 재출발 — 떠날 때 라이딩 중이었고 방치 ON·체력 있음·함정 아님이면 자동으로 다시 달린다(방치형 "닫아도 성장" 계약).
+function maybeAutoResume(wasRiding){
+  if(!wasRiding) return;               // 떠날 때 정지였으면 존중
+  if(S.idleMode===false) return;       // 방치 OFF면 멈춰서 직접 조작(기존 UX)
+  if(S.riding || S.trapZone) return;   // 이미 달리는 중·함정존이면 개입 안 함
+  if((S.hp||0) <= 0) return;           // 체력 0이면 회복 먼저(무한 재출발 방지)
+  enforceJapanRule(); enforceFerryRules();
+  if(!S.dest && S.city!=='달') autoPickNextDestination();
+  if(!S.dest && S.city!=='달') return; // 목적지를 못 잡으면 대기
+  S.riding=true;
+  const rb=document.getElementById('ride-btn'); if(rb) rb.textContent='■ 정지';
+  if(!tickIv){ tickIv=setInterval(tick,1000); startNpcTimer(); }
+  addLog('good','🚴 자동 재출발! 계속 여행 중… (방치 ON)');
+}
 // 일본 진입 규칙 강제: 일본은 부산 페리(buyFerryFromModal)로만 진입 가능.
 // 한국에 있는데 목적지가 일본이면 → 잘못된 상태이므로 즉시 초기화 (어떤 경로로 오염됐든 자동 복구)
 // 단, 정식 페리 탑승(S.onFerryToJapan=true)으로 부산→후쿠오카 가는 중은 예외.
@@ -434,7 +448,6 @@ function acceptReunion(id,money,xp,wr){
   closeModal(wr);
 }
 // 1번: 휴식 기능 제거됨. 오프라인 시 visibilitychange 핸들러에서 1분당 체력+1 회복
-function doRest(){addLog('neutral','💡 휴식 기능은 제거됐어요. 오프라인 시 1분당 체력+1 자동 회복!');}
 function useApple(){
   if(S.envyUntil && Date.now() < S.envyUntil){addLog('bad','😒 시기 효과: 회복 아이템 사용 불가!');return;}
   if(S.ap<=0){addLog('bad','사과 없음!');return;}
@@ -529,6 +542,8 @@ function applyOfflineReward(lastTime, wasRiding){
     const _sp=sponsorPerSec();
     if(_sp>0){ S.money+=_sp; moneyGain+=_sp; S._sponsorAccum=(S._sponsorAccum||0)+_sp; }
     if(S.dest && S.sgKm>=S.sgTot){
+      const _ad=CITIES.find(c=>c.n===S.dest);
+      if(_ad && _ad.region==='함정'){ break; } // 함정 도착은 오프라인 무저항 통과 금지 — dest·sgKm 유지해 온라인 첫 tick에 함정 모달로 처리
       const city=S.dest;
       S.city=city; S.dest=null; S.sgKm=0;
       if(!S.visited.includes(city))S.visited.push(city);
@@ -713,7 +728,7 @@ function showHistModal(ci){
       <div style="font-size:calc(8px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid ${titleColor};border-radius:6px;padding:7px;margin-bottom:8px;line-height:2;">📜 ${ci.hist}</div>
       <div style="font-size:calc(8px * var(--u));color:#3D2510;background:#FFF8DC;border:2px solid #D4B483;border-radius:6px;padding:8px;margin-bottom:8px;line-height:2;text-align:center;">${subText}</div>
       <div style="font-size:calc(8px * var(--u));color:#B71C1C;background:#FFE0E0;border:2px solid #B71C1C;border-radius:6px;padding:6px;margin-bottom:8px;text-align:center;line-height:1.8;">
-        🚷 무의미한 라이딩 200km 진행<br>50km마다 주사위 6 나오면 탈출 가능
+        🚷 무의미한 라이딩 200km 진행<br>8초마다 탈출 주사위 기회 충전 · 실패할수록 쉬워져요 (6번째는 무조건 성공!)
       </div>
       <button class="px-btn px-btn-red" style="width:100%;font-size:calc(9px * var(--u));" onclick="enterTrapZone('${ci.special}',${wr})">탈출 시도 시작...</button>
     </div>`;
@@ -1322,7 +1337,15 @@ function autoPickNextDestination(){
   const cur = CITIES.find(c=>c.n===S.city)||{};
   const currentInJapan = isJapan(cur);
   const curFerryReg = isFerryRegion(cur.region) ? cur.region : null;  // 현재 있는 페리 대륙(중국·동남아·…)
-  let others=CITIES.filter(c=>c.n!==S.city && c.n!=='달' && c.n!=='진천' && isRegionUnlocked(c.region));
+  // P0: 신규 유저(프레스티지0·방문<3)는 첫 목적지를 근거리+함정 제외로 큐레이션 — 첫 세션 사망 나선/함정 첫 도시 방지.
+  //  거리는 명시표(CITY_DIST) 값만 사용(미기재 쌍은 getCityDist가 매 호출 랜덤이라 sgTot과 어긋남) → 실제 sgTot도 이 명시값으로 확정.
+  const _newbie=(S.prestige||0)===0 && (S.visited||[]).length<3;
+  const _explicitDist=n=> (CITY_DIST[S.city+'-'+n]||CITY_DIST[n+'-'+S.city]||9999);
+  let others=CITIES.filter(c=>c.n!==S.city && c.n!=='달' && c.n!=='진천' && isRegionUnlocked(c.region)
+    && (!_newbie || (c.region!=='함정' && _explicitDist(c.n)<=120)));
+  if(_newbie && !others.length){ // 근거리 명시 후보 소진 시 완화(함정 제외는 유지)
+    others=CITIES.filter(c=>c.n!==S.city && c.n!=='달' && c.n!=='진천' && c.region!=='함정' && isRegionUnlocked(c.region));
+  }
   let ferryReturn = false;   // 이번 픽이 대륙 코스 완주 귀국인지
   if(currentInJapan){
     // 3번 fix: 일본 도시 모두 방문해야 부산으로 귀국 가능 (코스 완주 룰)
@@ -1460,11 +1483,11 @@ function ensureMissions(){
     S.foodToday = [];  // #2: 맛집 오늘 방문 기록 자정 리셋 → 매일 재방문 가능
     const next = new Date(); next.setHours(24,0,0,0); S.missions.dailyResetAt = next.getTime();
   }
-  // 주간 리셋 (월요일 00:00)
+  // 주간 리셋 (일요일 00:00) — 레이드·주간코스·7대죄의 getWeekKey(일요일 경계)와 통일(하루 어긋남 버그 수정)
   if(!S.missions.weeklyResetAt || now > S.missions.weeklyResetAt){
     MISSIONS.weekly.forEach(m=>{S.missions.progress[m.id]=0; S.missions.claimed = S.missions.claimed.filter(id=>id!==m.id);});
-    const d = new Date(); const day0 = d.getDay()===0?7:d.getDay(); // 일=7
-    d.setDate(d.getDate()+(8-day0)); d.setHours(0,0,0,0);
+    const d = new Date(); const dow = d.getDay(); // 일=0
+    d.setDate(d.getDate()+((7-dow)||7)); d.setHours(0,0,0,0); // 다음 일요일 00:00
     S.missions.weeklyResetAt = d.getTime();
   }
   // 월간 리셋 (1일 00:00)
@@ -1797,7 +1820,7 @@ function fetchRaid(force){
     if(curTab==='mission') renderMission();
   }).catch(_=>{ raidState.connected=false; });
 }
-// 전국 레이드 공동목표(100만km) 달성 보상 — 서버 확인 합산 기준, 주당 1회. "달성 시 모두 보상" 약속 이행.
+// 전국 레이드 공동목표(RAID_GOAL, 현재 5만km) 달성 보상 — 서버 확인 합산 기준, 주당 1회. "달성 시 모두 보상" 약속 이행.
 function raidRewardClaimedThisWeek(){ ensurePlayerId(); return S.raidRewardClaimed === getWeekKey(); }
 function claimRaidRewardIfDone(){
   if(!raidState.connected) return;                       // 오프라인 추정치로는 지급하지 않음(서버 합산만 인정)
@@ -2576,9 +2599,6 @@ var RARITY_GOLD = {common:2000, rare:6000, unique:15000, legend:40000, epic:1000
 var PAINT_POOL = [];
 function getOwnedPaints(){ return []; }
 function getActivePaint(){ return null; }
-function rollPaint(){ addLog('bad','페인트 시스템은 제거됐어요'); }
-function applyPaint(){}
-function renderPaintShop(){}
 
 // 2번: 장비 가챠 — 일반~에픽, 천장: 50회 전설 확정 · 100회 에픽 확정
 var GACHA_PROBS = [
@@ -2944,7 +2964,7 @@ function doLoad(parsedD){
           const _cv = VEHS.find(v=>v.id===S.vId); if(_cv) S.speed = _cv.sp;
           addLog('neutral','🚲 탈것 체계 정비(15단계)! 자전거 '+newOwned+'단계로 이전됐어요');
         }
-        if(!S.achievements)S.achievements=[];if(!S.boostCount)S.boostCount=0;if(!S.offlineCount)S.offlineCount=0;if(typeof S.autoApple!=='boolean')S.autoApple=false;if(typeof S.idleMode!=='boolean')S.idleMode=true;if(typeof S.prestige!=='number')S.prestige=0;
+        if(!S.achievements)S.achievements=[];if(!S.boostCount)S.boostCount=0;if(!S.offlineCount)S.offlineCount=0;if(typeof S.autoApple!=='boolean')S.autoApple=true;if(typeof S.idleMode!=='boolean')S.idleMode=true;if(typeof S.prestige!=='number')S.prestige=0;
         if(!S.regionVisits)S.regionVisits={}; // #3 지역별 도착 회수
         // #6 엽서 마이그레이션: 없으면 이미 방문한 도시들로 소급 생성
         if(!Array.isArray(S.postcards)){ S.postcards=[]; (S.visited||[]).forEach(c=>collectPostcard(c)); }
@@ -3011,6 +3031,7 @@ function doLoad(parsedD){
         logs=d.log||[];document.getElementById('ride-btn').textContent='▶ 출발!';
         if(d.lpt)applyOfflineReward(d.lpt, !!(d.S && d.S.riding));
         showSt('📂 불러오기 완료!');addLog('good','📂 불러오기 완료');update();
+        maybeAutoResume(!!(d.S && d.S.riding));   // P0: 방치 ON이면 떠날 때 상태로 자동 재출발(오프라인 보상 처리 후)
         saveReady=true; // 로드 성공 → 자동저장 활성화
         return true;
       }catch(e){showSt('불러오기 실패');return false;}
@@ -3094,7 +3115,7 @@ function closeModalAndLaunch(wr){
 }
 // 새 게임 초기 상태(공통). resetGame·doPrestige가 공유한다.
 function freshState(){
-  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,spdBonus:0,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,idleMode:true,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,gachaEpicCount:0,prestigeSpdTotal:0,loginStreak:{last:'',count:0},testerGiftClaimed:false,testerGiftPending:false,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[],lastTry:{}},playerId:'',nickname:'',postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
+  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,spdBonus:0,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:true,idleMode:true,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,gachaEpicCount:0,prestigeSpdTotal:0,loginStreak:{last:'',count:0},testerGiftClaimed:false,testerGiftPending:false,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[],lastTry:{}},playerId:'',nickname:'',postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
 }
 // 초기화 후 공통 뒷정리(뱃지·애니메이션·루프)
 function afterReset(){

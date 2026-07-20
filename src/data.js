@@ -732,7 +732,7 @@ const ACHIEVEMENTS=[
   // 지역별 (1번 추가 요청)
   {id:'reg_chung',grp:'지역',emoji:'🍎',name:'충청도 정복', desc:'충주·제천·태안 모두 방문',  check:s=>['충주','제천','태안'].every(c=>s.visited.includes(c)),         rw:{money:30000,xp:100}},
   {id:'reg_gang', grp:'지역',emoji:'🏔️',name:'강원도 정복', desc:'강릉·속초·고성 모두 방문',  check:s=>['강릉','속초','고성'].every(c=>s.visited.includes(c)),         rw:{money:40000,xp:120}},
-  {id:'reg_gyeong',grp:'지역',emoji:'🌊',name:'경상도 정복',desc:'포항·부산 모두 방문',       check:s=>['포항','부산'].every(c=>s.visited.includes(c)),                rw:{money:35000,xp:100}},
+  {id:'reg_gyeong',grp:'지역',emoji:'🌊',name:'경상도 정복',desc:'경상도 도시 모두 방문',   check:s=>CITIES.filter(c=>c.region==='경상').every(c=>s.visited.includes(c.n)), rw:{money:35000,xp:100}},
   {id:'reg_jeon', grp:'지역',emoji:'🌾',name:'전라도 정복', desc:'여수·목포·군산 모두 방문',  check:s=>['여수','목포','군산'].every(c=>s.visited.includes(c)),         rw:{money:40000,xp:120}},
   {id:'reg_gyeong2',grp:'지역',emoji:'🏙️',name:'경기도 정복',desc:'인천·서울 모두 방문',     check:s=>['인천','서울'].every(c=>s.visited.includes(c)),                rw:{money:50000,xp:150}},
   {id:'reg_jeju', grp:'지역',emoji:'🍊',name:'제주 상륙',   desc:'제주 방문',                check:s=>s.visited.includes('제주'),                                    rw:{money:100000,xp:300}},
@@ -783,7 +783,7 @@ let S={
   xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,
   end:5,speed:6,sp:3,vId:'v1',
   ap:3,jc:2,dopT:0,dopSp:5,
-  autoApple:false,
+  autoApple:true,   // P0: 신규 기본 ON — 첫 세션 "수동 사과 먹이기" 부담 제거(방치형 온보딩)
   riding:false,restT:0,ecool:0,
   prevBaseMhp:100,
   mhpSpBonus:0,
