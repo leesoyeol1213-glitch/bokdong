@@ -141,7 +141,7 @@ function tick(){
   S._wrathPrev = !!S.wrathUntil;
   S._lustPrev = !!S.lustUntil;
 
-  const baseSp = (v.sp + (S.dopT>0?S.dopSp:0) + (eqBonus.speedBonus||0)) * sinSpeedMult * prestigeMult();
+  const baseSp = (v.sp + (S.dopT>0?S.dopSp:0) + (eqBonus.speedBonus||0) + (S.spdBonus||0)) * sinSpeedMult * prestigeMult();
   const wMod = weather.mod.speedMult || 1.0;
   const km=(baseSp * wMod)*.05*SPEED_SCALE;
   const prevTotKm=S.totKm;
@@ -155,6 +155,16 @@ function tick(){
       playSfx('levelup');
     }
   });
+  // L1: 첫 세션 훅 — 첫 게임 시작 후 12km 도달 시 환영 선물 1회(초반 이탈 방지, Fable 진단).
+  //  기존 세이브(이미 12km 초과)는 크로스 조건에 안 걸려 미발동. 프레스티지 회차엔 제외.
+  if((S.prestige||0)===0 && !S._firstGiftDone && prevTotKm<12 && S.totKm>=12){
+    S._firstGiftDone=true;
+    S.money+=10000;
+    addLog('good','🎁 첫 여정 선물 도착! 응원의 ₩10,000 + 장비 1개!');
+    showSt('🎁 첫 여정 선물 도착!');
+    playSfx('levelup');
+    setTimeout(()=>dropGear('quiz'), 300);
+  }
   const speedHpDrain = 0.175 * v.sp; // 신 sp 스케일(km/h) 대응 — 과거 0.05*구sp와 동일 소모(HP/km ≈ 1.54 보존)
   const boostDrain = S.dopT > 0 ? 0.4 : 0;
   // 분노 시 체력 소모 ↑ (속도 +50%만큼 추가 소모)
@@ -167,6 +177,9 @@ function tick(){
   if(S.autoApple && S.hp <= S.mhp*0.3 && S.ap>0){ S.ap--; S.hp=Math.min(S.mhp, S.hp+30); }
   const xpMult = 1 + (eqBonus.xpBonus||0);
   S.xp += km*2.5 * xpMult;
+  // 협찬 수입(v13~15 패시브) — 매 초 소지금에 누적. 도착 사이 후반 수입 절벽 완화(Fable M1)
+  const _sponsor = sponsorPerSec();
+  if(_sponsor>0){ S.money += _sponsor; S._sponsorAccum = (S._sponsorAccum||0) + _sponsor; }
   if(S.dopT>0)S.dopT--;
   // 2번: 탐욕의 프레드 — 100km마다 약탈
   if(S.disasterFred){
@@ -196,13 +209,18 @@ function tick(){
   } else if(!S._petStage){
     S._petStage = curStage;
   }
-  if(S.xp>=S.xpMax){S.xp-=S.xpMax;S.lv++;S.xpMax=Math.floor(S.xpMax*1.35);S.sp++;S.money+=5000*S.lv;addLog('good','LEVEL UP! Lv.'+S.lv+' SP+1');playSfx('levelup');levelUpFx=90;levelUpLv=S.lv;if(typeof track==='function')track('level_up',{lv:S.lv});}
+  if(S.xp>=S.xpMax){S.xp-=S.xpMax;S.lv++;S.xpMax=Math.floor(S.xpMax*1.22);S.sp++;S.money+=5000*S.lv;addLog('good','LEVEL UP! Lv.'+S.lv+' SP+1');playSfx('levelup');levelUpFx=90;levelUpLv=S.lv;if(typeof track==='function')track('level_up',{lv:S.lv});}
   if(S.dest&&S.sgKm>=S.sgTot){
     // 도착 보상에 장비 돈 보너스 + 컬렉션 보너스 + 날씨 돈 보너스 적용
     const total = Math.floor((S.visited.length/CITIES.length + S.foodDone.length/FOODS.length + S.npcs.filter(n=>n.met&&!n.locked).length/Math.max(1,S.npcs.filter(n=>!n.locked).length)) /3 * 100);
     const codexBonus = 1 + Math.floor(total/10) * 0.02;
     const moneyMult = (1 + (eqBonus.moneyBonus||0)) * codexBonus * (weather.mod.moneyMult || 1.0);
-    let arriveMoney = Math.floor(20000 * moneyMult * prestigeMult());
+    // 도착 보상: 거리 비례(8000+구간km×60) × 자전거 티어 보정(v1=1.0…v15=2.4) — 후반 수입 절벽 완화(Fable 진단)
+    const _viIdx = VEHS.filter(v=>v.cat==='bike').findIndex(v=>v.id===S.vId);
+    const _tierMult = 1 + Math.max(0,_viIdx)*0.1;
+    let arriveMoney = Math.floor((8000 + (S.sgTot||100)*60) * _tierMult * moneyMult * prestigeMult());
+    // 도착 XP 보너스(거리 비례) — 고레벨 XP 소스, 성장축 수명 연장
+    S.xp += Math.round((S.sgTot||100) * 2);
     // 7대죄 #6 교만: 다음 도시 보상 -90%
     if(S.prideNextCity){
       arriveMoney = Math.floor(arriveMoney * 0.1);
@@ -482,26 +500,44 @@ function applyOfflineReward(lastTime, wasRiding){
     return;
   }
 
-  // 라이딩 중 → 여정 시뮬레이션
+  // 라이딩 중 → 여정 시뮬레이션 (온라인 tick과 동일 배수·소모로 일관)
   window._offlineSim=true;
   const v=cv2();
-  const kmPerSec=v.sp*0.05*prestigeMult()*SPEED_SCALE; // 프레스티지 배수 + 전역 속도배율(온라인과 일치)
-  const drainPerSec=Math.max(0.05, 0.175*v.sp); // tick과 동일한 소모(신 sp 스케일)
-  let hp=S.hp, dist=0, moneyGain=0, xpGain=0, applesUsed=0, levelsUp=0, stoppedNoApple=false, arrivedCount=0;
+  const eqB=getEquippedBonus();
+  const w=WEATHER_TYPES.find(x=>x.key===(S.weather&&S.weather.key))||WEATHER_TYPES[0];
+  const wSpeed=(w.mod&&w.mod.speedMult)||1.0, wMoney=(w.mod&&w.mod.moneyMult)||1.0;
+  // 온라인과 동일: (기본+장비속도)×날씨×프레스티지 × 0.05 × SPEED_SCALE
+  const kmPerSec=((v.sp+(eqB.speedBonus||0)+(S.spdBonus||0))*wSpeed)*0.05*prestigeMult()*SPEED_SCALE;
+  // 온라인과 동일: 0.175*sp − 장비 회복(×0.25), 하한 0.05
+  const drainPerSec=Math.max(0.05, 0.175*v.sp - (eqB.hpRegen||0)*0.25);
+  const xpMult=1+(eqB.xpBonus||0);
+  const _viIdx=VEHS.filter(x=>x.cat==='bike').findIndex(x=>x.id===S.vId);
+  const _tierMult=1+Math.max(0,_viIdx)*0.1;
+  const APPLE_PRICE=3000; // 사과 소진 시 소지금으로 자동 구매(온라인 방치 지원과 동일 취지)
+  let hp=S.hp, dist=0, moneyGain=0, xpGain=0, applesUsed=0, applesBought=0, levelsUp=0, stoppedNoApple=false, arrivedCount=0;
   const arrived=[];
   let t=0;
   for(t=0;t<sec;t++){
     if(hp - drainPerSec <= 0){
       if(S.ap>0){ S.ap--; applesUsed++; hp=Math.min(S.mhp, hp+30); }
+      else if(S.money>=APPLE_PRICE){ S.money-=APPLE_PRICE; moneyGain-=APPLE_PRICE; applesBought++; applesUsed++; hp=Math.min(S.mhp, hp+30); }
       else { stoppedNoApple=true; break; }
     }
     hp-=drainPerSec;
-    dist+=kmPerSec; S.sgKm+=kmPerSec; S.totKm+=kmPerSec; xpGain+=kmPerSec*2.5;
+    dist+=kmPerSec; S.sgKm+=kmPerSec; S.totKm+=kmPerSec; xpGain+=kmPerSec*2.5*xpMult;
+    // 협찬 수입(v13~15 패시브) — 오프라인에도 매 초 누적
+    const _sp=sponsorPerSec();
+    if(_sp>0){ S.money+=_sp; moneyGain+=_sp; S._sponsorAccum=(S._sponsorAccum||0)+_sp; }
     if(S.dest && S.sgKm>=S.sgTot){
       const city=S.dest;
       S.city=city; S.dest=null; S.sgKm=0;
       if(!S.visited.includes(city))S.visited.push(city);
-      const m=20000; S.money+=m; moneyGain+=m; arrivedCount++;
+      // 온라인 도착 보상과 동일 공식: (8000+구간km×60)×티어×(장비+도감+날씨)×프레스티지
+      const codexBonus=1+Math.floor(codexPercent()/10)*0.02;
+      const moneyMult=(1+(eqB.moneyBonus||0))*codexBonus*wMoney;
+      const m=Math.floor((8000+(S.sgTot||100)*60)*_tierMult*moneyMult*prestigeMult());
+      S.money+=m; moneyGain+=m; arrivedCount++;
+      xpGain+=Math.round((S.sgTot||100)*2); // 도착 XP 보너스(온라인과 동일)
       if(arrived.length<12) arrived.push(city);
       autoPickNextDestination(); // 조용히(로그 억제) 다음 목적지
       if(!S.dest) break; // 달·함정 등으로 더 못 가면 종료
@@ -510,14 +546,14 @@ function applyOfflineReward(lastTime, wasRiding){
   // 남은 시간은 정지 휴식 회복
   if(stoppedNoApple){ const restMin=Math.floor((sec-t)/60); hp=Math.min(S.mhp,hp+restMin); }
   S.hp=Math.max(0,Math.min(S.mhp,hp));
-  // XP → 레벨업 일괄 처리
+  // XP → 레벨업 일괄 처리 (온라인과 동일 곡선 1.22)
   S.xp+=xpGain;
-  while(S.xp>=S.xpMax){ S.xp-=S.xpMax; S.lv++; S.xpMax=Math.floor(S.xpMax*1.35); S.sp++; const lm=5000*S.lv; S.money+=lm; moneyGain+=lm; levelsUp++; }
+  while(S.xp>=S.xpMax){ S.xp-=S.xpMax; S.lv++; S.xpMax=Math.floor(S.xpMax*1.22); S.sp++; const lm=5000*S.lv; S.money+=lm; moneyGain+=lm; levelsUp++; }
   S.offlineCount=(S.offlineCount||0)+1;
   if(typeof track==='function') track('offline_reward',{sec:Math.floor(sec), levelsUp:levelsUp, arrived:arrivedCount||0});
   window._offlineSim=false;
   showTravelLog({resting:false, timeStr:hm(sec), dist:Math.floor(dist), arrived, arrivedCount,
-    moneyGain, xpGain:Math.floor(xpGain), applesUsed, levelsUp, stoppedNoApple, capped});
+    moneyGain, xpGain:Math.floor(xpGain), applesUsed, applesBought, levelsUp, stoppedNoApple, capped});
 }
 
 // #1 "여행 일지" 복귀 리포트 모달
@@ -542,8 +578,8 @@ function showTravelLog(info){
       ${info.arrivedCount>0?`<div style="font-size:calc(7px * var(--u));color:#8B6340;padding:calc(3px * var(--u)) 0;text-align:center;">${cities}</div>`:''}
       ${row('💰 벌이', '₩'+info.moneyGain.toLocaleString())}
       ${row('⭐ 경험치', 'XP +'+info.xpGain.toLocaleString()+(info.levelsUp>0?` (Lv +${info.levelsUp})`:''))}
-      ${row('🍎 사과 사용', info.applesUsed+'개')}
-      ${info.stoppedNoApple?`<div style="color:#B71C1C;font-size:calc(7px * var(--u));text-align:center;padding-top:calc(4px * var(--u));">🍎 사과가 떨어져 도중에 멈췄어요! 출발 전 넉넉히 챙겨가세요.</div>`:''}
+      ${row('🍎 사과 사용', info.applesUsed+'개'+(info.applesBought>0?` (자동구매 ${info.applesBought}개)`:''))}
+      ${info.stoppedNoApple?`<div style="color:#B71C1C;font-size:calc(7px * var(--u));text-align:center;padding-top:calc(4px * var(--u));">🍎 사과가 떨어지고 소지금도 부족해 도중에 멈췄어요! 출발 전 넉넉히 챙겨가세요.</div>`:''}
       ${info.capped?`<div style="color:#8B6340;font-size:calc(7px * var(--u));text-align:center;">(최대 8시간까지 반영)</div>`:''}
     </div>`;
   }
@@ -958,7 +994,7 @@ function showJuiceBoxResult(type){
   } else {
     S.money += 1000000;
     S.blackMoneyUntil = Date.now() + 40000;   // 40초 뒤 경찰 환수(속도 무관, 그 안에 쓰면 이득)
-    title = '💰 비자금 사과박스!';
+    title = '💰 비자금 박스!';
     color = '#E65100'; bg = 'linear-gradient(135deg,#FFF3E0,#FFD54F)';
     msg = `<span style="color:#3D2510;">박스 안에 빳빳한 만원권이 가득!</span><br><b style="color:#E65100;">₩1,000,000 즉시 입금!</b><br><span style="font-size:calc(7px * var(--u));color:#B71C1C;">⚠️ 약 40초 후 경찰 환수 — 그 전에 쓰면 이득!</span>`;
     logMsg = '💰 비자금 박스! ₩1,000,000 입금 (곧 경찰...)';
@@ -993,6 +1029,7 @@ function checkAuto(){
   const remain=Math.max(0, Math.ceil((_autoDeadline-Date.now())/1000));
   const oxEl=document.getElementById('ox-auto'); if(oxEl) oxEl.textContent='⏱️ '+remain+'초 후 넘어감(무응답)';
   const npEl=document.getElementById('npc-auto'); if(npEl) npEl.textContent='⏱️ '+remain+'초 후 자동 진행';
+  const dsEl=document.getElementById('dest-auto'); if(dsEl) dsEl.textContent='⏱️ '+remain+'초 후 자동 선택';
   if(Date.now()>=_autoDeadline){ const a=_autoAction; cancelAuto(); if(typeof a==='function') a(); }
 }
 function clearOXAuto(){ cancelAuto(); }
@@ -1268,8 +1305,9 @@ function closeModal(wr){
   // 맛집 등으로 잠시 가려졌던 특수 이벤트(페리·로켓·닥터오)를 다시 띄운다.
   // 도착 시점처럼 라이딩 상태로 복원해, 이벤트를 닫으면 정상적으로 다시 달리게 한다.
   if(pendingSpecial){ const ci=pendingSpecial; pendingSpecial=null; S.riding=true; showHistModal(ci); return; }
-  // 1번: 모달 닫힐 때 목적지가 없고 함정/달도 아니면 자동으로 새 목적지 설정
-  autoPickNextDestination();
+  // 1번: 모달 닫힐 때 목적지가 없고 함정/달도 아니면 다음 목적지 설정.
+  //  H4: 국내 자유주행이면 3갈래 선택 모달을 띄우고(라이딩 재개는 선택 후) 대기.
+  if(chooseNextDestination(wr)){ update(); return; }
   if(wr&&!isResting){S.riding=true;tickIv=setInterval(tick,1000);startNpcTimer();}
   update();
 }
@@ -1331,6 +1369,48 @@ function autoPickNextDestination(){
   } else {
     addLog('neutral','🎲 충동! '+S.city+'→'+pick.n+' ('+S.sgTot+'km)');
   }
+}
+
+// H4: 도착 후 다음 목적지 3갈래 선택(플레이어 주도성 부여, Fable 진단).
+//  코스(일본·페리 대륙)·함정·달·오프라인 시뮬은 방향성 유지 위해 기존 자동픽 그대로.
+//  국내 자유주행에서만 선택 모달을 띄우고, 방치모드 ON이면 6초 후 첫 후보로 자동 선택.
+//  반환값: 선택 모달을 띄웠으면 true(호출측이 라이딩 자동재개를 보류), 아니면 false.
+function chooseNextDestination(wr){
+  if(window._offlineSim){ autoPickNextDestination(); return false; }
+  if(S.dest || S.trapZone || S.city==='달'){ autoPickNextDestination(); return false; }
+  const cur=CITIES.find(c=>c.n===S.city)||{};
+  const isJapan=c=>c.region==='일본';
+  // 코스 진행 중(일본/페리 대륙)엔 순회 순서 유지 → 자동픽
+  if(isJapan(cur) || isFerryRegion(cur.region)){ autoPickNextDestination(); return false; }
+  const candidates=CITIES.filter(c=> c.n!==S.city && c.n!=='달' && c.n!=='진천' && c.region!=='함정'
+    && !isJapan(c) && !isFerryRegion(c.region) && isRegionUnlocked(c.region));
+  if(candidates.length<2){ autoPickNextDestination(); return false; }
+  const visited=S.visited||[];
+  const unvisited=candidates.filter(c=>!visited.includes(c.n));
+  const picked=[];
+  if(unvisited.length) picked.push(unvisited[Math.floor(Math.random()*unvisited.length)]); // 미방문 최소 1곳 보장(컬렉션 유도)
+  const pool=candidates.filter(c=>!picked.includes(c));
+  while(picked.length<3 && pool.length>0){ const i=Math.floor(Math.random()*pool.length); picked.push(pool.splice(i,1)[0]); }
+  const u='var(--u)'; const fs=px=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
+  const btns=picked.map(c=>{
+    const isNew=!visited.includes(c.n);
+    const dist=getCityDist(S.city,c.n);
+    const badge=isNew?` <span style="${fs(5)};background:#FFEB3B;color:#5D4037;border-radius:4px;padding:0 calc(3px * ${u});">NEW</span>`:'';
+    return `<button class="px-btn" style="${fs(7)};padding:calc(8px * ${u});background:#43A047;border-color:#1B5E20;color:#FFF;width:100%;margin-bottom:calc(4px * ${u});" onclick="selectEscapeDest('${c.n}',${!!wr})">📍 ${c.n} <span style="${fs(5)};opacity:.85;">(${c.region} · ${dist}km)</span>${badge}</button>`;
+  }).join('');
+  document.getElementById('modal-area').innerHTML=`
+  <div class="px-panel" style="border-color:#43A047;background:linear-gradient(135deg,#E8F5E9,#FFFDE7);box-shadow:0 0 calc(10px * ${u}) #66BB6A;margin-bottom:5px;">
+    <div style="${fs(9)};color:#1B5E20;text-align:center;margin-bottom:calc(4px * ${u});">🧭 다음은 어디로?</div>
+    <div style="${fs(6)};color:#5C3D1E;text-align:center;margin-bottom:calc(8px * ${u});">마음 가는 곳으로 떠나요.</div>
+    ${btns}
+    ${wr&&S.idleMode!==false?`<div id="dest-auto" style="text-align:center;margin-top:calc(4px * ${u});${fs(5)};color:#8B6340;">⏱️ 6초 후 자동 선택</div>`:''}
+  </div>`;
+  // 방치모드 ON → 6초 후 첫 후보(미방문 우선)로 자동 선택. checkAuto(animLoop)가 처리.
+  if(wr && S.idleMode!==false){
+    const auto=picked[0].n;
+    scheduleAuto(6, ()=>{ if(!S.dest) selectEscapeDest(auto, !!wr); });
+  }
+  return true;
 }
 
 // #5 진천 갈림길 표지판 — 라이딩 중 진천 태양광단지 우회를 제안(유일한 진천 진입 경로).
@@ -1758,15 +1838,20 @@ function renderRaidHTML(){
 // ── 주간 7대죄 보스 러시 (주사위 정화, 전투 없이) ─────────
 var SIN_RUSH_IDS=['fred','wrath','sloth','envy','gluttony','pride','lust'];
 function ensureSinRush(){
-  if(!S.sinRush) S.sinRush={weekKey:'',defeated:[]};
+  if(!S.sinRush) S.sinRush={weekKey:'',defeated:[],lastTry:{}};
   const wk=getWeekKey();
-  if(S.sinRush.weekKey!==wk){ S.sinRush.weekKey=wk; S.sinRush.defeated=[]; }
+  if(S.sinRush.weekKey!==wk){ S.sinRush.weekKey=wk; S.sinRush.defeated=[]; S.sinRush.lastTry={}; }
 }
 function challengeSin(id){
   ensureSinRush();
   if(modalOpen()){ showSt('진행 중인 선택을 먼저 마쳐주세요'); return; }
   if(S.sinRush.defeated.includes(id)){ showSt('이미 정화했어요'); return; }
+  // 일일 게이트: 실패한 죄악은 하루 1회만 도전 가능(무한 리롤로 저주-무시 브루트포스 방지)
+  const _dk=new Date().toDateString();
+  S.sinRush.lastTry=S.sinRush.lastTry||{};
+  if(S.sinRush.lastTry[id]===_dk){ showSt('😈 오늘은 이미 도전했어요 — 내일 다시 시도!'); return; }
   const npc=S.npcs.find(n=>n.id===id); if(!npc) return;
+  S.sinRush.lastTry[id]=_dk;   // 도전 기록(성공 시 어차피 정화되어 무의미)
   diceAnim=60; diceVal=Math.ceil(Math.random()*6);
   const win = diceVal>=3;   // 3~6 정화(66%)
   update();
@@ -1804,14 +1889,15 @@ function renderSinRushHTML(){
     const npc=S.npcs.find(n=>n.id===id)||{n:id,reward:''};
     const em=NPC_EMOJI[id]||'😈';
     const cleared=S.sinRush.defeated.includes(id);
+    const triedToday=!cleared && S.sinRush.lastTry && S.sinRush.lastTry[id]===new Date().toDateString();
     items+=`<div style="display:flex;justify-content:space-between;align-items:center;border:2px solid ${cleared?'#8B6340':'#B71C1C'};background:${cleared?'#EFE8DC':'#FFF3E0'};border-radius:calc(6px * ${u});padding:calc(5px * ${u});margin-bottom:calc(4px * ${u});">
       <div><div style="${fs(7)};color:#3D2510;">${em} ${npc.n}</div><div style="${fs(5)};color:#B71C1C;">${cleared?'':'실패 시: '+npc.reward}</div></div>
-      ${cleared?`<span style="${fs(6)};color:#1B5E20;padding:0 calc(6px * ${u});">정화 ✓</span>`:`<button class="px-btn px-btn-sm px-btn-red" style="${fs(6)};" onclick="challengeSin('${id}')">🎲 도전</button>`}
+      ${cleared?`<span style="${fs(6)};color:#1B5E20;padding:0 calc(6px * ${u});">정화 ✓</span>`:(triedToday?`<span style="${fs(5)};color:#8B6340;padding:0 calc(6px * ${u});">내일 재도전</span>`:`<button class="px-btn px-btn-sm px-btn-red" style="${fs(6)};" onclick="challengeSin('${id}')">🎲 도전</button>`)}
     </div>`;
   });
   return `<div class="px-panel" style="margin-bottom:calc(6px * ${u});border-color:#B71C1C;">
     <div style="${fs(9)};color:#B71C1C;text-align:center;margin-bottom:calc(3px * ${u});">😈 주간 7대죄 보스 러시 <span style="${fs(5)};color:#8B6340;">(${done}/${total})</span></div>
-    <div style="${fs(5)};color:#8B6340;text-align:center;margin-bottom:calc(6px * ${u});">🎲 주사위 3+로 정화(66%) · 실패 시 저주 · ${allDone?'✅ 완전 정화 달성!':'전원 정화 → ₩100만 + SP+2 + 🌟신화 장비 5%'}</div>
+    <div style="${fs(5)};color:#8B6340;text-align:center;margin-bottom:calc(6px * ${u});">🎲 주사위 3+로 정화(66%) · 실패 시 저주 · 죄악당 하루 1회 · ${allDone?'✅ 완전 정화 달성!':'전원 정화 → ₩100만 + SP+2 + 🌟신화 장비 5%'}</div>
     ${items}
   </div>`;
 }
@@ -2874,7 +2960,7 @@ function closeModalAndLaunch(wr){
 }
 // 새 게임 초기 상태(공통). resetGame·doPrestige가 공유한다.
 function freshState(){
-  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,idleMode:true,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[]},playerId:'',nickname:'',postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
+  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,spdBonus:0,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,idleMode:true,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[],lastTry:{}},playerId:'',nickname:'',postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
 }
 // 초기화 후 공통 뒷정리(뱃지·애니메이션·루프)
 function afterReset(){
@@ -2951,19 +3037,36 @@ function savePostcardImage(i){
 
 // ── 프레스티지(2회차 세계일주) — 콘텐츠 소진 해결. 진행 리셋 + 영구 배수 ──
 function prestigeMult(){ return 1 + 0.25*(S.prestige||0); } // 속도·수입 +25%/회차
+// 도감 수집률(%) — 도시·맛집·NPC 3축 평균. 도착 보상·협찬 수입 공용(Fable 진단: 후반 수입원 다양화)
+function codexPercent(){
+  const npcTot=Math.max(1,S.npcs.filter(n=>!n.locked).length);
+  const npcMet=S.npcs.filter(n=>n.met&&!n.locked).length;
+  return Math.floor((S.visited.length/CITIES.length + S.foodDone.length/FOODS.length + npcMet/npcTot)/3*100);
+}
+// 협찬 수입(초당 ₩) — v13~15 고티어 자전거일수록·도감 수집률 높을수록 붙는 패시브 수입.
+//  후반 "도착 사이 공백" 수입 절벽을 메움(온라인 tick·오프라인 시뮬 공통). v12 이하=0.
+function sponsorPerSec(){
+  const idx=VEHS.filter(v=>v.cat==='bike').findIndex(v=>v.id===S.vId);
+  if(idx<12) return 0;            // v13(idx 12)부터 협찬 계약 성립
+  const tierN=idx-11;            // v13→1, v14→2, v15→3
+  const codexM=1+codexPercent()/100; // 도감 100%면 2배
+  return Math.round(tierN*25*codexM*prestigeMult());
+}
 // 실효 속도 계산(기본 + ⚡부스터·🎁장비·🌏프레스티지·😡7대죄·☁️날씨) — 스탯/메인 공용
 function effSpeed(){
   const v=cv2(), now=Date.now();
   const base=v.sp;
   const eqSp=(getEquippedBonus().speedBonus)||0;
   const boostSp=S.dopT>0?(S.dopSp||0):0;
+  const spd=(S.spdBonus||0); // 영구 속도 보너스(방랑 검객 등 유니크 보상)
   let sinM=1; if(S.wrathUntil>now)sinM*=1.5; if(S.lustUntil>now)sinM*=0.5;
   const pM=prestigeMult();
   const w=WEATHER_TYPES.find(x=>x.key===(S.weather&&S.weather.key))||WEATHER_TYPES[0];
   const wM=(w.mod&&w.mod.speedMult)||1;
-  const eff=Math.round((base+boostSp+eqSp)*sinM*pM*wM);
+  const eff=Math.round((base+boostSp+eqSp+spd)*sinM*pM*wM);
   const parts=['기본 '+base];
   if(boostSp>0)parts.push('⚡부스터 +'+boostSp);
+  if(spd>0)parts.push('🗡️단련 +'+spd);
   if(eqSp>0)parts.push('🎁장비 +'+eqSp);
   if(pM>1)parts.push('🌏프레스티지 ×'+pM.toFixed(2));
   if(sinM>1)parts.push('😡분노 ×1.5');
@@ -3007,7 +3110,7 @@ function canPrestige(){
 }
 function doPrestige(){
   if(modalOpen()){showSt('진행 중인 선택을 먼저 마쳐주세요');return;}
-  if(!canPrestige()){showSt('아직 조건 미달 — v30 보유 또는 전 도시 방문 시 가능');return;}
+  if(!canPrestige()){showSt('아직 조건 미달 — v15(서퍼티지) 보유 또는 해금 도시 전부 방문 시 가능');return;}
   const nextMult = 1 + 0.25*((S.prestige||0)+1);
   showConfirmModal({
     title:'🌏 '+((S.prestige||0)+1)+'회차 세계일주?',
@@ -3648,7 +3751,7 @@ function update(){
   document.getElementById('apN').textContent=S.ap;document.getElementById('jcN').textContent=S.jc;
   // #8: 크로스바이크(v6) 보유 후 메인 사과 버튼을 사과박스 구매로 전환
   const _apBtn=document.getElementById('apple-btn');
-  if(_apBtn){ const _box=ownsVeh('v6'); const _html=_box?'📦<br>사과박스':'🍎<br>사과'; if(_apBtn.innerHTML!==_html)_apBtn.innerHTML=_html; }
+  if(_apBtn){ const _box=ownsVeh('v6'); const _html=_box?'📦 사과박스<br><span style="font-size:calc(6px * var(--u));opacity:.85;">랜덤 ₩15k</span>':'🍎<br>사과'; if(_apBtn.innerHTML!==_html)_apBtn.innerHTML=_html; }
   renderCourseWidget();   // 메인 화면 특별코스 위젯 갱신
   document.getElementById('hp-v').textContent=Math.round(S.hp)+'/'+S.mhp;document.getElementById('hp-b').style.width=Math.round(S.hp/S.mhp*100)+'%';
   document.getElementById('xp-v').textContent=Math.round(S.xp)+'/'+S.xpMax;document.getElementById('xp-b').style.width=Math.round(S.xp/S.xpMax*100)+'%';

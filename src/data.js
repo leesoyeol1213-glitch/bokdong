@@ -205,7 +205,7 @@ const NPCS=[
   {id:'km2',grade:'unique',n:'방랑 검객',role:'길 위의 검사',met:false,
     reward:'₩200,000, 체력+50, 속도+2',
     lines:['...길이 너를 단련시키는 거다.','흔들리지 마라. 목적지는 반드시 있다.'],
-    eff:s=>{s.money+=200000;s.hp=Math.min(s.mhp,s.hp+50);s.speed+=2;}},
+    eff:s=>{s.money+=200000;s.hp=Math.min(s.mhp,s.hp+50);s.spdBonus=(s.spdBonus||0)+2;}},
   {id:'trucker',grade:'unique',n:'장거리 기사',role:'전국을 달리는 트럭 기사',met:false,
     reward:'₩280,000, 구간 +30km',
     lines:['이봐요, 저기까지 견인해드릴까요?','전국 도로는 내가 제일 잘 알죠.'],
