@@ -1742,6 +1742,11 @@ function drawRestScene(){
 var _idleFrame=0;
 function animLoop(){
   requestAnimationFrame(animLoop);
+  // 🐾 마스코트 미니게임 중엔 전용 렌더(풀레이트) — 일반 씬·스로틀·자동진행 건너뜀
+  if(window.miniGame && window.miniGame.active){
+    if(typeof stepMascotMiniGame==='function') stepMascotMiniGame();
+    return;
+  }
   if(typeof checkAuto==='function') checkAuto();   // 방치 자동진행: 벽시계 데드라인 확인(매 프레임 — 스로틀 무관)
   // P0: 정지 중엔 프레임 1/3만 그림(~20fps) — 배터리 절약(저가 안드로이드 삭제 사유 1순위). 라이딩 중엔 풀레이트로 스크롤 부드럽게.
   if(!S.riding && !isResting){
@@ -1757,6 +1762,50 @@ function animLoop(){
   }
   // 정지 시엔 bikeX 그대로 유지 (멈춘 위치)
 
+}
+// 🐾 마스코트 추격 미니게임 렌더 — stepMascotMiniGame(logic.js)에서 매 프레임 호출. 논리 420×236 공간.
+function drawMascotMiniGame(elapsed){
+  const g=window.miniGame; if(!g) return;
+  ctx.setTransform(SS,0,0,SS,0,0);
+  ctx.imageSmoothingEnabled=false;
+  ctx.clearRect(0,0,420,236);
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  // 하늘
+  const gr=ctx.createLinearGradient(0,0,0,236); gr.addColorStop(0,'#8ED6FF'); gr.addColorStop(1,'#CFF3D6');
+  ctx.fillStyle=gr; ctx.fillRect(0,0,420,236);
+  // 땅
+  ctx.fillStyle='#5A8A3C'; ctx.fillRect(0,200,420,36);
+  ctx.fillStyle='#8B7355'; ctx.fillRect(0,200,420,4);
+  // 목표 마스코트(오른쪽에서 둥실)
+  ctx.font='24px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(g.mascot.emoji, 385, 58+Math.sin(frame*0.1)*6);
+  ctx.textBaseline='alphabetic';
+  // 장애물
+  g.obstacles.forEach(o=>{
+    ctx.fillStyle=o.hit?'#B71C1C':'#6D4C41'; ctx.fillRect(Math.round(o.x),200-o.h,o.w,o.h);
+    ctx.fillStyle=o.hit?'#EF9A9A':'#8D6E63'; ctx.fillRect(Math.round(o.x),200-o.h,o.w,3);
+  });
+  // 복동이(스프라이트 있으면 사용, 없으면 폴백) — 충돌 순간 깜빡임
+  const flash = g.flash>0 && (g.flash%2===0);
+  if(!flash){
+    const drew = (typeof drawBokdongSprite==='function') && drawBokdongSprite(ctx, 95, g.bokFeetY-27, 0.8, true);
+    if(!drew){
+      ctx.fillStyle='#1976D2'; ctx.fillRect(82, g.bokFeetY-30, 26, 22);
+      ctx.fillStyle='#333'; ctx.beginPath(); ctx.arc(88,g.bokFeetY-2,6,0,7); ctx.arc(102,g.bokFeetY-2,6,0,7); ctx.fill();
+    }
+  }
+  // HUD: 남은 시간 바
+  const pct=Math.max(0,Math.min(1,elapsed/20000));
+  ctx.fillStyle='rgba(0,0,0,.22)'; ctx.fillRect(12,12,200,10);
+  ctx.fillStyle='#43A047'; ctx.fillRect(12,12,Math.round(200*(1-pct)),10);
+  ctx.fillStyle='#1B5E20'; ctx.font='bold 10px sans-serif'; ctx.textAlign='left';
+  ctx.fillText(Math.max(0,Math.ceil((20000-elapsed)/1000))+'s', 218, 21);
+  // 남은 기회(하트)
+  const maxH=(typeof MG_MAXHITS==='number')?MG_MAXHITS:3;
+  ctx.font='15px serif'; ctx.textAlign='right';
+  let hearts=''; for(let i=0;i<Math.max(0,maxH-g.hits);i++) hearts+='❤'; for(let i=0;i<g.hits;i++) hearts+='🖤';
+  ctx.fillStyle='#B71C1C'; ctx.fillText(hearts, 408, 22);
+  ctx.textAlign='left';
 }
 // (rAF 킥오프는 boot.js로 이동 — 모든 파일 로드 후 시작 보장)
 

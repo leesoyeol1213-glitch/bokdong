@@ -80,6 +80,31 @@ const VEHS=[
   {id:'v15', n:'임복동 전설의 서퍼티지',cat:'bike', sp:100, hb:64, km:250000, cost:200000000, owned:false},
   // 1회용 특수 (나로호발사센터 전용)
   {id:'rocket', n:'임복동1호 🚀', cat:'rocket',sp:143, hb:0,  km:0,     cost:80000,    owned:false, oneshot:true},
+  // 🏅 업적 자전거 — 구매 불가. 대륙 마스코트 전부 포획(세트 완성) 시 해금. tierMult=도착보상 배수(sp 계열은 tunable).
+  {id:'ach_kr',  n:'🇰🇷 태극 자전거',   cat:'ach', sp:26, hb:44, setId:'set_kr',  tierMult:1.7, owned:false},
+  {id:'ach_jp',  n:'🗾 후지 자전거',     cat:'ach', sp:40, hb:52, setId:'set_jp',  tierMult:2.0, owned:false},
+  {id:'ach_cn',  n:'🐉 용 자전거',       cat:'ach', sp:62, hb:60, setId:'set_cn',  tierMult:2.3, owned:false},
+  {id:'ach_sea', n:'🌴 트로피컬 자전거', cat:'ach', sp:90, hb:70, setId:'set_sea', tierMult:2.6, owned:false},
+];
+
+// ── 🐾 지역 마스코트 — 지역 전 도시 방문(정복) 시 '추격 미니게임'으로 포획. 각자 복동이 스탯 보조(장비처럼 합산). ──
+const MASCOTS=[
+  {id:'m_gang', region:'강원', name:'반달곰',    emoji:'🐻', boost:{mhpBonus:15},      desc:'강원 산맥의 수호신 · 최대 체력 +15'},
+  {id:'m_gyeonggi',region:'경기',name:'백로',    emoji:'🕊️', boost:{speedBonus:2},      desc:'한강의 백로 · 속도 +2'},
+  {id:'m_gyeong',region:'경상', name:'붉은대게',  emoji:'🦀', boost:{moneyBonus:0.05},   desc:'동해의 대게 · 수입 +5%'},
+  {id:'m_jeon', region:'전라',  name:'황새',      emoji:'🦢', boost:{xpBonus:0.05},      desc:'곡창지대의 황새 · 경험치 +5%'},
+  {id:'m_chung',region:'충청',  name:'사과다람쥐',emoji:'🐿️', boost:{hpRegen:1},         desc:'과수원 다람쥐 · 체력 회복 +1/초'},
+  {id:'m_jeju', region:'제주',  name:'돌하르방',  emoji:'🗿', boost:{mhpBonus:20},       desc:'제주의 수호석 · 최대 체력 +20'},
+  {id:'m_jp',   region:'일본',  name:'너구리',    emoji:'🦝', boost:{xpBonus:0.08},      desc:'일본의 타누키 · 경험치 +8%'},
+  {id:'m_cn',   region:'중국',  name:'판다',      emoji:'🐼', boost:{moneyBonus:0.08},   desc:'중국의 판다 · 수입 +8%'},
+  {id:'m_sea',  region:'동남아',name:'코끼리',    emoji:'🐘', boost:{speedBonus:3},      desc:'동남아의 코끼리 · 속도 +3'},
+];
+// 대륙 세트 — 그 대륙 마스코트 전부 포획 시 업적 자전거 해금
+const MASCOT_SETS=[
+  {id:'set_kr', name:'한국',   bikeId:'ach_kr',  regions:['강원','경기','경상','전라','충청','제주']},
+  {id:'set_jp', name:'일본',   bikeId:'ach_jp',  regions:['일본']},
+  {id:'set_cn', name:'중국',   bikeId:'ach_cn',  regions:['중국']},
+  {id:'set_sea',name:'동남아', bikeId:'ach_sea', regions:['동남아']},
 ];
 
 // NPC 등급 시스템: normal(일반) / rare(레어) / unique(유니크) / legend(전설) / epic(에픽) / god(신) / disaster(재앙)
@@ -792,6 +817,7 @@ let S={
   gachaTicket:0, gachaTicketMigrated:true,   // F: 자전거 신규 등록 시 지급되는 가챠권
   raidRewardClaimed:'',                       // 전국 레이드 공동목표 보상 — 마지막 수령 주차(중복 방지)
   raidRankClaimedWeek:'',                     // 상위 랭커 박스 — 정산 완료한(지난) 주차
+  mascots:[],                                 // 🐾 포획한 지역 마스코트 id (영구·프레스티지 이월)
   foodStreak:0,
   seenTabs:{npc:0,veh:0,ach:0,gear:0},
   inventory:[],

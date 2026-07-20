@@ -229,9 +229,9 @@ function tick(){
     const total = Math.floor((S.visited.length/CITIES.length + S.foodDone.length/FOODS.length + S.npcs.filter(n=>n.met&&!n.locked).length/Math.max(1,S.npcs.filter(n=>!n.locked).length)) /3 * 100);
     const codexBonus = 1 + Math.floor(total/10) * 0.02;
     const moneyMult = (1 + (eqBonus.moneyBonus||0)) * codexBonus * (weather.mod.moneyMult || 1.0);
-    // 도착 보상: 거리 비례(8000+구간km×60) × 자전거 티어 보정(v1=1.0…v15=2.4) — 후반 수입 절벽 완화(Fable 진단)
+    // 도착 보상: 거리 비례(8000+구간km×60) × 자전거 티어 보정(v1=1.0…v15=2.4). 업적 자전거는 자체 tierMult.
     const _viIdx = VEHS.filter(v=>v.cat==='bike').findIndex(v=>v.id===S.vId);
-    const _tierMult = 1 + Math.max(0,_viIdx)*0.1;
+    const _tierMult = cv2().tierMult || (1 + Math.max(0,_viIdx)*0.1);
     let arriveMoney = Math.floor((8000 + (S.sgTot||100)*60) * _tierMult * moneyMult * prestigeMult());
     // 도착 XP 보너스(거리 비례) — 고레벨 XP 소스, 성장축 수명 연장
     S.xp += Math.round((S.sgTot||100) * 2);
@@ -256,6 +256,16 @@ function tick(){
       S.visited.push(S.city);
       // #6 여행 엽서 수집(도시별 1장, 첫 도착 시)
       collectPostcard(S.city);
+    }
+    // 🐾 이번 도착으로 지역을 정복했고 마스코트 미포획이면 등장 알림(추격 버튼은 메인 탭에 상시 노출)
+    if(ci.region && isRegionConquered(ci.region)){
+      const _m=MASCOTS.find(x=>x.region===ci.region && !(S.mascots||[]).includes(x.id));
+      window._mascotSeen=window._mascotSeen||{};
+      if(_m && !window._mascotSeen[_m.id]){
+        window._mascotSeen[_m.id]=1;
+        addLog('good','🐾 '+ci.region+' 정복! '+_m.emoji+' '+_m.name+'이(가) 나타났다 — 메인 화면에서 추격!');
+        showSt('🐾 '+_m.emoji+' '+_m.name+' 발견! 추격하세요');
+      }
     }
     addLog('good','🎉 '+S.city+' 도착! ₩'+arriveMoney.toLocaleString());addLog('neutral','📜 '+ci.hist);
     playSfx('arrive');
@@ -525,7 +535,7 @@ function applyOfflineReward(lastTime, wasRiding){
   const drainPerSec=Math.max(0.05, 0.175*v.sp - (eqB.hpRegen||0)*0.25);
   const xpMult=1+(eqB.xpBonus||0);
   const _viIdx=VEHS.filter(x=>x.cat==='bike').findIndex(x=>x.id===S.vId);
-  const _tierMult=1+Math.max(0,_viIdx)*0.1;
+  const _tierMult=cv2().tierMult || (1+Math.max(0,_viIdx)*0.1);
   const APPLE_PRICE=3000; // 사과 소진 시 소지금으로 자동 구매(온라인 방치 지원과 동일 취지)
   let hp=S.hp, dist=0, moneyGain=0, xpGain=0, applesUsed=0, applesBought=0, levelsUp=0, stoppedNoApple=false, arrivedCount=0;
   const arrived=[];
@@ -2408,16 +2418,144 @@ function drawGearDropAnim(){
 // 장착 효과 합산
 function getEquippedBonus(){
   const bonus = {mhpBonus:0, xpBonus:0, moneyBonus:0, speedBonus:0, hpRegen:0};
-  if(!S.equipped) return bonus;
-  for(const slot of Object.keys(S.equipped)){
-    const itemId = S.equipped[slot];
-    if(!itemId) continue;
-    const item = (S.inventory||[]).find(x=>x.id===itemId);
-    if(!item) continue;
-    const ef = GEAR_EFFECT[slot](item.mult, item);
-    Object.keys(ef).forEach(k=>bonus[k]=(bonus[k]||0)+ef[k]);
+  if(S.equipped){
+    for(const slot of Object.keys(S.equipped)){
+      const itemId = S.equipped[slot];
+      if(!itemId) continue;
+      const item = (S.inventory||[]).find(x=>x.id===itemId);
+      if(!item) continue;
+      const ef = GEAR_EFFECT[slot](item.mult, item);
+      Object.keys(ef).forEach(k=>bonus[k]=(bonus[k]||0)+ef[k]);
+    }
   }
+  // 🐾 마스코트 보조 스탯을 장비 보너스에 합산 → tick·effSpeed·도착보상·체력 모든 소비처가 자동 반영
+  const mb=getMascotBonus();
+  Object.keys(mb).forEach(k=>bonus[k]=(bonus[k]||0)+mb[k]);
   return bonus;
+}
+// 🐾 포획한 마스코트들의 스탯 보조 합산
+function getMascotBonus(){
+  const b={mhpBonus:0, xpBonus:0, moneyBonus:0, speedBonus:0, hpRegen:0};
+  (S.mascots||[]).forEach(id=>{
+    const m=MASCOTS.find(x=>x.id===id); if(!m||!m.boost) return;
+    Object.keys(m.boost).forEach(k=>b[k]=(b[k]||0)+m.boost[k]);
+  });
+  return b;
+}
+// 지역 완주(전 도시 방문) 여부
+function isRegionConquered(region){
+  const cities=CITIES.filter(c=>c.region===region);
+  return cities.length>0 && cities.every(c=>(S.visited||[]).includes(c.n));
+}
+// 지금 추격 가능한 마스코트(정복 완료 + 미포획) 하나 반환
+function getAvailableMascot(){
+  return MASCOTS.find(m=>!(S.mascots||[]).includes(m.id) && isRegionConquered(m.region)) || null;
+}
+// 세트(대륙) 완성 시 업적 자전거 소유 동기화 — S.mascots(영구) 기준. 로드·포획·환생 후 호출.
+function syncAchBikes(){
+  MASCOT_SETS.forEach(set=>{
+    const complete = MASCOTS.filter(m=>set.regions.includes(m.region)).every(m=>(S.mascots||[]).includes(m.id));
+    if(complete && !vehOwned(set.bikeId)) setVehOwned(set.bikeId, true);
+  });
+}
+// 마스코트 포획 확정 — 컬렉션 추가 + 스탯 반영 + 세트 완성 시 업적 자전거 해금
+function catchMascot(id){
+  const m=MASCOTS.find(x=>x.id===id); if(!m) return;
+  S.mascots=S.mascots||[];
+  if(!S.mascots.includes(id)) S.mascots.push(id);
+  refreshMhpFromHelmet();                 // mhpBonus 즉시 반영
+  addLog('good','🐾 '+m.emoji+' '+m.name+' 포획! ('+m.desc+')');
+  showSt('🐾 '+m.emoji+' '+m.name+' 포획!');
+  if(typeof track==='function') track('mascot_catch',{id:id, region:m.region});
+  // 세트 완성 체크 → 업적 자전거
+  MASCOT_SETS.forEach(set=>{
+    if(!set.regions.includes(m.region)) return;
+    const complete = MASCOTS.filter(x=>set.regions.includes(x.region)).every(x=>S.mascots.includes(x.id));
+    if(complete && !vehOwned(set.bikeId)){
+      setVehOwned(set.bikeId, true);
+      const bike=VEHS.find(v=>v.id===set.bikeId);
+      addLog('good','🏅 '+set.name+' 마스코트 전부 포획! 업적 자전거 ['+(bike?bike.n:set.bikeId)+'] 해금! (탈것 탭에서 선택)');
+      showSt('🏅 '+set.name+' 세트 완성! 업적 자전거 해금!');
+      if(typeof playSfx==='function') playSfx('levelup');
+    }
+  });
+  checkAchievements();
+}
+
+// ── 🐾 마스코트 추격 미니게임(원버튼 점프·20초·보통 난이도) ──
+var MG_GROUND=200, MG_BOKX=95, MG_JUMPV=-9.6, MG_GRAV=0.56, MG_OBSPEED=3.9, MG_MAXHITS=3, MG_DUR=20000;
+function huntMascot(){ const m=getAvailableMascot(); if(m) startMascotMiniGame(m.id); else showSt('추격할 마스코트가 없어요'); }
+function startMascotMiniGame(id){
+  const m=MASCOTS.find(x=>x.id===id); if(!m) return;
+  if(modalOpen()){ showSt('진행 중인 걸 먼저 마쳐주세요'); return; }
+  if((S.mascots||[]).includes(id)){ showSt('이미 포획했어요'); return; }
+  const wr=S.riding; if(S.riding){ S.riding=false; isResting=false; clearInterval(tickIv); tickIv=null; }
+  window.miniGame={ active:true, id:id, mascot:m, start:Date.now(),
+    bokFeetY:MG_GROUND, vy:0, onGround:true, obstacles:[], hits:0, passed:0,
+    nextSpawn:Date.now()+900, flash:0, ended:false, wasRiding:wr };
+  const u='var(--u)';
+  document.getElementById('modal-area').innerHTML=`
+  <div class="px-panel" style="border-color:#43A047;background:linear-gradient(135deg,#E8F5E9,#FFFDE7);margin-bottom:5px;text-align:center;">
+    <div style="font-size:calc(9px * ${u});color:#1B5E20;margin-bottom:calc(4px * ${u});">${m.emoji} ${m.name} 추격전!</div>
+    <div style="font-size:calc(6px * ${u});color:#5C3D1E;margin-bottom:calc(6px * ${u});">위 화면에서 20초간 장애물을 피하세요! (${MG_MAXHITS}번 부딪히면 놓침)</div>
+    <button class="px-btn px-btn-green" style="width:100%;font-size:calc(12px * ${u});padding:calc(15px * ${u});" onclick="mascotJump()">🔼 점프! (위 화면 탭도 가능)</button>
+  </div>`;
+  if(typeof ST==='function') ST('main');   // 메인 탭으로(캔버스가 보여야 함)
+  update();
+}
+function mascotJump(){
+  const g=window.miniGame; if(!g||!g.active||g.ended) return;
+  if(g.onGround){ g.vy=MG_JUMPV; g.onGround=false; if(typeof playSfx==='function') playSfx('good'); }
+}
+// animLoop가 매 프레임 호출 — 물리·충돌·타이머 갱신 후 그리기
+function stepMascotMiniGame(){
+  const g=window.miniGame; if(!g||!g.active) return;
+  if(typeof frame==='number') frame++;    // 페달링·마스코트 애니메이션용 프레임 진행
+  const now=Date.now();
+  g.vy+=MG_GRAV; g.bokFeetY+=g.vy;
+  if(g.bokFeetY>=MG_GROUND){ g.bokFeetY=MG_GROUND; g.vy=0; g.onGround=true; } else g.onGround=false;
+  if(now>=g.nextSpawn){
+    g.obstacles.push({x:432, w:16, h:20+Math.floor(Math.random()*15), hit:false, counted:false});
+    g.nextSpawn=now+950+Math.random()*600;
+  }
+  const jumpOffset=MG_GROUND-g.bokFeetY;
+  for(const o of g.obstacles){
+    o.x-=MG_OBSPEED;
+    if(!o.hit && o.x<MG_BOKX+14 && o.x+o.w>MG_BOKX-14 && jumpOffset<o.h){ o.hit=true; g.hits++; g.flash=8; if(typeof playSfx==='function') playSfx('bad'); }
+    if(!o.counted && o.x+o.w<MG_BOKX-14){ o.counted=true; if(!o.hit) g.passed++; }
+  }
+  g.obstacles=g.obstacles.filter(o=>o.x>-40);
+  if(g.flash>0) g.flash--;
+  const elapsed=now-g.start;
+  if(!g.ended){
+    if(g.hits>=MG_MAXHITS){ endMascotMiniGame(false); return; }
+    if(elapsed>=MG_DUR){ endMascotMiniGame(true); return; }
+  }
+  if(typeof drawMascotMiniGame==='function') drawMascotMiniGame(elapsed);
+}
+function endMascotMiniGame(success){
+  const g=window.miniGame; if(!g||g.ended) return; g.ended=true; g.active=false;
+  const m=g.mascot; window._miniWasRiding=g.wasRiding;
+  if(success){ catchMascot(g.id); }
+  else { addLog('neutral','🐾 '+m.name+' 놓쳤다! 메인 화면에서 다시 추격할 수 있어요.'); if(typeof playSfx==='function') playSfx('bad'); }
+  window.miniGame=null;
+  showMascotResult(success, m);
+}
+function showMascotResult(success, m){
+  const u='var(--u)';
+  document.getElementById('modal-area').innerHTML=`
+  <div class="px-panel" style="border-color:${success?'#43A047':'#B71C1C'};background:${success?'linear-gradient(135deg,#E8F5E9,#FFFDE7)':'#FFF3E0'};margin-bottom:5px;text-align:center;box-shadow:0 0 calc(10px * ${u}) ${success?'#66BB6A':'#EF9A9A'};">
+    <div style="font-size:calc(11px * ${u});color:${success?'#1B5E20':'#B71C1C'};margin-bottom:calc(6px * ${u});">${success?'🎉 '+m.emoji+' '+m.name+' 포획!':'😢 '+m.name+' 놓침…'}</div>
+    <div style="font-size:calc(7px * ${u});color:#5C3D1E;margin-bottom:calc(8px * ${u});line-height:1.8;">${success?m.desc+'<br>스탯 보조가 적용됐어요!':'괜찮아요! 메인 화면 추격 버튼으로<br>언제든 다시 도전할 수 있어요.'}</div>
+    <button class="px-btn px-btn-green" style="width:100%;font-size:calc(9px * ${u});padding:calc(10px * ${u});" onclick="closeMascotResult()">확인 ▶</button>
+  </div>`;
+  update();
+}
+function closeMascotResult(){
+  document.getElementById('modal-area').innerHTML='';
+  if(typeof maybeAutoResume==='function') maybeAutoResume(window._miniWasRiding);
+  window._miniWasRiding=false;
+  update();
 }
 
 // 장착/해제
@@ -2538,6 +2676,23 @@ function renderCodex(){
     <div style="${fs(7)};color:#8B6340;margin-bottom:calc(6px * ${u});">전체 컬렉션 ${total}%</div>
     <div class="px-bar-bg" style="height:calc(14px * ${u});"><div class="px-bar-fill" style="width:${total}%;background:linear-gradient(90deg,#FF9800,#FFC107);"></div></div>
   </div>`;
+
+  // 🐾 마스코트 도감
+  const mascotOwn=(S.mascots||[]).length;
+  html += `<div class="px-panel" style="margin-bottom:5px;">
+    <div style="${fs(7)};color:#3D2510;margin-bottom:calc(4px * ${u});">🐾 지역 마스코트 (${mascotOwn}/${MASCOTS.length})</div>
+    <div style="${fs(5)};color:#8B6340;margin-bottom:calc(6px * ${u});line-height:1.6;">지역을 정복하면 마스코트가 등장! 추격 미니게임으로 포획 → 스탯 보조 · 대륙 세트 완성 시 🏅업적 자전거 해금</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:calc(5px * ${u});">`;
+  MASCOTS.forEach(m=>{
+    const owned=(S.mascots||[]).includes(m.id);
+    const conquered=isRegionConquered(m.region);
+    const sub = owned ? (m.desc.split('·')[1]||'') : (conquered?'🎯 추격 가능!':'지역 미정복');
+    html += `<div style="border:2px solid ${owned?'#43A047':'#D4B483'};background:${owned?'#E8F5E9':'#F5E6C8'};border-radius:calc(6px * ${u});padding:calc(5px * ${u});${owned?'':'opacity:.7;'}">
+      <div style="${fs(9)};color:#3D2510;">${owned?m.emoji:'❔'} <span style="${fs(6)};">${owned?m.name:'???'}</span></div>
+      <div style="${fs(4)};color:#8B6340;margin-top:calc(1px * ${u});">${m.region} ·${sub}</div>
+    </div>`;
+  });
+  html += `</div></div>`;
 
   // 도시 도감
   html += `<div class="px-panel" style="margin-bottom:5px;">
@@ -3086,6 +3241,8 @@ function doLoad(parsedD){
         if((!_curC || !isFerryRegion(_curC.region)) && S.ferryTo && S.dest!==(FERRY_REGIONS[S.ferryTo]||{}).port) S.ferryTo = null;
         // 충주에 있는데 아무 목적지도 없으면 정상 (toggleRide 시 자동 설정됨)
         logs=d.log||[];document.getElementById('ride-btn').textContent='▶ 출발!';
+        if(!Array.isArray(S.mascots)) S.mascots=[];   // 구버전 세이브 마이그레이션
+        syncAchBikes();                                // 🐾 포획 컬렉션 → 업적 자전거 소유 복원
         if(d.lpt)applyOfflineReward(d.lpt, !!(d.S && d.S.riding));
         showSt('📂 불러오기 완료!');addLog('good','📂 불러오기 완료');update();
         maybeAutoResume(!!(d.S && d.S.riding));   // P0: 방치 ON이면 떠날 때 상태로 자동 재출발(오프라인 보상 처리 후)
@@ -3172,7 +3329,7 @@ function closeModalAndLaunch(wr){
 }
 // 새 게임 초기 상태(공통). resetGame·doPrestige가 공유한다.
 function freshState(){
-  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,spdBonus:0,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:true,idleMode:true,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,gachaEpicCount:0,prestigeSpdTotal:0,loginStreak:{last:'',count:0},testerGiftClaimed:false,testerGiftPending:false,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[],lastTry:{}},playerId:'',nickname:'',postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
+  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,spdBonus:0,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:true,idleMode:true,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,gachaEpicCount:0,prestigeSpdTotal:0,loginStreak:{last:'',count:0},testerGiftClaimed:false,testerGiftPending:false,mascots:[],foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[],lastTry:{}},playerId:'',nickname:'',postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
 }
 // 초기화 후 공통 뒷정리(뱃지·애니메이션·루프)
 function afterReset(){
@@ -3361,6 +3518,8 @@ function doPrestige(){
         raidRankPending:S.raidRankPending, raidGoalPending:S.raidGoalPending,
         // 일회성 테스터 선물 수령 여부 — 환생해도 중복 지급 방지
         testerGiftClaimed:S.testerGiftClaimed, testerGiftPending:S.testerGiftPending,
+        // 🐾 포획한 마스코트 — 영구 컬렉션(환생 이월). 업적 자전거 해금 상태도 이걸로 복원
+        mascots:S.mascots||[],
         // 장비·강화 수준·강화석 유지(사용자 요청) — 인벤(각 아이템 .plus 포함)·장착·강화석 이월
         inventory:S.inventory||[], equipped:S.equipped||{head:null,eyes:null,hands:null,feet:null,body:null}, gearDust:S.gearDust||0,
         // 프레스티지 강화: 영구 속도 노하우(회차마다 +1 누적) — 다음 회차로 이월
@@ -3380,6 +3539,8 @@ function doPrestige(){
       S.testerGiftClaimed=!!keep.testerGiftClaimed; S.testerGiftPending=keep.testerGiftClaimed?false:true;
       // 장비·강화 수준·강화석 이월 후 장착 헬멧 체력 보너스 재적용(mhp 갱신)
       S.inventory=keep.inventory; S.equipped=keep.equipped; S.gearDust=keep.gearDust;
+      // 🐾 마스코트 컬렉션 이월 → 업적 자전거 해금 복원
+      S.mascots=keep.mascots||[]; syncAchBikes();
       refreshMhpFromHelmet();
       afterReset();
       addLog('good','🌏✨ '+S.prestige+'회차 세계일주 시작! 여행 노하우: 속도·수입 +'+Math.round((prestigeMult()-1)*100)+'% · 🗡️속도 노하우 +'+S.prestigeSpdTotal+' · 🎟️가챠권 +3');
@@ -3617,6 +3778,7 @@ function renderNpcs(){
 function renderVehs(){
   const cats=[
     {key:'bike', label:'🚲 자전거 (15단계 업그레이드)'},
+    {key:'ach',  label:'🏅 업적 자전거 (마스코트 세트 완성)'},
     {key:'rocket',label:'🚀 1회용 로켓'},
   ];
   const f = tabFilter.veh;
@@ -3653,6 +3815,11 @@ function renderVehs(){
       // 로켓: 보유 중일 때만 여기 도달 → 발사 버튼만 표시
       if(v.cat==='rocket'){
         btn=`<button class="px-btn px-btn-sm px-btn-red" onclick="launchRocket()" style="font-size:calc(9px * var(--u));">🚀발사!</button>`;
+      } else if(v.cat==='ach'){
+        // 업적 자전거: 구매 불가, 마스코트 세트 완성 시 owned. owned면 선택, 아니면 잠금 안내
+        if(cur) btn=`<span style="color:#4CAF50;font-size:calc(9px * var(--u));white-space:nowrap;">[현재]</span>`;
+        else if(owned) btn=`<button class="px-btn px-btn-sm px-btn-green" onclick="switchVeh('${v.id}')">변경</button>`;
+        else { const _set=MASCOT_SETS.find(s=>s.bikeId===v.id); btn=`<div style="font-size:calc(8px * var(--u));color:#8B6340;text-align:center;white-space:nowrap;">🔒<br>${_set?_set.name:''} 세트</div>`; }
       } else {
         if(cur)btn=`<span style="color:#4CAF50;font-size:calc(9px * var(--u));white-space:nowrap;">[현재]</span>`;
         else if(owned)btn=`<button class="px-btn px-btn-sm px-btn-green" onclick="switchVeh('${v.id}')">변경</button>`;
@@ -3662,13 +3829,14 @@ function renderVehs(){
       }
       const canvasId='vc-'+v.id;
       const rocketNote=v.cat==='rocket'?`<div style="font-size:calc(7px * var(--u));color:#E53935;margin-top:2px;">1회용 · 5% 폭발확률</div><div style="font-size:calc(7px * var(--u));color:#8B6340;margin-top:1px;">🔒 나로호발사센터에서만 구매 가능</div>`:'';
-      html+=`<div class="px-panel" style="margin-bottom:5px;${cur?'border-color:#4CAF50;':''}${v.cat==='rocket'&&owned?'border-color:#FF6D00;background:#FFF3E0;':''}${locked?'opacity:.5':''}">
+      html+=`<div class="px-panel" style="margin-bottom:5px;${cur?'border-color:#4CAF50;':''}${v.cat==='ach'&&owned?'border-color:#F9A825;background:#FFFDE7;':''}${v.cat==='rocket'&&owned?'border-color:#FF6D00;background:#FFF3E0;':''}${(locked||(v.cat==='ach'&&!owned))?'opacity:.55':''}">
         <div style="display:flex;align-items:center;gap:10px;">
           <canvas id="${canvasId}" width="80" height="50" class="veh-canvas"></canvas>
           <div style="flex:1;">
             <div style="font-size:calc(9px * var(--u));color:#3D2510;">${v.n}${owned&&!cur&&v.cat!=='rocket'?' <span style="font-size:calc(9px * var(--u));color:#1976D2;">[보유]</span>':''}</div>
             <div style="font-size:calc(9px * var(--u));color:#8B6340;margin-top:2px;">🏎️ ${v.sp}km/h &nbsp; ❤️+${v.hb} &nbsp; <span style="color:#B71C1C;">💔${(0.175 * v.sp).toFixed(2)}/s</span></div>
             ${rocketNote}
+            ${v.cat==='ach'&&!owned?`<div style="font-size:calc(8px * var(--u));color:#8B6340;">🔒 ${(MASCOT_SETS.find(s=>s.bikeId===v.id)||{}).name} 마스코트 전부 포획 시 해금</div>`:''}
             ${locked?`<div style="font-size:calc(9px * var(--u));color:#8B6340;">🔒 ${v.km.toLocaleString()}km 필요</div>`:''}
           </div>
           ${btn}
@@ -3733,7 +3901,8 @@ function getHelmetBonus(){
 }
 // 1번 fix: 헬멧 변경/강화 시 mhp 일관 갱신
 function refreshMhpFromHelmet(){
-  S.mhp = (S.prevBaseMhp||100) + (S.mhpSpBonus||0) + getHelmetBonus();
+  const mascotMhp = (typeof getMascotBonus==='function') ? (getMascotBonus().mhpBonus||0) : 0;  // 🐾 마스코트 체력 보조 포함
+  S.mhp = (S.prevBaseMhp||100) + (S.mhpSpBonus||0) + getHelmetBonus() + mascotMhp;
   S.hp = Math.min(S.hp, S.mhp);
 }
 
@@ -4008,6 +4177,13 @@ function update(){
   // 테스터 감사 선물 버튼 — 미수령 시에만 노출
   const _giftBtn=document.getElementById('tester-gift-btn');
   if(_giftBtn){ const _show=S.testerGiftPending?'block':'none'; if(_giftBtn.style.display!==_show)_giftBtn.style.display=_show; }
+  // 🐾 마스코트 추격 버튼 — 정복한 지역의 미포획 마스코트가 있고 미니게임 중이 아닐 때 노출
+  const _mhBtn=document.getElementById('mascot-hunt-btn');
+  if(_mhBtn){
+    const _am=(window.miniGame&&window.miniGame.active)?null:getAvailableMascot();
+    if(_am){ _mhBtn.style.display='block'; const _h='🐾 '+_am.emoji+' '+_am.name+' 추격!'; if(_mhBtn.innerHTML!==_h)_mhBtn.innerHTML=_h; }
+    else if(_mhBtn.style.display!=='none') _mhBtn.style.display='none';
+  }
   renderCourseWidget();   // 메인 화면 특별코스 위젯 갱신
   document.getElementById('hp-v').textContent=Math.round(S.hp)+'/'+S.mhp;document.getElementById('hp-b').style.width=Math.round(S.hp/S.mhp*100)+'%';
   document.getElementById('xp-v').textContent=Math.round(S.xp)+'/'+S.xpMax;document.getElementById('xp-b').style.width=Math.round(S.xp/S.xpMax*100)+'%';

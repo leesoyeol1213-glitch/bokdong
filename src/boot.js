@@ -8,6 +8,9 @@ try{ if(document.fonts && document.fonts.load){ document.fonts.load('11px Galmur
 // 즉시 호출 대신 다음 프레임에 시작 — 모든 정의가 끝난 후 실행되도록
 requestAnimationFrame(animLoop);
 
+// 🐾 마스코트 미니게임: 캔버스 탭/클릭으로 점프(버튼 외 화면 어디나)
+try{ if(cv) cv.addEventListener('pointerdown', function(){ if(window.miniGame && window.miniGame.active && typeof mascotJump==='function') mascotJump(); }); }catch(e){}
+
 // ── 자동 불러오기 + 자동저장 시동 (v9.19) ─────────────────
 // 방치형 UX: 시작 시 자동 로드(+오프라인 보상), 30초 주기·탭 이탈·닫기 시 자동 저장.
 (function initPersistence(){
