@@ -1474,6 +1474,55 @@ function ensureMissions(){
     S.missions.monthlyResetAt = d.getTime();
   }
 }
+// ── 일일 로그인 스트릭(출석) 보상 — 7일 사이클 반복(Fable: 매일 돌아올 이유) ──
+var LOGIN_REWARDS = [
+  {money:10000,               label:'₩10,000'},
+  {ap:3,                      label:'🍎 사과 +3'},
+  {money:20000,               label:'₩20,000'},
+  {ticket:1,                  label:'🎟️ 가챠권 +1'},
+  {jc:2,                      label:'⚡ 사과즙 +2'},
+  {money:30000,               label:'₩30,000'},
+  {ticket:2, money:50000,     label:'🎟️ 가챠권 +2 · ₩50,000'},
+];
+function ensureLoginStreak(){ if(!S.loginStreak) S.loginStreak={last:'',count:0}; }
+// 하루 1회, 새 날(자정 기준 toDateString)마다 출석 보상. 연속이면 count↑, 하루라도 건너뛰면 1로 리셋.
+function checkDailyLoginReward(){
+  ensureLoginStreak();
+  const today=new Date().toDateString();
+  if(S.loginStreak.last===today) return;                     // 오늘 이미 지급
+  const y=new Date(Date.now()-86400000).toDateString();
+  S.loginStreak.count = (S.loginStreak.last===y) ? (S.loginStreak.count||0)+1 : 1;  // 어제 접속=연속, 아니면 리셋
+  S.loginStreak.last=today;
+  const cyc=((S.loginStreak.count-1)%7);
+  const rw=LOGIN_REWARDS[cyc];
+  if(rw.money)  S.money+=rw.money;
+  if(rw.ap)     S.ap=Math.min(99,(S.ap||0)+rw.ap);
+  if(rw.jc)     S.jc=Math.min(99,(S.jc||0)+rw.jc);
+  if(rw.ticket) S.gachaTicket=(S.gachaTicket||0)+rw.ticket;
+  addLog('good','📅 출석 '+S.loginStreak.count+'일차! 보상: '+rw.label);
+  showSt('📅 출석 '+S.loginStreak.count+'일차 보상!');
+  if(typeof track==='function') track('login_streak',{day:S.loginStreak.count, cyc:cyc+1});
+  if(!modalOpen()) showLoginRewardModal(cyc, S.loginStreak.count);  // 다른 모달(오프라인·온보딩) 중이면 로그로 대신
+}
+function showLoginRewardModal(cycIdx, streak){
+  const u='var(--u)'; const fs=px=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
+  const cells=LOGIN_REWARDS.map((rw,i)=>{
+    const done=i<=cycIdx;               // 이번 사이클에서 이미 받은 칸(오늘 포함)
+    const isToday=i===cycIdx;
+    return `<div style="flex:1;text-align:center;border:2px solid ${isToday?'#E65100':(done?'#8B6340':'#D4B483')};background:${isToday?'#FFE082':(done?'#EFE8DC':'#FFF8DC')};border-radius:calc(5px * ${u});padding:calc(4px * ${u}) calc(2px * ${u});">
+      <div style="${fs(4)};color:#8B6340;">${i+1}일</div>
+      <div style="${fs(5)};color:#3D2510;line-height:1.4;">${rw.label.split('·')[0]}</div>
+      ${isToday?`<div style="${fs(4)};color:#E65100;">오늘</div>`:(done?`<div style="${fs(4)};color:#1B5E20;">✓</div>`:'')}
+    </div>`;
+  }).join('');
+  document.getElementById('modal-area').innerHTML=`
+  <div class="px-panel" style="border-color:#E65100;background:linear-gradient(135deg,#FFF8E1,#FFECB3);box-shadow:0 0 calc(10px * ${u}) #FFB74D;margin-bottom:5px;">
+    <div style="${fs(9)};color:#E65100;text-align:center;margin-bottom:calc(4px * ${u});">📅 출석 체크 · ${streak}일 연속!</div>
+    <div style="${fs(6)};color:#5C3D1E;text-align:center;margin-bottom:calc(8px * ${u});">오늘의 보상: <b>${LOGIN_REWARDS[cycIdx].label}</b></div>
+    <div style="display:flex;gap:calc(3px * ${u});margin-bottom:calc(8px * ${u});">${cells}</div>
+    <button class="px-btn px-btn-green" style="width:100%;${fs(8)};padding:calc(9px * ${u});" onclick="document.getElementById('modal-area').innerHTML='';if(typeof update==='function')update();">받기 ▶</button>
+  </div>`;
+}
 function trackMission(type, amount){
   ensureMissions();
   amount = amount || 1;
@@ -2456,12 +2505,13 @@ function rollPaint(){ addLog('bad','페인트 시스템은 제거됐어요'); }
 function applyPaint(){}
 function renderPaintShop(){}
 
-// 2번: 장비 가챠 — 일반~전설, 천장 50회 시 전설 확정
+// 2번: 장비 가챠 — 일반~에픽, 천장: 50회 전설 확정 · 100회 에픽 확정
 var GACHA_PROBS = [
   {key:'common', weight:60},
   {key:'rare',   weight:25},
   {key:'unique', weight:12},
-  {key:'legend', weight:3},
+  {key:'legend', weight:2.5},
+  {key:'epic',   weight:0.5},   // ≈0.5% 최상위 슬롯(Fable: 고인물 목표 지점)
 ];
 // 가방이 가득 찼는지 — 가챠는 유료/유한 자원이므로 과금 전에 막아 아이템·재화 유실을 방지한다.
 function gachaBagFull(){
@@ -2488,9 +2538,14 @@ function rollGearGachaTicket(){
 // 공통 추첨 로직(결제는 호출부에서 이미 처리)
 function _doGearRoll(source){
   S.gachaCount = (S.gachaCount||0) + 1;
+  S.gachaEpicCount = (S.gachaEpicCount||0) + 1;
   let rarityKey;
-  // 천장 — 50회마다 전설 확정
-  if(S.gachaCount >= 50){
+  // 천장 — 에픽(100회) 우선, 그다음 전설(50회)
+  if(S.gachaEpicCount >= 100){
+    rarityKey = 'epic';
+    S.gachaEpicCount = 0; S.gachaCount = 0;
+    addLog('good','🌌 에픽 천장! 100회 누적 → 에픽 확정!');
+  } else if(S.gachaCount >= 50){
     rarityKey = 'legend';
     S.gachaCount = 0;
     addLog('good','🎯 천장! 50회 누적 → 전설 확정!');
@@ -2499,7 +2554,8 @@ function _doGearRoll(source){
     let r = Math.random() * total;
     rarityKey = 'common';
     for(const p of GACHA_PROBS){r -= p.weight; if(r<=0){rarityKey = p.key; break;}}
-    if(rarityKey === 'legend') S.gachaCount = 0; // 전설 나오면 카운트 리셋
+    if(rarityKey === 'legend') S.gachaCount = 0;            // 전설 나오면 전설 카운트 리셋
+    if(rarityKey === 'epic'){ S.gachaEpicCount = 0; S.gachaCount = 0; }  // 에픽 자연획득 → 양 천장 리셋
   }
   const item = generateGear(rarityKey);
   S.inventory = S.inventory || [];
@@ -2514,12 +2570,12 @@ function _doGearRoll(source){
     S.gearDust = (S.gearDust||0) + RARITY_DUST[item.rarity];
     addLog('bad','🎒 가방이 가득 차 ['+r.label+'] '+item.name+'은(는) 강화석 +'+RARITY_DUST[item.rarity]+'로 전환됐어요.');
   }
-  if(rarityKey==='legend') playSfx('mythic');
+  if(rarityKey==='legend'||rarityKey==='epic') playSfx('mythic');
   else playSfx('gear');
   if(added){
     showGachaResult('gear', item, true);
-    // ✨ 전설 뽑기는 상단 캔버스에도 god-ray 드롭 연출
-    if(rarityKey==='legend') showGearDropAnim(item);
+    // ✨ 전설·에픽 뽑기는 상단 캔버스에도 god-ray 드롭 연출
+    if(rarityKey==='legend'||rarityKey==='epic') showGearDropAnim(item);
   }
 }
 
@@ -2565,16 +2621,19 @@ function enhanceGear(itemId){
   if(plus>=10){addLog('bad','이미 최대 강화 (+10)');return;}
   const cost = (plus+1) * RARITY_DUST[item.rarity];
   if((S.gearDust||0) < cost){addLog('bad','강화석 부족! 필요: '+cost);return;}
-  // 성공 확률 (레벨이 오를수록 어려워짐)
-  const successProbs = [1.0,1.0,0.95,0.85,0.7,0.55,0.4,0.3,0.2,0.15,0.1];
-  const prob = successProbs[plus] || 0.1;
+  // 성공 확률 (레벨이 오를수록 어려워짐) — Fable 리밸런스: 하한 30%로 후반 강화 절망감 완화
+  const successProbs = [1.0,1.0,0.95,0.85,0.7,0.55,0.45,0.4,0.35,0.32,0.3];
+  const prob = Math.max(0.30, successProbs[plus] || 0.3);
   S.gearDust -= cost;
   if(Math.random() < prob){
     item.plus = plus + 1;
     // 강화 효과는 getGearEffectValue(rarity + plus×8%)로만 계산된다. (과거 item.mult*=1.15는 미사용 죽은 코드 → 제거)
     addLog('good','✨ '+item.name+' +'+item.plus+' 강화 성공! (효과 +8%)');
   } else {
-    addLog('bad','💥 '+item.name+' 강화 실패... (강화석 -'+cost+')');
+    // Fable 리밸런스: 실패 시 강화석 50% 반환(전량 소각 → 반환으로 파밍 부담 완화)
+    const refund=Math.floor(cost*0.5);
+    if(refund>0) S.gearDust+=refund;
+    addLog('bad','💥 '+item.name+' 강화 실패... (강화석 -'+(cost-refund)+', 50% 반환 +'+refund+')');
   }
   // 헬멧 강화 시 mhp 갱신 (1번 fix: SP 투자분 보존)
   if(item.slot==='head' && S.equipped && S.equipped.head===item.id){
@@ -2960,7 +3019,7 @@ function closeModalAndLaunch(wr){
 }
 // 새 게임 초기 상태(공통). resetGame·doPrestige가 공유한다.
 function freshState(){
-  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,spdBonus:0,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,idleMode:true,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[],lastTry:{}},playerId:'',nickname:'',postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
+  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,spdBonus:0,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:false,idleMode:true,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,gachaEpicCount:0,prestigeSpdTotal:0,loginStreak:{last:'',count:0},foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[],lastTry:{}},playerId:'',nickname:'',postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
 }
 // 초기화 후 공통 뒷정리(뱃지·애니메이션·루프)
 function afterReset(){
@@ -3114,15 +3173,20 @@ function doPrestige(){
   const nextMult = 1 + 0.25*((S.prestige||0)+1);
   showConfirmModal({
     title:'🌏 '+((S.prestige||0)+1)+'회차 세계일주?',
-    message:`지금까지의 진행(레벨·돈·자전거·장비·방문)이 초기화됩니다.\n대신 영구 보너스 "여행 노하우"를 얻어요:\n\n🚀 속도·수입 +${Math.round((nextMult-1)*100)}% (영구)\n🏆 업적·프레스티지 횟수는 유지\n👥 NPC를 다시 만나 보상을 또 받습니다`,
+    message:`지금까지의 진행(레벨·돈·자전거·장비·방문)이 초기화됩니다.\n대신 영구 보너스 "여행 노하우"를 얻어요:\n\n🚀 속도·수입 +${Math.round((nextMult-1)*100)}% (영구)\n🗡️ 영구 속도 노하우 +${(S.prestigeSpdTotal||0)+1}\n🎟️ 가챠권 3장 지급\n🏆 업적·프레스티지 횟수는 유지\n👥 NPC를 다시 만나 보상을 또 받습니다`,
     okText:((S.prestige||0)+1)+'회차 출발! 🌏', cancelText:'아직...', color:'#8B5CF6',
     onOk:()=>{
       const keep={ prestige:(S.prestige||0)+1, achievements:S.achievements||[], paints:S.paints||['gray'], activePaint:S.activePaint||'gray', autoApple:!!S.autoApple,
         // 전국 레이드 정체성·주간 기여도 — 환생(게임 내 리셋)과 무관하게 플레이어 단위로 유지
         playerId:S.playerId, nickname:S.nickname, course:S.course, sinRush:S.sinRush,
-        raidRewardClaimed:S.raidRewardClaimed, raidRankClaimedWeek:S.raidRankClaimedWeek };
+        raidRewardClaimed:S.raidRewardClaimed, raidRankClaimedWeek:S.raidRankClaimedWeek,
+        // 프레스티지 강화: 영구 속도 노하우(회차마다 +1 누적) — 다음 회차로 이월
+        prestigeSpdTotal:(S.prestigeSpdTotal||0)+1 };
       S=freshState();
       S.prestige=keep.prestige; S.achievements=keep.achievements; S.paints=keep.paints; S.activePaint=keep.activePaint; S.autoApple=keep.autoApple;
+      // 프레스티지 강화(Fable): 영구 속도 노하우 이월 + 새 회차 시작 시 가챠권 3장 지급
+      S.prestigeSpdTotal=keep.prestigeSpdTotal; S.spdBonus=(S.spdBonus||0)+S.prestigeSpdTotal;
+      S.gachaTicket=(S.gachaTicket||0)+3;
       // 레이드/주간 콘텐츠 복원(기여도 리셋 버그 수정)
       if(keep.playerId) S.playerId=keep.playerId;
       S.nickname=keep.nickname||'';
@@ -3130,7 +3194,7 @@ function doPrestige(){
       if(keep.sinRush) S.sinRush=keep.sinRush;
       S.raidRewardClaimed=keep.raidRewardClaimed||''; S.raidRankClaimedWeek=keep.raidRankClaimedWeek||'';
       afterReset();
-      addLog('good','🌏✨ '+S.prestige+'회차 세계일주 시작! 여행 노하우: 속도·수입 +'+Math.round((prestigeMult()-1)*100)+'% (영구)');
+      addLog('good','🌏✨ '+S.prestige+'회차 세계일주 시작! 여행 노하우: 속도·수입 +'+Math.round((prestigeMult()-1)*100)+'% · 🗡️속도 노하우 +'+S.prestigeSpdTotal+' · 🎟️가챠권 +3');
       track('prestige',{n:S.prestige});
       const _unlk=WORLD_MAP.find(r=>r.unlock===S.prestige);
       if(_unlk){ addLog('good','🌏 새 지역 해금! '+_unlk.flag+' '+_unlk.name+(_unlk.soon?' — 곧 공개!':'')); showSt('🌏 '+_unlk.flag+' '+_unlk.name+' 해금!'); }
@@ -3256,6 +3320,7 @@ function renderGachaShop(){
   const fs=(px)=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
   const gachaCnt = S.gachaCount || 0;
   const pityLeft = 50 - gachaCnt;
+  const epicPityLeft = 100 - (S.gachaEpicCount || 0);
   const tickets = S.gachaTicket || 0;
 
   // 결과 알림
@@ -3272,11 +3337,11 @@ function renderGachaShop(){
     <div class="px-panel" style="margin-bottom:5px;border-color:#7B1FA2;background:linear-gradient(135deg,#F3E5F5,#FFFFFF);">
       <div style="${fs(7)};color:#4A148C;margin-bottom:calc(6px * ${u});text-align:center;">⚔️ 장비 가챠</div>
       <div style="${fs(5)};color:#5C3D1E;background:rgba(255,255,255,.7);border-radius:calc(4px * ${u});padding:calc(5px * ${u});margin-bottom:calc(6px * ${u});line-height:1.9;text-align:center;">
-        일반 60% · 레어 25% · 유니크 12% · 전설 3%<br>
-        <b style="color:#7B1FA2;">🎯 천장 시스템: 50회 시 전설 확정!</b>
+        일반 60% · 레어 25% · 유니크 12% · 전설 2.5% · <b style="color:#6A1B9A;">에픽 0.5%</b><br>
+        <b style="color:#7B1FA2;">🎯 천장: 50회 전설 확정 · 🌌 100회 에픽 확정!</b>
       </div>
       <div style="${fs(5)};color:#5C3D1E;background:#FFF;border:1px dashed #7B1FA2;border-radius:calc(4px * ${u});padding:calc(4px * ${u});margin-bottom:calc(6px * ${u});text-align:center;">
-        🎯 천장까지: <b>${pityLeft}회</b> 남음
+        🎯 전설 천장까지: <b>${pityLeft}회</b> · 🌌 에픽 천장까지: <b>${epicPityLeft}회</b>
       </div>
       <button class="px-btn" style="width:100%;${fs(7)};background:#7B1FA2;border-color:#4A148C;box-shadow:calc(3px * ${u}) calc(3px * ${u}) 0 #2A0040;margin-bottom:calc(6px * ${u});" onclick="rollGearGacha()">⚔️ 장비 뽑기 ₩100,000</button>
       <button class="px-btn" style="width:100%;${fs(7)};background:${tickets>0?'#00897B':'#9E9E9E'};border-color:${tickets>0?'#004D40':'#616161'};box-shadow:calc(3px * ${u}) calc(3px * ${u}) 0 ${tickets>0?'#002620':'#424242'};" onclick="rollGearGachaTicket()">🎟️ 가챠권으로 뽑기 (보유 ${tickets})</button>
