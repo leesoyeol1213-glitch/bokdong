@@ -1773,13 +1773,24 @@ function claimRaidRewardIfDone(){
   if(raidState.total < raidState.goal) return;           // 목표 미달
   const wk=getWeekKey();
   if(S.raidRewardClaimed===wk) return;                   // 이번 주 이미 수령
-  S.raidRewardClaimed=wk;
+  if(S.raidGoalPending===wk) return;                     // 이미 수령 대기 등록됨
+  // 자동 지급 대신 '수령 대기' 등록 → 레이드 탭 버튼으로 직접 받는다.
+  S.raidGoalPending=wk;
+  addLog('good','🌏 전국 레이드 목표 '+RAID_GOAL.toLocaleString()+'km 달성! 미션 탭에서 협동 보상을 수령하세요!');
+  showSt('🌏 목표 달성! 미션 탭에서 보상 수령');
+}
+// 협동 목표 보상 수령 — 이번 주 목표 달성분(₩50만+🎟️2)을 버튼으로 지급
+function claimRaidGoalReward(){
+  const wk=getWeekKey();
+  if(S.raidGoalPending!==wk){ showSt('받을 협동 보상이 없어요'); return; }
+  S.raidGoalPending=null; S.raidRewardClaimed=wk;
   // 주간 반복 지급이므로 영구 SP는 제외(스탯 인플레 방지). 금액 + 가챠권 위주.
   S.money+=500000; S.gachaTicket=(S.gachaTicket||0)+2;
-  addLog('good','🌏 전국 레이드 목표 '+RAID_GOAL.toLocaleString()+'km 달성! 모두에게 보상 ₩500,000 + 🎟️가챠권 2');
-  showSt('🌏 전국 레이드 목표 달성! ₩50만 + 🎟️×2');
+  addLog('good','🌏 협동 목표 보상 수령! ₩500,000 + 🎟️가챠권 2');
+  showSt('🌏 협동 보상 수령! ₩50만 + 🎟️×2');
   playSfx('levelup');
-  checkAchievements(); save(); update();
+  checkAchievements(); if(typeof save==='function') save(); update();
+  if(curTab==='mission') renderMission();
 }
 // ── 구간별 상위 랭커 보상 — 지난주 최종 순위 정산(공정성). 상위 3위에게 전설~신화 랜덤박스 ──
 // 순위별 신화 확률: 1위 100%(신화 확정) · 2위 40% · 3위 20%, 나머지는 전설.
@@ -1814,12 +1825,24 @@ function grantRankBox(rank){
 // 지난주 최종 보드 rows(km 내림차순)로 내 등수를 판정해 상위 3위면 박스 지급. (네트워크와 분리 — 테스트 용이)
 // rows는 km desc 정렬 가정. 서버 정렬과 무관하게 방어적으로 재정렬한다.
 function applyRankSettlement(rows, lastWk){
-  S.raidRankClaimedWeek=lastWk;   // 상위권이 아니어도 정산 완료로 표시(매 fetch 재조회 방지)
+  S.raidRankClaimedWeek=lastWk;   // 순위 판정 완료 표시(상위권 아니어도) — 매 fetch 재조회 방지
   const sorted=(rows||[]).slice().sort((a,b)=>(b.km||0)-(a.km||0));
   const idx=sorted.findIndex(x=>x.player_id===S.playerId);
   if(idx>=0 && idx<3 && (sorted[idx].km||0)>0){
-    grantRankBox(idx+1);
+    // 자동 지급 대신 '수령 대기'로 저장 → 레이드 탭에서 버튼으로 직접 받는 손맛(사용자 피드백)
+    S.raidRankPending={week:lastWk, rank:idx+1};
+    addLog('good','🏆 지난주 전국 레이드 '+(idx+1)+'위! 레이드 탭(미션)에서 순위 보상을 수령하세요!');
+    showSt('🏆 지난주 '+(idx+1)+'위! 미션 탭에서 보상 수령');
   }
+}
+// 순위 보상 수령 — 대기 중인 랭커 박스를 실제로 개봉(전설~신화)
+function claimRankBox(){
+  const p=S.raidRankPending;
+  if(!p){ showSt('받을 순위 보상이 없어요'); return; }
+  S.raidRankPending=null;
+  grantRankBox(p.rank);
+  if(typeof save==='function') save(); update();
+  if(curTab==='mission') renderMission();
 }
 var _raidRankSettling=false;
 function settleRaidRankReward(){
@@ -1852,14 +1875,35 @@ function renderRaidHTML(){
   const pct=Math.min(100, Math.floor(raidState.total/raidState.goal*100));
   const reached=raidState.connected && raidState.total>=raidState.goal;
   const claimed=raidRewardClaimedThisWeek();
+  const wkNow=getWeekKey();
+  // ── 수령 버튼(1): 지난주 순위 보상 대기 ──
+  const rankPending=S.raidRankPending;
+  const rankMedal=rankPending?(rankPending.rank===1?'🥇':rankPending.rank===2?'🥈':'🥉'):'';
+  const rankClaimBtn = rankPending
+    ? `<button class="px-btn" style="width:100%;${fs(8)};padding:calc(10px * ${u});background:#F59E0B;border-color:#B45309;color:#3D2510;box-shadow:calc(3px * ${u}) calc(3px * ${u}) 0 #78350F;margin-bottom:calc(6px * ${u});animation:pulse 1.4s infinite;" onclick="claimRankBox()">${rankMedal} 지난주 ${rankPending.rank}위 순위 보상 수령! (전설~신화 박스)</button>`
+    : '';
+  // ── 수령 버튼(2): 이번 주 협동 목표 보상 대기 ──
+  const goalPending=(S.raidGoalPending===wkNow);
+  const goalClaimBtn = goalPending
+    ? `<button class="px-btn px-btn-green" style="width:100%;${fs(8)};padding:calc(10px * ${u});margin-bottom:calc(6px * ${u});animation:pulse 1.4s infinite;" onclick="claimRaidGoalReward()">🎁 협동 목표 보상 수령! (₩500,000 + 🎟️2)</button>`
+    : '';
+  // ── 순위 보상 상태(버튼 없을 때 '왜 없는지' 안내 — 빈 화면 방지) ──
+  const prevWk=getPrevWeekKey();
+  const rankStatus = rankPending ? ''
+    : (S.raidRankClaimedWeek===prevWk
+        ? `<div style="${fs(5)};color:#8B6340;text-align:center;margin-bottom:calc(5px * ${u});">지난주 순위 보상: 상위 3위가 아니어서 없어요 (계속 달려 순위를 올려보세요!)</div>`
+        : `<div style="${fs(5)};color:#8B6340;text-align:center;margin-bottom:calc(5px * ${u});">지난주 순위 보상: 접속 시 정산 예정 ${raidState.connected?'':'(서버 연결 대기중)'}</div>`);
   const goalBanner = reached
-    ? `<div style="${fs(6)};text-align:center;background:#DCFCE7;border:2px solid #16a34a;border-radius:calc(6px * ${u});padding:calc(5px * ${u});margin-bottom:calc(5px * ${u});color:#15803d;">🎉 이번 주 목표 달성! ${claimed?'그랜드 보상 지급 완료 ✓':'보상 지급 중…'}</div>`
+    ? `<div style="${fs(6)};text-align:center;background:#DCFCE7;border:2px solid #16a34a;border-radius:calc(6px * ${u});padding:calc(5px * ${u});margin-bottom:calc(5px * ${u});color:#15803d;">🎉 이번 주 목표 달성! ${claimed?'협동 보상 수령 완료 ✓':(goalPending?'아래 버튼으로 수령하세요 👇':'보상 확인 중…')}</div>`
     : '';
   const nick=(S.nickname||'').replace(/"/g,'&quot;');
   const lead=raidState.top.map((r,i)=>`<div style="display:flex;justify-content:space-between;${fs(6)};color:#3D2510;padding:calc(2px * ${u}) 0;"><span>${i+1}. ${r.name}</span><span>${r.km.toLocaleString()}km</span></div>`).join('');
   return `<div class="px-panel" style="margin-bottom:calc(6px * ${u});border-color:#0284c7;">
     <div style="${fs(9)};color:#0284c7;text-align:center;margin-bottom:calc(3px * ${u});">🌏 주간 전국 레이드 ${raidState.connected?'':`<span style="${fs(5)};color:#8B6340;">(연결 준비중·오프라인)</span>`}</div>
     <div style="${fs(6)};color:#8B6340;text-align:center;margin-bottom:calc(5px * ${u});">전국의 임복동이 함께 ${raidState.goal.toLocaleString()}km 완주에 도전!</div>
+    ${rankClaimBtn}
+    ${goalClaimBtn}
+    ${rankStatus}
     ${goalBanner}
     <div style="background:#F0F9FF;border:2px solid #0284c7;border-radius:calc(6px * ${u});padding:calc(6px * ${u});margin-bottom:calc(6px * ${u});">
       <div style="${fs(6)};color:#0284c7;font-weight:bold;margin-bottom:calc(3px * ${u});">🎁 이렇게 보상받아요</div>
@@ -3180,6 +3224,8 @@ function doPrestige(){
         // 전국 레이드 정체성·주간 기여도 — 환생(게임 내 리셋)과 무관하게 플레이어 단위로 유지
         playerId:S.playerId, nickname:S.nickname, course:S.course, sinRush:S.sinRush,
         raidRewardClaimed:S.raidRewardClaimed, raidRankClaimedWeek:S.raidRankClaimedWeek,
+        // 미수령 레이드 보상(순위·목표) — 환생과 무관하게 플레이어 단위로 유지(유실 방지)
+        raidRankPending:S.raidRankPending, raidGoalPending:S.raidGoalPending,
         // 프레스티지 강화: 영구 속도 노하우(회차마다 +1 누적) — 다음 회차로 이월
         prestigeSpdTotal:(S.prestigeSpdTotal||0)+1 };
       S=freshState();
@@ -3193,6 +3239,7 @@ function doPrestige(){
       if(keep.course) S.course=keep.course;
       if(keep.sinRush) S.sinRush=keep.sinRush;
       S.raidRewardClaimed=keep.raidRewardClaimed||''; S.raidRankClaimedWeek=keep.raidRankClaimedWeek||'';
+      S.raidRankPending=keep.raidRankPending||null; S.raidGoalPending=keep.raidGoalPending||'';
       afterReset();
       addLog('good','🌏✨ '+S.prestige+'회차 세계일주 시작! 여행 노하우: 속도·수입 +'+Math.round((prestigeMult()-1)*100)+'% · 🗡️속도 노하우 +'+S.prestigeSpdTotal+' · 🎟️가챠권 +3');
       track('prestige',{n:S.prestige});
