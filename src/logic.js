@@ -1364,6 +1364,7 @@ function autoPickNextDestination(){
   const _newbie=(S.prestige||0)===0 && (S.visited||[]).length<3;
   const _explicitDist=n=> (CITY_DIST[S.city+'-'+n]||CITY_DIST[n+'-'+S.city]||9999);
   let others=CITIES.filter(c=>c.n!==S.city && c.n!=='달' && c.n!=='진천' && isRegionUnlocked(c.region)
+    && (c.region!=='함정' || !(S.visited||[]).includes(c.n))   // 이미 다녀온 함정엔 다시 안 걸림(선택창과 동일 규칙)
     && (!_newbie || (c.region!=='함정' && _explicitDist(c.n)<=120)));
   if(_newbie && !others.length){ // 근거리 명시 후보 소진 시 완화(함정 제외는 유지)
     others=CITIES.filter(c=>c.n!==S.city && c.n!=='달' && c.n!=='진천' && c.region!=='함정' && isRegionUnlocked(c.region));
@@ -1427,26 +1428,37 @@ function chooseNextDestination(wr){
   const isJapan=c=>c.region==='일본';
   // 코스 진행 중(일본/페리 대륙)엔 순회 순서 유지 → 자동픽
   if(isJapan(cur) || isFerryRegion(cur.region)){ autoPickNextDestination(); return false; }
-  const candidates=CITIES.filter(c=> c.n!==S.city && c.n!=='달' && c.n!=='진천' && c.region!=='함정'
-    && !isJapan(c) && !isFerryRegion(c.region) && isRegionUnlocked(c.region));
-  if(candidates.length<2){ autoPickNextDestination(); return false; }
   const visited=S.visited||[];
-  const unvisited=candidates.filter(c=>!visited.includes(c.n));
+  // 후보: 국내 일반 도시(달·진천 제외 — 진천은 '갈림길' 전용 연출로만 진입).
+  //  함정 도시(신한·청학동)는 **미방문일 때만** 포함 — 프레스티지 '전 도시 방문' 경로를 열어두되,
+  //  이미 다녀온 함정에 또 걸리는 일은 없게 한다.(canPrestige가 함정도 요구하는데 선택지에서 빠져 막혔던 버그 수정)
+  const candidates=CITIES.filter(c=> c.n!==S.city && c.n!=='달' && c.n!=='진천'
+    && !isJapan(c) && !isFerryRegion(c.region) && isRegionUnlocked(c.region)
+    && (c.region!=='함정' || !visited.includes(c.n)));
+  if(candidates.length<2){ autoPickNextDestination(); return false; }
+  // 미방문 '우선' 배치 — 3칸을 안 가본 곳으로 먼저 채우고, 모자랄 때만 가본 곳으로 채움
+  const uPool=candidates.filter(c=>!visited.includes(c.n));
+  const vPool=candidates.filter(c=>visited.includes(c.n));
   const picked=[];
-  if(unvisited.length) picked.push(unvisited[Math.floor(Math.random()*unvisited.length)]); // 미방문 최소 1곳 보장(컬렉션 유도)
-  const pool=candidates.filter(c=>!picked.includes(c));
-  while(picked.length<3 && pool.length>0){ const i=Math.floor(Math.random()*pool.length); picked.push(pool.splice(i,1)[0]); }
+  while(picked.length<3 && uPool.length) picked.push(uPool.splice(Math.floor(Math.random()*uPool.length),1)[0]);
+  while(picked.length<3 && vPool.length) picked.push(vPool.splice(Math.floor(Math.random()*vPool.length),1)[0]);
+  // 프레스티지 진행도(해금 지역 중 미방문 수) — 목표가 보이게
+  const needCities=CITIES.filter(c=>c.region!=='우주' && isRegionUnlocked(c.region));
+  const leftCount=needCities.filter(c=>!visited.includes(c.n)).length;
   const u='var(--u)'; const fs=px=>`font-size:calc(${px<11?px+2:px}px * ${u})`;
   const btns=picked.map(c=>{
     const isNew=!visited.includes(c.n);
+    const isTrap=c.region==='함정';
     const dist=getCityDist(S.city,c.n);
     const badge=isNew?` <span style="${fs(5)};background:#FFEB3B;color:#5D4037;border-radius:4px;padding:0 calc(3px * ${u});">NEW</span>`:'';
-    return `<button class="px-btn" style="${fs(7)};padding:calc(8px * ${u});background:#43A047;border-color:#1B5E20;color:#FFF;width:100%;margin-bottom:calc(4px * ${u});" onclick="selectEscapeDest('${c.n}',${!!wr})">📍 ${c.n} <span style="${fs(5)};opacity:.85;">(${c.region} · ${dist}km)</span>${badge}</button>`;
+    const warn=isTrap?` <span style="${fs(5)};background:#B71C1C;color:#FFF;border-radius:4px;padding:0 calc(3px * ${u});">⚠️함정</span>`:'';
+    const bgc=isTrap?'#8D6E63':'#43A047', bdc=isTrap?'#4E342E':'#1B5E20';
+    return `<button class="px-btn" style="${fs(7)};padding:calc(8px * ${u});background:${bgc};border-color:${bdc};color:#FFF;width:100%;margin-bottom:calc(4px * ${u});" onclick="selectEscapeDest('${c.n}',${!!wr})">📍 ${c.n} <span style="${fs(5)};opacity:.85;">(${c.region} · ${dist}km)</span>${badge}${warn}</button>`;
   }).join('');
   document.getElementById('modal-area').innerHTML=`
   <div class="px-panel" style="border-color:#43A047;background:linear-gradient(135deg,#E8F5E9,#FFFDE7);box-shadow:0 0 calc(10px * ${u}) #66BB6A;margin-bottom:5px;">
     <div style="${fs(9)};color:#1B5E20;text-align:center;margin-bottom:calc(4px * ${u});">🧭 다음은 어디로?</div>
-    <div style="${fs(6)};color:#5C3D1E;text-align:center;margin-bottom:calc(8px * ${u});">마음 가는 곳으로 떠나요.</div>
+    <div style="${fs(6)};color:#5C3D1E;text-align:center;margin-bottom:calc(8px * ${u});">${leftCount>0?'🗺️ 안 가본 곳 <b>'+leftCount+'곳</b> 남음 (전부 방문하면 프레스티지!)':'🎉 전 도시 방문 완료! 프레스티지 가능!'}</div>
     ${btns}
     ${wr&&S.idleMode!==false?`<div id="dest-auto" style="text-align:center;margin-top:calc(4px * ${u});${fs(5)};color:#8B6340;">⏱️ 6초 후 자동 선택</div>`:''}
   </div>`;
