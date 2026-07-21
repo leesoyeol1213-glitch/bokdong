@@ -1315,8 +1315,10 @@ var ASSETS_SOURCES = {
   bg_fukuoka: null, bg_osaka: null, bg_kyoto: null, bg_sapporo: null,
   bg_nara: null, bg_hiroshima: null, bg_okinawa: null,
   // 🌴 동남아 전용 배경 예약
-  bg_singapore: null, bg_bangkok: null, bg_halong: null, bg_bali: null,
-  bg_angkor: null, bg_cebu: null, bg_kualalumpur: null,
+  bg_singapore: "./assets/bg_singapore.webp", bg_bangkok: "./assets/bg_bangkok.webp",
+  bg_halong:    "./assets/bg_halong.webp",    bg_bali:    "./assets/bg_bali.webp",
+  bg_angkor:    "./assets/bg_angkor.webp",    bg_cebu:    "./assets/bg_cebu.webp",
+  bg_kualalumpur: "./assets/bg_kualalumpur.webp",
   rocket: "./assets/rocket.png",  // 나로호(임복동1호) 발사 스프라이트 (태극기 로켓)
 
   // NPC 픽셀 초상화 (배경 투명) — 모달 + 카드용
@@ -1376,19 +1378,19 @@ var ASSETS_SOURCES = {
 
   // 🐾 지역 마스코트(추격 미니게임 목표) — 이미지 도착 시 null을 "./assets/mascot_xxx.png"로 교체만 하면 자동 적용.
   //    (7대죄·MR.블랙은 기존 npc_* 초상을 그대로 재사용하므로 별도 자산 불필요)
-  mascot_m_gang:        null,   // 🐐 산양(강원)
-  mascot_m_gyeonggi:    null,   // 🦁 해치(경기)
-  mascot_m_gyeong:      null,   // 🕊️ 갈매기(경상)
-  mascot_m_jeon:        null,   // 🐕 진돗개(전라)
-  mascot_m_chung:       null,   // 🦢 황새(충청)
-  mascot_m_jeju:        null,   // 🗿 돌하르방(제주)
-  mascot_m_jp:          null,   // 🦝 너구리(일본)
-  mascot_m_cn:          null,   // 🐼 판다(중국)
-  mascot_m_sea:         null,   // 🐘 코끼리(동남아)
-  mascot_m_blackdragon: null,   // 🐉 흑염룡(MR.블랙 전용)
-  // 🏃 추격 미니게임 배경(심리스 타일링). 없으면 코드로 그린 하늘+풀밭 폴백.
-  bg_chase:     null,
-  bg_chase_sin: null,
+  mascot_m_gang:        "./assets/mascot_m_gang.webp",        // 🐐 산양(강원)
+  mascot_m_gyeonggi:    "./assets/mascot_m_gyeonggi.webp",    // 🦁 해치(경기)
+  mascot_m_gyeong:      "./assets/mascot_m_gyeong.webp",      // 🕊️ 갈매기(경상)
+  mascot_m_jeon:        "./assets/mascot_m_jeon.webp",        // 🐕 진돗개(전라)
+  mascot_m_chung:       "./assets/mascot_m_chung.webp",       // 🦢 황새(충청)
+  mascot_m_jeju:        "./assets/mascot_m_jeju.webp",        // 🗿 돌하르방(제주)
+  mascot_m_jp:          "./assets/mascot_m_jp.webp",          // 🦝 너구리(일본)
+  mascot_m_cn:          "./assets/mascot_m_cn.webp",          // 🐼 판다(중국)
+  mascot_m_sea:         "./assets/mascot_m_sea.webp",         // 🐘 코끼리(동남아)
+  mascot_m_blackdragon: "./assets/mascot_m_blackdragon.webp", // 🐉 흑염룡(MR.블랙 전용)
+  // 🏃 추격 미니게임 배경(가로 심리스 스크롤). 없으면 코드로 그린 하늘+풀밭 폴백.
+  bg_chase:     "./assets/bg_chase.webp",
+  bg_chase_sin: "./assets/bg_chase_sin.webp",
 };
 
 // Image 객체 캐시
@@ -1803,7 +1805,7 @@ function drawMascotMiniGame(elapsed){
   // 목표(마스코트/7대죄) — 전용 스프라이트가 있으면 그림, 없으면 이모지 폴백
   const bob=Math.sin(frame*0.1)*6;
   if(g.spriteKey && hasAsset(g.spriteKey)){
-    const sz=64; drawAsset(ctx, g.spriteKey, Math.round(385-sz/2), Math.round(26+bob), sz, sz);
+    const sz=62; drawAsset(ctx, g.spriteKey, Math.round(383-sz/2), Math.round(38+bob), sz, sz);  // 하트 HUD(y~22)와 겹치지 않게 아래로
   } else {
     ctx.font='24px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText(g.emoji, 385, 58+bob);
