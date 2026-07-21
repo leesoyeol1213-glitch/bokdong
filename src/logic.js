@@ -2067,6 +2067,7 @@ function challengeSin(id){
   const em=(typeof NPC_EMOJI!=='undefined' && NPC_EMOJI[id])||'😈';
   const isLast = S.sinRush.defeated.length+1 >= SIN_RUSH_IDS.length;
   startMiniGame({ emoji:em, name:npc.n, intro:npc.n+' 정화 추격전!', diff:'sin', accent:'#B71C1C',
+    spriteKey:'npc_'+id, bgKey:'bg_chase_sin',   // 7대죄는 기존 NPC 초상 재사용(별도 아트 불필요)
     winTitle:'😇 '+em+' '+npc.n+' 정화!', loseTitle:'😈 '+npc.n+'에게 당했다…',
     winText:'죄악을 정화했어요! ₩50,000 + XP+100'+(isLast?'<br>👑 7대죄 완전 정화 그랜드 보상!':''),
     loseText:'저주에 걸렸어요… ('+npc.reward+')<br>다시 도전할 수 있어요.',
@@ -2509,6 +2510,7 @@ function startMiniGame(cfg){
   const d=MG_DIFF[cfg.diff]||MG_DIFF.mascot;
   const wr=S.riding; if(S.riding){ S.riding=false; isResting=false; clearInterval(tickIv); tickIv=null; }
   window.miniGame={ active:true, emoji:cfg.emoji, name:cfg.name,
+    spriteKey:cfg.spriteKey||'', bgKey:cfg.bgKey||'bg_chase', scrollX:0,
     winTitle:cfg.winTitle, loseTitle:cfg.loseTitle, winText:cfg.winText, loseText:cfg.loseText,
     onWin:cfg.onWin, onLose:cfg.onLose,
     obSpeed:d.obSpeed, spawnBase:d.spawnBase, spawnRand:d.spawnRand, maxHits:d.maxHits, dur:d.dur,
@@ -2529,6 +2531,7 @@ function startMascotMiniGame(id){
   const m=MASCOTS.find(x=>x.id===id); if(!m) return;
   if((S.mascots||[]).includes(id)){ showSt('이미 포획했어요'); return; }
   startMiniGame({ emoji:m.emoji, name:m.name, intro:m.name+' 추격전!', diff:'mascot', accent:'#43A047',
+    spriteKey:'mascot_'+m.id, bgKey:'bg_chase',
     winTitle:'🎉 '+m.emoji+' '+m.name+' 포획!', loseTitle:'😢 '+m.name+' 놓침…',
     winText:m.desc+'<br>스탯 보조가 적용됐어요!',
     loseText:'괜찮아요! 메인 화면 추격 버튼으로<br>언제든 다시 도전할 수 있어요.',
@@ -2543,6 +2546,7 @@ function mascotJump(){
 function stepMascotMiniGame(){
   const g=window.miniGame; if(!g||!g.active) return;
   if(typeof frame==='number') frame++;    // 페달링·애니메이션용 프레임 진행
+  g.scrollX=(g.scrollX||0)+g.obSpeed;     // 배경 가로 스크롤(장애물과 같은 속도 → 이질감 없음)
   const now=Date.now();
   g.vy+=MG_GRAV; g.bokFeetY+=g.vy;
   if(g.bokFeetY>=MG_GROUND){ g.bokFeetY=MG_GROUND; g.vy=0; g.onGround=true; } else g.onGround=false;
