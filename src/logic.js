@@ -1141,6 +1141,9 @@ function acceptNpc(id,wr){
     n.eff(S);n.met=true;
     n._resultText = rewardDeltaText(snap) || n.reward;
     addLog(n.grade==='disaster'?'bad':'good',(NPC_EMOJI[n.id]||'👤')+' '+n.n+(n.grade==='disaster'?' 의 저주! ':' 만남! ')+n._resultText);
+    // 🐾 이 NPC로 해금되는 전용 마스코트(예: MR.블랙 → 흑염룡) 출현 알림
+    const _nm=(typeof MASCOTS!=='undefined')?MASCOTS.find(x=>x.npcId===id && !(S.mascots||[]).includes(x.id)):null;
+    if(_nm){ addLog('good','🐾 '+_nm.emoji+' '+_nm.name+' 출현! 메인 화면에서 추격하세요!'); showSt('🐾 '+_nm.emoji+' '+_nm.name+' 출현!'); }
     // 재앙 NPC는 보상 애니 대신 빨간 화면 효과
     if(n.grade==='disaster'){
       evAnim='disaster_aftermath'; evTimer=120;
@@ -2451,9 +2454,15 @@ function isRegionConquered(region){
   const cities=CITIES.filter(c=>c.region===region);
   return cities.length>0 && cities.every(c=>(S.visited||[]).includes(c.n));
 }
-// 지금 추격 가능한 마스코트(정복 완료 + 미포획) 하나 반환
+// 마스코트 해금 조건 — npcId가 있으면 그 NPC를 만났는지, 없으면 지역 정복 여부
+function isMascotUnlocked(m){
+  if(!m) return false;
+  if(m.npcId){ const n=(S.npcs||[]).find(x=>x.id===m.npcId); return !!(n && n.met); }
+  return isRegionConquered(m.region);
+}
+// 지금 추격 가능한 마스코트(해금 완료 + 미포획) 하나 반환
 function getAvailableMascot(){
-  return MASCOTS.find(m=>!(S.mascots||[]).includes(m.id) && isRegionConquered(m.region)) || null;
+  return MASCOTS.find(m=>!(S.mascots||[]).includes(m.id) && isMascotUnlocked(m)) || null;
 }
 // 세트(대륙) 완성 시 업적 자전거 소유 동기화 — S.mascots(영구) 기준. 로드·포획·환생 후 호출.
 function syncAchBikes(){
@@ -2709,8 +2718,9 @@ function renderCodex(){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:calc(5px * ${u});">`;
   MASCOTS.forEach(m=>{
     const owned=(S.mascots||[]).includes(m.id);
-    const conquered=isRegionConquered(m.region);
-    const sub = owned ? (m.desc.split('·')[1]||'') : (conquered?'🎯 추격 가능!':'지역 미정복');
+    const unlocked=isMascotUnlocked(m);
+    const lockHint = m.npcId ? ((S.npcs||[]).find(x=>x.id===m.npcId)||{}).n+' 조우 필요' : '지역 미정복';
+    const sub = owned ? (m.desc.split('·').slice(1).join('·')||'') : (unlocked?'🎯 추격 가능!':lockHint);
     html += `<div style="border:2px solid ${owned?'#43A047':'#D4B483'};background:${owned?'#E8F5E9':'#F5E6C8'};border-radius:calc(6px * ${u});padding:calc(5px * ${u});${owned?'':'opacity:.7;'}">
       <div style="${fs(9)};color:#3D2510;">${owned?m.emoji:'❔'} <span style="${fs(6)};">${owned?m.name:'???'}</span></div>
       <div style="${fs(4)};color:#8B6340;margin-top:calc(1px * ${u});">${m.region} ·${sub}</div>
