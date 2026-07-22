@@ -13,6 +13,13 @@ android/local.properties
 *.apk
 *.aab
 
+# 🔐 서명 키스토어·비밀 — 절대 커밋 금지 (service_role 키와 동급)
+*.jks
+*.keystore
+keystore.properties
+android/app/upload*.jks
+google-services.json
+
 # iOS 빌드 산출물
 ios/App/build/
 ios/App/Pods/
