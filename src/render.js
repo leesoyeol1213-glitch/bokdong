@@ -88,25 +88,18 @@ function drawScene(){
   const hasCityBg = !!bgKey;
 
   if(hasCityBg){
-    // #5: 배경 패럴럭스 — 라이딩 시 좌측으로 흐름. 장면 이미지는 좌우 끝이 안 맞으므로
-    //     '미러 타일링'(홀수 구간 좌우반전)으로 이음새 없이 무한 스크롤.
+    // #5: 배경 패럴럭스 — 라이딩 시 좌측으로 흐름.
+    //   배경 프롬프트가 '좌우 끝이 이어지게(seamless), 양끝을 건물로 막지 않게' 설계됨(배경_생성_프롬프트.md).
+    //   → 반전 없는 '직선 타일링'으로 이어붙여 연속 스크롤. (과거 미러 타일링은 홀수 구간을 좌우반전해
+    //     간판 글자가 뒤집히고 장면이 되꺾여 "잘린" 느낌을 줬음 — 폐기.)
     const _boostMul = (S.dopT>0) ? 1.8 : 1;   // 부스트 시 배경 스크롤 가속 → 속도감(복동이 모션은 cyc 유지)
-    if(S.riding && !isResting) bgScrollX = (bgScrollX + (0.7 + asp*0.9)*_boostMul) % 840;
+    if(S.riding && !isResting) bgScrollX = (bgScrollX + (0.7 + asp*0.9)*_boostMul) % 420;
     const img = ASSETS_IMG[bgKey];
-    const sx = ((bgScrollX % 840) + 840) % 840;
-    const k0 = Math.floor(sx/420);
-    for(let k=k0; k*420 - sx < 420; k++){
-      const screenX = k*420 - sx;
-      if((k & 1)===0){
-        ctx.drawImage(img, screenX, -26, 420, 236);
-      } else {
-        ctx.save(); ctx.translate(screenX+420, -26); ctx.scale(-1,1);
-        ctx.drawImage(img, 0, 0, 420, 236); ctx.restore();
-      }
+    const sx = ((bgScrollX % 420) + 420) % 420;
+    for(let screenX = -sx; screenX < 420; screenX += 420){
+      ctx.drawImage(img, screenX, -26, 420, 236);
     }
-    // 🐰 달: 절구질하는 토끼 — 고정 위치 애니메이션 스프라이트로 오버레이.
-    //   (배경에 굽지 않아 스크롤돼도 안 미끄러지고, 절굿공이가 위아래로 움직인다)
-    if(bgKey==='bg_moon') drawMoonRabbit();
+    // (달 토끼 오버레이 제거 — bg_moon 배경 퀄리티에 비해 코드 토끼가 조악해 삭제. 배경만 노출)
   } else {
     // 폴백: 기존 픽셀 그리기
     p(0,-26,420,90+26,pal.sky);p(0,90,420,25,pal.sky2);
@@ -1095,8 +1088,7 @@ function drawBgEl(type,pal,asp){
     ctx.fillStyle='rgba(255,255,255,.4)';ctx.beginPath();ctx.ellipse(earthX,earthY,22,22,0,0,Math.PI*2);ctx.stroke&&ctx.stroke();
     // 흰 구름띠
     ctx.fillStyle='rgba(255,255,255,.35)';ctx.beginPath();ctx.ellipse(earthX,earthY-8,18,4,.1,0,Math.PI*2);ctx.fill();
-    // 토끼 절구질 (달 표면 위)
-    drawMoonRabbit();
+    // (토끼 제거 — 폴백 우주 배경에서도 토끼 미표시. bg_moon 자산이 정상이면 이 폴백은 미사용)
     return;
   }
   if(type==='mountain'){
@@ -1129,43 +1121,7 @@ function drawBgEl(type,pal,asp){
   }
 }
 
-// 4번: 달 위 토끼 절구질 애니메이션
-function drawMoonRabbit(){
-  const rx=340, ry=130;
-  // 절굿공이 위아래 (절구질)
-  const pestleY = Math.abs(Math.sin(frame*.18))*18;
-  // 절구
-  p(rx-12,ry-2,24,16,'#D0D0D0');
-  p(rx-10,ry,20,12,'#A8A8A8');
-  // 절굿공이
-  p(rx-2,ry-22-pestleY,4,22+pestleY,'#E0E0E0');
-  p(rx-4,ry-26-pestleY,8,6,'#D0D0D0');
-  // 토끼 몸통
-  ctx.fillStyle='#F0F0F0';
-  ctx.beginPath();ctx.ellipse(rx,ry-18,10,12,0,0,Math.PI*2);ctx.fill();
-  // 귀 (두 개)
-  p(rx-7,ry-42,5,16,'#F0F0F0');
-  p(rx+2,ry-42,5,16,'#F0F0F0');
-  p(rx-6,ry-40,3,12,'#FFB6C1');
-  p(rx+3,ry-40,3,12,'#FFB6C1');
-  // 머리
-  ctx.fillStyle='#F0F0F0';
-  ctx.beginPath();ctx.arc(rx,ry-30,9,0,Math.PI*2);ctx.fill();
-  // 눈
-  p(rx-4,ry-32,3,3,'#FF6B81');
-  p(rx+1,ry-32,3,3,'#FF6B81');
-  // 팔 (절굿공이 잡기)
-  ctx.strokeStyle='#D0D0D0';ctx.lineWidth=3;
-  ctx.beginPath();ctx.moveTo(rx-9,ry-18);ctx.lineTo(rx-3,ry-22-pestleY/2);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(rx+9,ry-18);ctx.lineTo(rx+3,ry-22-pestleY/2);ctx.stroke();
-  // 말풍선 (가끔 등장)
-  if(Math.floor(frame/60)%4===0){
-    ctx.fillStyle='#FFF9C4';ctx.strokeStyle='#FFB6C1';ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.roundRect(rx-32,ry-68,64,18,5);ctx.fill();ctx.stroke();
-    ctx.fillStyle='#5C3D1E';ctx.font='bold 5px Galmuri11, monospace';ctx.textAlign='center';
-    ctx.fillText('어서 와요~🌕',rx,ry-55);ctx.textAlign='left';
-  }
-}
+// (drawMoonRabbit 제거 — 달 배경 자산 대비 퀄리티가 낮아 토끼 오버레이 삭제)
 
 // ✨ 레벨업 연출 — 번쩍 + 팝업 + 상승 별 (levelUpFx: 90→0)
 function drawLevelUpFx(){
@@ -1288,7 +1244,7 @@ var ASSETS_SOURCES = {
   bg_seoul: "./assets/bg_seoul.webp",  // 서울 (화창한 대낮)
   bg_busan:     null,  // 부산 항구
   bg_chungju: "./assets/bg_chungju.webp",  // 충주 시골 (시작 도시)
-  bg_tokyo:     null,
+  bg_tokyo: "./assets/bg_tokyo.webp",  // 도쿄 — 시부야 교차로 야경
   bg_jeju: "./assets/bg_jeju.webp",
   bg_default:   null,  // 기본 배경 (도시별 없을 때 폴백)
   // 범용 배경 — region/bg 기반 자동 적용. (WebP 압축: ~1.5MB→~150KB)
@@ -1306,14 +1262,20 @@ var ASSETS_SOURCES = {
   bg_guilin:   "./assets/bg_guilin.webp",    // 구이린 — 계림산수 카르스트
   bg_hongkong: "./assets/bg_hongkong.webp",  // 홍콩 — 빅토리아항 야경·트램
   bg_harbin:   "./assets/bg_harbin.webp",    // 하얼빈 — 빙설제 얼음궁전
-  // 🇰🇷 국내 전용 배경 예약 — 이미지 도착 시 null을 "./assets/bg_xxx.webp"로 교체(bg_busan은 위에 이미 있음)
+  // 🇰🇷 국내 전용 배경 — 배선 완료분은 경로, 미도착분(부산·제천·강릉·속초·고성·포항·여수·진천)은 null 유지
   bg_jecheon: null, bg_gangneung: null, bg_sokcho: null, bg_goseong: null, bg_pohang: null,
-  bg_yeosu: null, bg_mokpo: null, bg_gunsan: null, bg_taean: null, bg_incheon: null,
-  bg_naro: null, bg_jinchon: null, bg_daegu: null, bg_suwon: null, bg_chuncheon: null,
-  bg_gyeongju: null, bg_jeonju: null, bg_daejeon: null,
-  // 🇯🇵 일본 전용 배경 예약 (bg_tokyo는 위에 이미 있음)
-  bg_fukuoka: null, bg_osaka: null, bg_kyoto: null, bg_sapporo: null,
-  bg_nara: null, bg_hiroshima: null, bg_okinawa: null,
+  bg_yeosu: null, bg_jinchon: null,
+  bg_mokpo: "./assets/bg_mokpo.webp", bg_gunsan: "./assets/bg_gunsan.webp",
+  bg_taean: "./assets/bg_taean.webp", bg_incheon: "./assets/bg_incheon.webp",
+  bg_naro: "./assets/bg_naro.webp", bg_daegu: "./assets/bg_daegu.webp",
+  bg_suwon: "./assets/bg_suwon.webp", bg_chuncheon: "./assets/bg_chuncheon.webp",
+  bg_gyeongju: "./assets/bg_gyeongju.webp", bg_jeonju: "./assets/bg_jeonju.webp",
+  bg_daejeon: "./assets/bg_daejeon.webp",
+  // 🇯🇵 일본 전용 배경 (전 도시 완료: tokyo는 위·나머지 7종)
+  bg_fukuoka: "./assets/bg_fukuoka.webp", bg_osaka: "./assets/bg_osaka.webp",
+  bg_kyoto: "./assets/bg_kyoto.webp", bg_sapporo: "./assets/bg_sapporo.webp",
+  bg_nara: "./assets/bg_nara.webp", bg_hiroshima: "./assets/bg_hiroshima.webp",
+  bg_okinawa: "./assets/bg_okinawa.webp",
   // 🌴 동남아 전용 배경 예약
   bg_singapore: "./assets/bg_singapore.webp", bg_bangkok: "./assets/bg_bangkok.webp",
   bg_halong:    "./assets/bg_halong.webp",    bg_bali:    "./assets/bg_bali.webp",
@@ -1542,6 +1504,17 @@ function getBoostTier(){
   const per = Math.max(1, Math.ceil(bikes.length / 5)); // 15개면 3개씩 5구간
   return Math.min(5, Math.floor(idx / per) + 1);
 }
+// 부스트 스프라이트 프레임별 가로 안정화 보정 (native 128px 기준).
+//   b스프라이트는 프레임마다 캐릭터 무게중심이 좌우로 어긋나 있어(속도줄기 탓) 부스트 중 "앞뒤로 흔들림"으로 보임.
+//   각 프레임 중심을 실측(비마젠타 픽셀 centroid) → tier 평균으로 되당김 = (평균 - 프레임중심). b2가 특히 컸음(range 19.7px).
+//   drawImage 시 xfix*(sz/128)만큼 cx를 밀어 프레임간 캐릭터 위치를 일치시킴(아트 재생성 불필요).
+var BOOST_XFIX = {
+  1: [2, 3, 1, -3, -4],
+  2: [-10, 6, 10, -3, -2],
+  3: [3, -2, -1, 0, 0],
+  4: [-2, -2, 1, 1, 3],
+  5: [0, 0, -1, 1, -1],
+};
 function drawBokdongSprite(ctx2, cx, cy, scale, isRiding){
   const isBoost = (S.dopT||0) > 0;
   // 일반 5프레임 / 부스트 10프레임 사이클 (v9.19 재작업 시트)
@@ -1554,8 +1527,8 @@ function drawBokdongSprite(ctx2, cx, cy, scale, isRiding){
     frameNum = (Math.floor(frame / speed) % cycleLen) + 1;
   }
   // 부스트: 자전거 단계별 부스트 이미지(b{tier}_{frame}), 일반: cyc_{frame}
-  let key;
-  if(isBoost){ const tier = getBoostTier(); key = 'b' + tier + '_' + frameNum; }
+  let key, boostTier = 0;
+  if(isBoost){ boostTier = getBoostTier(); key = 'b' + boostTier + '_' + frameNum; }
   else { key = 'cyc_' + frameNum; }
   if(window.bokdongDebug && key !== _lastPhaseLog){
     console.log('[bokdong] frame='+frame+' key='+key+' boost='+isBoost+' tier='+(isBoost?getBoostTier():'-'));
@@ -1580,7 +1553,10 @@ function drawBokdongSprite(ctx2, cx, cy, scale, isRiding){
   // 발끝(바퀴 바닥) 기준 정렬 — 바퀴가 화면 아래로 안 잘리게.
   // 일반(cyc) 스프라이트는 바퀴가 프레임 하단에 더 붙어있어 도로에 ~1/5 잠김 → 7px 올림. 부스트는 그대로.
   const footY = cy + 34 - (isBoost ? 0 : 7);  // 바퀴 바닥선(부스트 b스프라이트는 자체 여백 기준)
-  ctx2.drawImage(img, Math.round(cx - sz/2), Math.round(footY - sz), sz, sz);
+  // 부스트 프레임별 가로 안정화: 실측 편차만큼 되당겨 프레임간 캐릭터 위치 일치(앞뒤 흔들림 제거)
+  let xfix = 0;
+  if(isBoost && BOOST_XFIX[boostTier]) xfix = (BOOST_XFIX[boostTier][frameNum-1]||0) * (sz/128);
+  ctx2.drawImage(img, Math.round(cx - sz/2 + xfix), Math.round(footY - sz), sz, sz);
   return true;
 }
 // 마지막 drawVehPixel 호출이 임복동 스프라이트를 그렸는지 추적
