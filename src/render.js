@@ -1504,17 +1504,8 @@ function getBoostTier(){
   const per = Math.max(1, Math.ceil(bikes.length / 5)); // 15개면 3개씩 5구간
   return Math.min(5, Math.floor(idx / per) + 1);
 }
-// 부스트 스프라이트 프레임별 가로 안정화 보정 (native 128px 기준).
-//   b스프라이트는 프레임마다 캐릭터 무게중심이 좌우로 어긋나 있어(속도줄기 탓) 부스트 중 "앞뒤로 흔들림"으로 보임.
-//   각 프레임 중심을 실측(비마젠타 픽셀 centroid) → tier 평균으로 되당김 = (평균 - 프레임중심). b2가 특히 컸음(range 19.7px).
-//   drawImage 시 xfix*(sz/128)만큼 cx를 밀어 프레임간 캐릭터 위치를 일치시킴(아트 재생성 불필요).
-var BOOST_XFIX = {
-  1: [2, 3, 1, -3, -4],
-  2: [-10, 6, 10, -3, -2],
-  3: [3, -2, -1, 0, 0],
-  4: [-2, -2, 1, 1, 3],
-  5: [0, 0, -1, 1, -1],
-};
+// (v11.2) 부스트·일반 스프라이트 전량 재생성 — 추출 파이프라인에서 프레임별 자전거 중심(가로)·
+//   지면선(세로)을 128px 캔버스에 일치시켜 정렬 완료. 프레임간 흔들림이 없어 과거 BOOST_XFIX 보정 불필요 → 제거.
 function drawBokdongSprite(ctx2, cx, cy, scale, isRiding){
   const isBoost = (S.dopT||0) > 0;
   // 일반 5프레임 / 부스트 10프레임 사이클 (v9.19 재작업 시트)
@@ -1551,12 +1542,9 @@ function drawBokdongSprite(ctx2, cx, cy, scale, isRiding){
   const sz = 112 * scale; // 복동이 표시 크기(+약간 크게). 조정 지점.
   ctx2.imageSmoothingEnabled = false;  // #A: 크리스프(픽셀) 렌더 — 배경처럼 쨍하게. (부드럽게 되돌리려면 true)
   // 발끝(바퀴 바닥) 기준 정렬 — 바퀴가 화면 아래로 안 잘리게.
-  // 일반(cyc) 스프라이트는 바퀴가 프레임 하단에 더 붙어있어 도로에 ~1/5 잠김 → 7px 올림. 부스트는 그대로.
-  const footY = cy + 34 - (isBoost ? 0 : 7);  // 바퀴 바닥선(부스트 b스프라이트는 자체 여백 기준)
-  // 부스트 프레임별 가로 안정화: 실측 편차만큼 되당겨 프레임간 캐릭터 위치 일치(앞뒤 흔들림 제거)
-  let xfix = 0;
-  if(isBoost && BOOST_XFIX[boostTier]) xfix = (BOOST_XFIX[boostTier][frameNum-1]||0) * (sz/128);
-  ctx2.drawImage(img, Math.round(cx - sz/2 + xfix), Math.round(footY - sz), sz, sz);
+  // v11.2: cyc·부스트 스프라이트를 동일 프레이밍(지면선 y=125)으로 재생성 → 동일 footY 사용(과거 cyc -7 보정 제거).
+  const footY = cy + 34;  // 바퀴 바닥선(전 스프라이트 공통 정렬)
+  ctx2.drawImage(img, Math.round(cx - sz/2), Math.round(footY - sz), sz, sz);
   return true;
 }
 // 마지막 drawVehPixel 호출이 임복동 스프라이트를 그렸는지 추적
