@@ -59,7 +59,10 @@ function drawScene(){
       '구이린':'bg_guilin', '홍콩':'bg_hongkong', '하얼빈':'bg_harbin',
       // 🌴 동남아 전용 배경 (에셋 대기)
       '싱가포르':'bg_singapore', '방콕':'bg_bangkok', '하롱베이':'bg_halong', '발리':'bg_bali',
-      '앙코르와트':'bg_angkor', '세부':'bg_cebu', '쿠알라룸푸르':'bg_kualalumpur'
+      '앙코르와트':'bg_angkor', '세부':'bg_cebu', '쿠알라룸푸르':'bg_kualalumpur',
+      // 🏰 유럽 전용 배경 (에셋 대기 — ASSETS_SOURCES null, 도착 시 경로 교체하면 자동 적용)
+      '런던':'bg_london', '파리':'bg_paris', '로마':'bg_rome', '바르셀로나':'bg_barcelona',
+      '인터라켄':'bg_interlaken', '산토리니':'bg_santorini', '암스테르담':'bg_amsterdam'
     };
     // trapZone 활성 시 함정 배경
     if(S.trapZone){
@@ -1281,6 +1284,9 @@ var ASSETS_SOURCES = {
   bg_halong:    "./assets/bg_halong.webp",    bg_bali:    "./assets/bg_bali.webp",
   bg_angkor:    "./assets/bg_angkor.webp",    bg_cebu:    "./assets/bg_cebu.webp",
   bg_kualalumpur: "./assets/bg_kualalumpur.webp",
+  // 🏰 유럽 전용 배경 예약 — 이미지 도착 시 null→"./assets/bg_*.webp" 로 교체하면 자동 적용
+  bg_london: null, bg_paris: null, bg_rome: null, bg_barcelona: null,
+  bg_interlaken: null, bg_santorini: null, bg_amsterdam: null,
   rocket: "./assets/rocket.png",  // 나로호(임복동1호) 발사 스프라이트 (태극기 로켓)
 
   // NPC 픽셀 초상화 (배경 투명) — 모달 + 카드용

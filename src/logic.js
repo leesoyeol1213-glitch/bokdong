@@ -3226,6 +3226,8 @@ function doLoad(parsedD){
           const _cv = VEHS.find(v=>v.id===S.vId); if(_cv) S.speed = _cv.sp;
           addLog('neutral','🚲 탈것 체계 정비(15단계)! 자전거 '+newOwned+'단계로 이전됐어요');
         }
+        // 후속 추가된 VEHS id(업적 자전거 등)를 기존 세이브에 병합 — 없으면 미보유로 추가해 syncAchBikes 정상화
+        VEHS.forEach(v=>{ if(!S.vehs.some(sv=>sv.id===v.id)) S.vehs.push({id:v.id, owned:false}); });
         if(!S.achievements)S.achievements=[];if(!S.boostCount)S.boostCount=0;if(!S.offlineCount)S.offlineCount=0;if(typeof S.autoApple!=='boolean')S.autoApple=true;if(typeof S.idleMode!=='boolean')S.idleMode=true;if(typeof S.prestige!=='number')S.prestige=0;
         if(!S.regionVisits)S.regionVisits={}; // #3 지역별 도착 회수
         // #6 엽서 마이그레이션: 없으면 이미 방문한 도시들로 소급 생성

@@ -58,6 +58,14 @@ const CITIES=[
   {n:'앙코르와트',region:'동남아',bg:'mountain',hist:'🌴 앙코르와트! 정글 속 거대한 크메르 사원. 새벽 실루엣이 연못에 비친다.'},
   {n:'세부',    region:'동남아',bg:'coast',   hist:'🌴 세부! 새하얀 백사장과 청록 바다, 지프니와 레촌(돼지구이)의 필리핀 낙원.'},
   {n:'쿠알라룸푸르',region:'동남아',bg:'city', hist:'🌴 쿠알라룸푸르! 페트로나스 트윈타워가 하늘을 찌르는 말레이시아의 수도.'},
+  // 🏰 유럽 — 3회차 프레스티지 해금(목포 페리). 세계일주 세 번째 대륙. 상륙항=런던.
+  {n:'런던',    region:'유럽',bg:'city',    hist:'🏰 런던! 빅벤과 타워브리지, 빨간 이층버스. 템스강 위로 런던아이가 천천히 돈다.'},
+  {n:'파리',    region:'유럽',bg:'city',    hist:'🏰 파리! 에펠탑이 반짝이고 센강변 노천카페. 루브르와 개선문의 낭만이 흐른다.'},
+  {n:'로마',    region:'유럽',bg:'city',    hist:'🏰 로마! 콜로세움과 트레비 분수. "모든 길은 로마로" — 이천 년 제국의 심장.'},
+  {n:'바르셀로나',region:'유럽',bg:'coast', hist:'🏰 바르셀로나! 가우디의 사그라다 파밀리아와 지중해 해변. 예술과 태양의 도시.'},
+  {n:'인터라켄',region:'유럽',bg:'snow',    hist:'🏰 인터라켄! 알프스 융프라우의 만년설. 두 호수 사이, 스위스 산악열차가 오른다.'},
+  {n:'산토리니',region:'유럽',bg:'coast',   hist:'🏰 산토리니! 파란 돔 지붕과 하얀 절벽 마을. 에게해 위로 붉은 노을이 진다.'},
+  {n:'암스테르담',region:'유럽',bg:'city',  hist:'🏰 암스테르담! 운하를 따라 늘어선 좁은 집들과 자전거 물결. 풍차와 튤립의 나라.'},
 ];
 
 // ── 탈것 (v4.1 확장: 자전거→킥보드→오토바이→닌자→하야부사→차량 라인) ──
@@ -85,6 +93,7 @@ const VEHS=[
   {id:'ach_jp',  n:'🗾 후지 자전거',     cat:'ach', sp:40, hb:52, setId:'set_jp',  tierMult:2.0, owned:false},
   {id:'ach_cn',  n:'🐉 용 자전거',       cat:'ach', sp:62, hb:60, setId:'set_cn',  tierMult:2.3, owned:false},
   {id:'ach_sea', n:'🌴 트로피컬 자전거', cat:'ach', sp:90, hb:70, setId:'set_sea', tierMult:2.6, owned:false},
+  {id:'ach_eu',  n:'🏰 캐슬 자전거',     cat:'ach', sp:120,hb:80, setId:'set_eu',  tierMult:2.9, owned:false},
 ];
 
 // ── 🐾 지역 마스코트 — 지역 전 도시 방문(정복) 시 '추격 미니게임'으로 포획. 각자 복동이 스탯 보조(장비처럼 합산). ──
@@ -98,6 +107,7 @@ const MASCOTS=[
   {id:'m_jp',   region:'일본',  name:'너구리',    emoji:'🦝', boost:{xpBonus:0.08},      desc:'일본의 타누키 · 경험치 +8%'},
   {id:'m_cn',   region:'중국',  name:'판다',      emoji:'🐼', boost:{moneyBonus:0.08},   desc:'중국의 판다 · 수입 +8%'},
   {id:'m_sea',  region:'동남아',name:'코끼리',    emoji:'🐘', boost:{speedBonus:3},      desc:'동남아의 코끼리 · 속도 +3'},
+  {id:'m_eu',   region:'유럽',  name:'늑대',      emoji:'🐺', boost:{speedBonus:4},      desc:'로마를 세운 카피톨리노 늑대 · 속도 +4'},
   // 특별: 지역이 아니라 NPC 조우로 해금(npcId). MR.블랙(god 등급, 최저 조우확률)의 전용 마스코트.
   {id:'m_blackdragon', region:'특별', npcId:'mb', name:'흑염룡', emoji:'🐉',
     boost:{speedBonus:3, xpBonus:0.05}, desc:'MR.블랙의 봉인에서 깨어난 흑염룡 · 속도 +3 · 경험치 +5%'},
@@ -108,6 +118,7 @@ const MASCOT_SETS=[
   {id:'set_jp', name:'일본',   bikeId:'ach_jp',  regions:['일본']},
   {id:'set_cn', name:'중국',   bikeId:'ach_cn',  regions:['중국']},
   {id:'set_sea',name:'동남아', bikeId:'ach_sea', regions:['동남아']},
+  {id:'set_eu', name:'유럽',   bikeId:'ach_eu',  regions:['유럽']},
 ];
 
 // NPC 등급 시스템: normal(일반) / rare(레어) / unique(유니크) / legend(전설) / epic(에픽) / god(신) / disaster(재앙)
@@ -643,6 +654,42 @@ const OX_BY_CITY={
     {q:'페트로나스 트윈타워는 쌍둥이 마천루다.',a:true,ex:'452m, 한때 세계 최고 높이'},
     {q:'쿠알라룸푸르는 유럽에 있는 도시다.',a:false,ex:'동남아시아 말레이시아'},
   ],
+  // 🏰 유럽 도시 OX
+  '런던':[
+    {q:'빅벤은 런던 국회의사당의 시계탑 별칭이다.',a:true,ex:'정식명 엘리자베스 타워'},
+    {q:'런던을 가로지르는 강은 템스강이다.',a:true,ex:'타워브리지가 가로지름'},
+    {q:'런던은 일 년 내내 눈만 내리는 도시다.',a:false,ex:'흐리고 비 잦은 온대 기후'},
+  ],
+  '파리':[
+    {q:'에펠탑은 1889년 파리 만국박람회 때 세워졌다.',a:true,ex:'구스타브 에펠 설계'},
+    {q:'루브르 박물관에 모나리자가 전시돼 있다.',a:true,ex:'다빈치의 대표작'},
+    {q:'파리는 이탈리아의 수도다.',a:false,ex:'프랑스의 수도'},
+  ],
+  '로마':[
+    {q:'콜로세움은 고대 로마의 원형 경기장이다.',a:true,ex:'검투사 경기가 열림'},
+    {q:'바티칸은 로마 시내에 있는 세계 최소 국가다.',a:true,ex:'교황청 소재'},
+    {q:'로마는 바다 위에 지어진 수상 도시다.',a:false,ex:'테베레강의 언덕 도시'},
+  ],
+  '바르셀로나':[
+    {q:'사그라다 파밀리아는 가우디가 설계한 성당이다.',a:true,ex:'140년 넘게 건축 중'},
+    {q:'바르셀로나는 스페인의 지중해 연안 도시다.',a:true,ex:'카탈루냐 지방'},
+    {q:'바르셀로나는 내륙 사막에 있다.',a:false,ex:'지중해 해변 도시'},
+  ],
+  '인터라켄':[
+    {q:'인터라켄은 스위스 알프스 관광의 관문 마을이다.',a:true,ex:'융프라우 등산 기점'},
+    {q:'"인터라켄"은 두 호수 사이라는 뜻이다.',a:true,ex:'툰호·브리엔츠호 사이'},
+    {q:'스위스는 바다에 접한 해양 국가다.',a:false,ex:'내륙 산악 국가'},
+  ],
+  '산토리니':[
+    {q:'산토리니는 그리스 에게해의 화산섬이다.',a:true,ex:'하얀 집·파란 지붕'},
+    {q:'산토리니의 절벽 마을은 석양 명소로 유명하다.',a:true,ex:'이아 마을 일몰'},
+    {q:'산토리니는 눈 덮인 북극권 섬이다.',a:false,ex:'지중해 온난 기후'},
+  ],
+  '암스테르담':[
+    {q:'암스테르담은 운하가 발달한 네덜란드의 수도다.',a:true,ex:'운하가 도시를 가름'},
+    {q:'네덜란드는 풍차와 튤립으로 유명하다.',a:true,ex:'간척지의 나라'},
+    {q:'암스테르담은 자전거보다 자동차가 훨씬 많다.',a:false,ex:'세계적 자전거 도시'},
+  ],
 };
 // 호환용 fallback
 const OX_QS=[
@@ -699,6 +746,14 @@ const FOODS=[
   {c:'앙코르와트',n:'피시 아목(크메르 커리)',e:'🍲',type:'tap'},
   {c:'세부',    n:'레촌(돼지구이)',  e:'🐷',type:'timing'},
   {c:'쿠알라룸푸르',n:'나시르막',    e:'🍚',type:'tap'},
+  // 🏰 유럽 맛집 7종
+  {c:'런던',    n:'피시 앤 칩스',    e:'🍟',type:'tap'},
+  {c:'파리',    n:'크루아상',        e:'🥐',type:'timing'},
+  {c:'로마',    n:'카르보나라',      e:'🍝',type:'tap'},
+  {c:'바르셀로나',n:'파에야',        e:'🥘',type:'timing'},
+  {c:'인터라켄',n:'스위스 퐁뒤',     e:'🫕',type:'timing'},
+  {c:'산토리니',n:'그리스 기로스',   e:'🥙',type:'tap'},
+  {c:'암스테르담',n:'스트룹와플',    e:'🧇',type:'tap'},
 ];
 const FOOD_QUIZ={
   '제천':{q:'의림지는 어느 시대 저수지?',opts:['삼한시대','고려시대','조선시대','일제시대'],ans:0},
@@ -954,6 +1009,7 @@ var REGION_UNLOCK = { '중국':1, '동남아':2, '유럽':3, '아메리카':4, '
 var FERRY_REGIONS = {
   '중국':   { gateway:'인천', port:'상하이',   price:300000, flag:'🇨🇳', name:'중국',     accent:'#C62828', soft:'#FFEBEE', softer:'#FFCDD2', glow:'#EF5350', shadow:'#5E0000', spot:'🏮' },
   '동남아': { gateway:'제주', port:'싱가포르', price:400000, flag:'🌴',  name:'동남아', accent:'#00897B', soft:'#E0F2F1', softer:'#B2DFDB', glow:'#26A69A', shadow:'#004D40', spot:'🌴' },
+  '유럽':   { gateway:'목포', port:'런던',     price:600000, flag:'🇪🇺', name:'유럽',   accent:'#3949AB', soft:'#E8EAF6', softer:'#C5CAE9', glow:'#5C6BC0', shadow:'#1A237E', spot:'🏰' },
 };
 function ferryRegionByGateway(cityName){ for(var r in FERRY_REGIONS){ if(FERRY_REGIONS[r].gateway===cityName) return r; } return null; }
 function isFerryRegion(region){ return !!FERRY_REGIONS[region]; }
@@ -965,7 +1021,7 @@ var WORLD_MAP = [
   { key:'일본',     flag:'🇯🇵', name:'일본',         unlock:0 },
   { key:'중국',     flag:'🇨🇳', name:'중국',         unlock:1, cities:7 },
   { key:'동남아',   flag:'🌴', name:'동남아시아',     unlock:2, cities:7 },
-  { key:'유럽',     flag:'🇪🇺', name:'유럽',         unlock:3, soon:true },
+  { key:'유럽',     flag:'🇪🇺', name:'유럽',         unlock:3, cities:7 },
   { key:'아메리카', flag:'🗽', name:'아메리카',       unlock:4, soon:true },
   { key:'아프리카', flag:'🦁', name:'아프리카',       unlock:5, soon:true },
   { key:'오세아니아',flag:'🦘', name:'오세아니아',     unlock:6, soon:true },
