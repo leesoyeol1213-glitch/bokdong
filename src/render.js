@@ -1291,8 +1291,8 @@ var ASSETS_SOURCES = {
   bg_interlaken: null, bg_santorini: null, bg_amsterdam: null,
   // 🇰🇷 독도 코스 배경 예약
   bg_ulleungdo: null, bg_dokdo: null,
-  // 🆕 v11.4 신규 스프라이트 예약 — 오박사(진천 애니) + 응원단(라이딩 도로변). 도착 시 경로 교체하면 자동 적용
-  npc_droh: null, sprite_dog_chase: null, sprite_youtuber: null, sprite_cheer_locals: null,
+  // 🆕 v11.4 신규 스프라이트 예약 — 오박사·베이비 도현(진천 애니) + 응원단(라이딩 도로변). 도착 시 경로 교체하면 자동 적용
+  npc_droh: null, npc_dohyun: null, sprite_dog_chase: null, sprite_youtuber: null, sprite_cheer_locals: null,
   rocket: "./assets/rocket.png",  // 나로호(임복동1호) 발사 스프라이트 (태극기 로켓)
 
   // NPC 픽셀 초상화 (배경 투명) — 모달 + 카드용
