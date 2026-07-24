@@ -1034,7 +1034,9 @@ function setVehOwned(id,val){const v=S.vehs.find(v=>v.id===id);if(v)v.owned=val;
 // 탈것 속도에 비례한 애니메이션 배수 (3번 속도 연동)
 // 🌏 세계 지역 해금 — 프레스티지 회차마다 새 대륙(매 회차 신규맵). key=도시 region 값.
 // 국내 각 도(道)·일본·우주·함정은 0(기본 해금). 미래 대륙은 회차 게이트.
-var REGION_UNLOCK = { '중국':1, '동남아':2, '유럽':3, '아메리카':4, '아프리카':5, '오세아니아':6 };
+// 🌏 대륙 해금 회차. 유럽은 데이터·배경·자전거까지 준비됐지만 **출시 후 오픈 보류** → 999로 잠금.
+//   오픈할 때: '유럽':999 → '유럽':3 으로 되돌리고 WORLD_MAP 유럽도 soon 제거(cities:7)만 하면 끝.
+var REGION_UNLOCK = { '중국':1, '동남아':2, '유럽':999, '아메리카':4, '아프리카':5, '오세아니아':6 };
 // 🗺️ 국내 도(道) 인접 관계 — 목적지 선택을 '인근 지역' 우선으로(현재 지역=최근접, 인접 지역=근접).
 //   포항(경상) 같은 페리 관문이 그 지역에 있을 때 자연스럽게 후보로 떠서 독도 페리 등으로 이어지게 함.
 var REGION_ADJ = {
@@ -1065,7 +1067,7 @@ var WORLD_MAP = [
   { key:'일본',     flag:'🇯🇵', name:'일본',         unlock:0 },
   { key:'중국',     flag:'🇨🇳', name:'중국',         unlock:1, cities:7 },
   { key:'동남아',   flag:'🌴', name:'동남아시아',     unlock:2, cities:7 },
-  { key:'유럽',     flag:'🇪🇺', name:'유럽',         unlock:3, cities:7 },
+  { key:'유럽',     flag:'🇪🇺', name:'유럽',         unlock:3, soon:true },
   { key:'아메리카', flag:'🗽', name:'아메리카',       unlock:4, soon:true },
   { key:'아프리카', flag:'🦁', name:'아프리카',       unlock:5, soon:true },
   { key:'오세아니아',flag:'🦘', name:'오세아니아',     unlock:6, soon:true },
