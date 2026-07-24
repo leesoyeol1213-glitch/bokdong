@@ -1532,12 +1532,24 @@ function chooseNextDestination(wr){
     picked = (S._destChoices.names||[]).map(n=>candidates.find(c=>c.n===n)).filter(Boolean);
   }
   if(picked.length < Math.min(3, candidates.length)){
-    // 미방문 '우선' 배치 — 3칸을 안 가본 곳으로 먼저 채우고, 모자랄 때만 가본 곳으로 채움
+    // 🗺️ '인근 지역' 우선 배치 — 현재 지역(0)→인접 지역(1)→그 외(2) 순, 같은 근접도 안에선 미방문 우선.
+    //   방문한 도시도 후보에 포함(재방문 가능) → 포항 등 페리 관문이 인근이면 다시 떠서 독도 페리로 이어짐.
+    //   (과거: 미방문만 우선이라 방문한 관문이 계속 안 떠서 페리 코스 진입 막힘)
     picked=[];
-    const uPool=candidates.filter(c=>!visited.includes(c.n));
-    const vPool=candidates.filter(c=>visited.includes(c.n));
-    while(picked.length<3 && uPool.length) picked.push(uPool.splice(Math.floor(Math.random()*uPool.length),1)[0]);
-    while(picked.length<3 && vPool.length) picked.push(vPool.splice(Math.floor(Math.random()*vPool.length),1)[0]);
+    const curReg=cur.region||'';
+    // 🚢 인근 페리 관문 1칸 보장 — 잠금해제된 페리 대륙 관문 + 일본(부산) 중 현재/인접 지역에 있는 것.
+    //   (포항=독도 관문 등을 방문했어도 인근이면 반드시 후보로 떠서 페리 코스 진입이 막히지 않게)
+    const gwCities=['부산']; for(const rg in FERRY_REGIONS){ if(isRegionUnlocked(rg)) gwCities.push(FERRY_REGIONS[rg].gateway); }
+    const nearGw=candidates.filter(c=> gwCities.includes(c.n) && regionProximity(curReg,c.region)<=1);
+    if(nearGw.length) picked.push(nearGw[Math.floor(Math.random()*nearGw.length)]);
+    // 나머지: 근접도 가중치(현재 지역5·인접3·그 외2) × 미방문 보너스(1.5) → 인근 우선하되 먼 곳·미방문도 섞임(탐험·프레스티지 유지).
+    const pool=candidates.filter(c=>!picked.includes(c)).map(c=>({ c, w: ({0:5,1:3,2:2}[regionProximity(curReg,c.region)]||2) * (visited.includes(c.n)?1:1.5) }));
+    while(picked.length<3 && pool.length){
+      const tot=pool.reduce((s,e)=>s+e.w,0);
+      let r=Math.random()*tot, idx=pool.length-1;
+      for(let i=0;i<pool.length;i++){ r-=pool[i].w; if(r<=0){ idx=i; break; } }
+      picked.push(pool[idx].c); pool.splice(idx,1);
+    }
   }
   S._destChoices = {city:S.city, names:picked.map(c=>c.n)};
   // 프레스티지 진행도(해금 지역 중 미방문 수) — 목표가 보이게
