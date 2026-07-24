@@ -241,7 +241,7 @@ function tick(){
       S.prideNextCity = false;
       addLog('bad','🦚 교만의 가오지훈의 저주! 도착 보상 -90%');
     }
-    S.city=S.dest;S.dest=null;S.sgKm=0;S.money+=arriveMoney;S._jinchonForkShown=false;
+    S.city=S.dest;S.dest=null;S.sgKm=0;S.money+=arriveMoney;S._jinchonForkShown=false;S._destChoices=null;
     const ci=CITIES.find(c=>c.n===S.city)||CITIES[0];
     // #3: 지역별 도착 회수 누적(반복 포함) — 스탯 표기 + 업적 연계
     if(ci.region && ci.region!=='함정' && ci.region!=='우주'){
@@ -968,6 +968,7 @@ function selectEscapeDest(destName, wr){
   // 단, S.city가 함정 도시면 가장 가까운 일반 도시(충주)로 우선 이동했다고 처리
   const fromCity = (S.city === '신한' || S.city === '지리산청학동') ? S.city : (S.city || '충주');
   S.dest = destName;
+  S._destChoices = null;   // 목적지 확정 → 후보 캐시 해제
   S.sgKm = 0;
   S.sgTot = getCityDist(fromCity, destName);
   // 거리가 음수/NaN이면 폴백
@@ -1516,12 +1517,21 @@ function chooseNextDestination(wr){
     && !isJapan(c) && !isFerryRegion(c.region) && isRegionUnlocked(c.region)
     && (c.region!=='함정' || !visited.includes(c.n)));
   if(candidates.length<2){ autoPickNextDestination(); return false; }
-  // 미방문 '우선' 배치 — 3칸을 안 가본 곳으로 먼저 채우고, 모자랄 때만 가본 곳으로 채움
-  const uPool=candidates.filter(c=>!visited.includes(c.n));
-  const vPool=candidates.filter(c=>visited.includes(c.n));
-  const picked=[];
-  while(picked.length<3 && uPool.length) picked.push(uPool.splice(Math.floor(Math.random()*uPool.length),1)[0]);
-  while(picked.length<3 && vPool.length) picked.push(vPool.splice(Math.floor(Math.random()*vPool.length),1)[0]);
+  // 후보 캐시 재사용 — 같은 도시에서 아직 목적지 미선택이면(맛집 등으로 모달이 재호출돼도) 후보를 그대로 유지.
+  //  (버그: 맛집 누르면 다음 장소 3후보가 재추첨되던 문제 — 도착당 후보 고정)
+  let picked=[];
+  if(S._destChoices && S._destChoices.city===S.city){
+    picked = (S._destChoices.names||[]).map(n=>candidates.find(c=>c.n===n)).filter(Boolean);
+  }
+  if(picked.length < Math.min(3, candidates.length)){
+    // 미방문 '우선' 배치 — 3칸을 안 가본 곳으로 먼저 채우고, 모자랄 때만 가본 곳으로 채움
+    picked=[];
+    const uPool=candidates.filter(c=>!visited.includes(c.n));
+    const vPool=candidates.filter(c=>visited.includes(c.n));
+    while(picked.length<3 && uPool.length) picked.push(uPool.splice(Math.floor(Math.random()*uPool.length),1)[0]);
+    while(picked.length<3 && vPool.length) picked.push(vPool.splice(Math.floor(Math.random()*vPool.length),1)[0]);
+  }
+  S._destChoices = {city:S.city, names:picked.map(c=>c.n)};
   // 프레스티지 진행도(해금 지역 중 미방문 수) — 목표가 보이게
   const needCities=CITIES.filter(c=>c.region!=='우주' && isRegionUnlocked(c.region));
   const leftCount=needCities.filter(c=>!visited.includes(c.n)).length;
