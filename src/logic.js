@@ -698,6 +698,7 @@ function showHistModal(ci){
         : `<div style="font-size:calc(9px * var(--u));color:#B71C1C;background:#FFE0E0;border:2px solid #E53935;border-radius:6px;padding:8px;text-align:center;margin-bottom:6px;line-height:1.8;">자금 부족!<br>보유: ₩${S.money.toLocaleString()} / 필요: ₩${ferryPrice.toLocaleString()}</div>`}
       <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(9px * var(--u));" onclick="closeModal(${wr})">다음 기회에... ▶</button>
     </div>`;
+    if(wr && S.idleMode!==false) scheduleAuto(6, function(){ if(modalOpen()) closeModal(wr); });  // 방치: 페리 팝업 자동 넘김(계속 여행)
     return;
     }
   }
@@ -728,6 +729,7 @@ function showHistModal(ci){
         : `<div style="font-size:calc(9px * var(--u));color:#B71C1C;background:#FFE0E0;border:2px solid #E53935;border-radius:6px;padding:8px;text-align:center;margin-bottom:6px;line-height:1.8;">자금 부족!<br>보유: ₩${S.money.toLocaleString()} / 필요: ₩${ferryPrice.toLocaleString()}</div>`}
       <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(9px * var(--u));" onclick="closeModal(${wr})">다음 기회에... ▶</button>
     </div>`;
+    if(wr && S.idleMode!==false) scheduleAuto(6, function(){ if(modalOpen()) closeModal(wr); });  // 방치: 페리 팝업 자동 넘김(계속 여행)
     return;
     }
   }
@@ -753,6 +755,7 @@ function showHistModal(ci){
       }
       <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(9px * var(--u));" onclick="closeModal(${wr})">${hasRocket?'나중에 발사':'다음 기회에...'} ▶</button>
     </div>`;
+    if(wr && S.idleMode!==false) scheduleAuto(6, function(){ if(modalOpen()) closeModal(wr); });  // 방치: 나로호 팝업 자동 넘김
     return;
   }
 
@@ -771,6 +774,7 @@ function showHistModal(ci){
       </div>
       <button class="px-btn" style="width:100%;font-size:calc(9px * var(--u));background:#FFD700;border-color:#B8860B;color:#1A0A00;" onclick="closeModal(${wr})">달 라이딩 시작! 🌕</button>
     </div>`;
+    if(wr && S.idleMode!==false) scheduleAuto(6, function(){ if(modalOpen()) closeModal(wr); });  // 방치: 달 라이딩 자동 시작
     return;
   }
 
@@ -794,6 +798,7 @@ function showHistModal(ci){
       </div>
       <button class="px-btn px-btn-red" style="width:100%;font-size:calc(9px * var(--u));" onclick="enterTrapZone('${ci.special}',${wr})">탈출 시도 시작...</button>
     </div>`;
+    if(wr && S.idleMode!==false) scheduleAuto(4, function(){ if(S.trapZone==null && modalOpen()) enterTrapZone(ci.special, wr); });  // 방치: 함정존 자동 진입(이후 tick이 주사위 자동 굴림)
     return;
   }
 
@@ -815,6 +820,7 @@ function showHistModal(ci){
         : `<button class="px-btn px-btn-orange" style="width:100%;font-size:calc(9px * var(--u));margin-bottom:5px;" onclick="startDrOQuiz(${wr})">퀴즈 도전!</button>
            <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(9px * var(--u));" onclick="closeModal(${wr})">나중에</button>`}
     </div>`;
+    if(wr && S.idleMode!==false) scheduleAuto(6, function(){ if(modalOpen()) closeModal(wr); });  // 방치: 진천 퀴즈 자동 넘김(계속 여행). 퀴즈는 방치 OFF로 직접.
     return;
   }
 
@@ -825,6 +831,7 @@ function showHistModal(ci){
     if(typeof track==='function') track('dokdo_visit',{visits:S.dokdo.visits, donated:S.dokdo.donated});
     maybeGrantDokdoMythic(wr);   // 도착만으로 조건 충족 시(기존 기부 누적) 지급
     renderDokdoModal(wr);
+    if(wr && S.idleMode!==false) scheduleAuto(6, function(){ if(modalOpen()) closeModal(wr); });  // 방치: 독도 기부 모달 자동 넘김(기부는 방치 OFF로 직접)
     return;
   }
 
@@ -1635,6 +1642,8 @@ function offerJinchonFork(){
       update();
     }
   });
+  // 방치모드: 6초 후 자동으로 '그냥 지나친다'(계속 여행). 진천은 방치 OFF로 직접 선택.
+  if(S.idleMode!==false) scheduleAuto(6, function(){ if(window._pendingConfirm) _confirmCancel(); });
 }
 
 // ── 1번: 일일/주간/월간 미션 시스템 ────────────────────
