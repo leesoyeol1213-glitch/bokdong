@@ -187,8 +187,13 @@ function tick(){
   const regenAmount = (eqBonus.hpRegen || 0) * 0.25;
   const hpDrain = Math.max(0.05, totalDrain - regenAmount);
   S.hp=Math.max(0, Math.min(S.mhp, S.hp - hpDrain));
-  // #2 자동 사과: 체력 30% 이하 + 사과 보유 시 자동 섭취(방치 지원). 조용히(로그 스팸 방지).
-  if(S.autoApple && S.hp <= S.mhp*0.3 && S.ap>0){ S.ap--; S.hp=Math.min(S.mhp, S.hp+30); }
+  // #2 자동 사과(방치 지원): 체력 30% 이하일 때 ①재고 있으면 섭취 ②재고 0이면 소지금으로 자동구매(₩3,000).
+  //   고속 자전거는 사과 소모가 빨라 '비축'만으론 방치가 끊김 → 지갑을 연료로(사용자 결정). 오프라인·수동과 동일가.
+  //   로그는 조용히(스팸 방지) — 자동구매 개수만 누적해 여행/상태에서 참고 가능.
+  if(S.autoApple && S.hp <= S.mhp*0.3){
+    if(S.ap > 0){ S.ap--; S.hp=Math.min(S.mhp, S.hp+30); }
+    else if(S.money >= 3000){ S.money -= 3000; S.hp=Math.min(S.mhp, S.hp+30); S._autoAppleBought=(S._autoAppleBought||0)+1; }
+  }
   const xpMult = 1 + (eqBonus.xpBonus||0);
   S.xp += km*2.5 * xpMult;
   // 협찬 수입(v13~15 패시브) — 매 초 소지금에 누적. 도착 사이 후반 수입 절벽 완화(Fable M1)
@@ -2339,14 +2344,15 @@ var GEAR_EFFECT_TABLE = {
   feet: {  // 속도 +
     common: 1,  rare: 2,  unique: 4,  legend: 7,  epic: 12, mythic: 20,
   },
-  body: {  // 체력 회복 +/초
-    common: 1,  rare: 2,  unique: 4,  legend: 7,  epic: 12, mythic: 20,
+  body: {  // 체력 회복 +/초 — 고속 자전거 방치 지탱의 핵심(전설/신화 강화 시 크게 상승). ×0.25가 실 HP/초.
+    common: 1,  rare: 3,  unique: 6,  legend: 12, epic: 22, mythic: 40,
   },
 };
-// 강화(plus) 보너스 — +1당 약 8% 추가
+// 강화(plus) 보너스 — +1당 약 8% 추가. body(체력회복)는 방치 지탱 축이라 +1당 10%로 더 가파르게(강화석 소모 유인).
 function getGearEffectValue(slot, rarity, plus){
   const base = (GEAR_EFFECT_TABLE[slot] || {})[rarity] || 0;
-  const plusBonus = 1 + (plus||0) * 0.08;
+  const perPlus = (slot==='body') ? 0.10 : 0.08;
+  const plusBonus = 1 + (plus||0) * perPlus;
   return base * plusBonus;
 }
 var GEAR_EFFECT = {
@@ -3756,7 +3762,7 @@ function playSfx(name){
 // #2 자동 사과 토글 — 체력 30% 이하면 자동으로 사과 섭취(방치 지원)
 function toggleAutoApple(){
   S.autoApple = !S.autoApple;
-  addLog(S.autoApple?'good':'neutral', S.autoApple?'🍎 자동 사과 ON — 체력 30% 이하면 자동 섭취':'🍎 자동 사과 OFF');
+  addLog(S.autoApple?'good':'neutral', S.autoApple?'🍎 자동 사과 ON — 체력 30% 이하면 자동 섭취(재고 없으면 ₩3,000 자동구매)':'🍎 자동 사과 OFF');
   update();
 }
 // 방치모드 on/off — ON(기본): NPC·OX 자동진행(핸즈프리). OFF: 멈춰서 전설 NPC·맛집·퀴즈를 직접 챙김.
