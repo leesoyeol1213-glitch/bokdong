@@ -1516,11 +1516,20 @@ window.bokdongDebug = false;
 var _lastPhaseLog = '';
 // 부스트 단계 판정: 현재 자전거가 5구간 중 몇 단계인지 (1~5). 자전거 총수에 자동 적응.
 function getBoostTier(){
-  const bikes = VEHS.filter(v=>v.cat==='bike');
-  const idx = bikes.findIndex(v=>v.id===S.vId);
-  if(idx < 0) return 1;
-  const per = Math.max(1, Math.ceil(bikes.length / 5)); // 15개면 3개씩 5구간
-  return Math.min(5, Math.floor(idx / per) + 1);
+  // 현재 탈것의 '속도'로 부스트 이미지 tier(1~5) 판정.
+  //  정규 자전거(cat:'bike')를 속도순 5구간으로 나눈 '각 구간 최고속도'가 tier 경계.
+  //  → 정규 자전거는 기존 index 방식과 동일 결과 + 업적 자전거(cat:'ach')·로켓도 속도에 맞는 부스터 이미지 적용
+  //    (과거: ach는 index -1이라 무조건 b1 tier로 고정되던 버그).
+  const cur = VEHS.find(x=>x.id===S.vId);
+  const sp = cur ? (cur.sp||0) : 0;
+  const bikes = VEHS.filter(b=>b.cat==='bike').slice().sort((a,b)=>a.sp-b.sp);
+  if(!bikes.length) return 1;
+  const per = Math.max(1, Math.ceil(bikes.length/5));
+  for(let t=1; t<=5; t++){
+    const segMax = bikes[Math.min(bikes.length-1, t*per-1)];
+    if(segMax && sp <= segMax.sp) return t;
+  }
+  return 5;
 }
 // (v11.2) 부스트·일반 스프라이트 전량 재생성 — 추출 파이프라인에서 프레임별 자전거 중심(가로)·
 //   지면선(세로)을 128px 캔버스에 일치시켜 정렬 완료. 프레임간 흔들림이 없어 과거 BOOST_XFIX 보정 불필요 → 제거.
