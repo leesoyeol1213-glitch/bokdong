@@ -1247,7 +1247,7 @@ function drawTree(x,y){
 var ASSETS_SOURCES = {
   // 배경 (도시별) — 1024x576 권장
   bg_seoul: "./assets/bg_seoul.webp",  // 서울 (화창한 대낮)
-  bg_busan:     null,  // 부산 항구
+  bg_busan: "./assets/bg_busan.webp",  // 부산 — 감천마을·해운대
   bg_chungju: "./assets/bg_chungju.webp",  // 충주 시골 (시작 도시)
   bg_tokyo: "./assets/bg_tokyo.webp",  // 도쿄 — 시부야 교차로 야경
   bg_jeju: "./assets/bg_jeju.webp",
@@ -1268,8 +1268,9 @@ var ASSETS_SOURCES = {
   bg_hongkong: "./assets/bg_hongkong.webp",  // 홍콩 — 빅토리아항 야경·트램
   bg_harbin:   "./assets/bg_harbin.webp",    // 하얼빈 — 빙설제 얼음궁전
   // 🇰🇷 국내 전용 배경 — 배선 완료분은 경로, 미도착분(부산·제천·강릉·속초·고성·포항·여수·진천)은 null 유지
-  bg_jecheon: null, bg_gangneung: null, bg_sokcho: null, bg_goseong: null, bg_pohang: null,
-  bg_yeosu: null, bg_jinchon: null,
+  bg_jecheon: null, bg_gangneung: null, bg_sokcho: null, bg_goseong: null,
+  bg_pohang: "./assets/bg_pohang.webp", bg_yeosu: "./assets/bg_yeosu.webp",
+  bg_jinchon: "./assets/bg_jinchon.webp",
   bg_mokpo: "./assets/bg_mokpo.webp", bg_gunsan: "./assets/bg_gunsan.webp",
   bg_taean: "./assets/bg_taean.webp", bg_incheon: "./assets/bg_incheon.webp",
   bg_naro: "./assets/bg_naro.webp", bg_daegu: "./assets/bg_daegu.webp",
@@ -1289,8 +1290,8 @@ var ASSETS_SOURCES = {
   // 🏰 유럽 전용 배경 예약 — 이미지 도착 시 null→"./assets/bg_*.webp" 로 교체하면 자동 적용
   bg_london: null, bg_paris: null, bg_rome: null, bg_barcelona: null,
   bg_interlaken: null, bg_santorini: null, bg_amsterdam: null,
-  // 🇰🇷 독도 코스 배경 예약
-  bg_ulleungdo: null, bg_dokdo: null,
+  // 🇰🇷 독도 코스 배경
+  bg_ulleungdo: "./assets/bg_ulleungdo.webp", bg_dokdo: "./assets/bg_dokdo.webp",
   // 🆕 v11.4 신규 스프라이트 예약 — 오박사·베이비 도현(진천 애니) + 응원단(라이딩 도로변). 도착 시 경로 교체하면 자동 적용
   npc_droh: null, npc_dohyun: null, sprite_dog_chase: null, sprite_youtuber: null, sprite_cheer_locals: null,
   rocket: "./assets/rocket.png",  // 나로호(임복동1호) 발사 스프라이트 (태극기 로켓)
