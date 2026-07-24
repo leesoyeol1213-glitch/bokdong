@@ -192,7 +192,7 @@ function tick(){
   //   로그는 조용히(스팸 방지) — 자동구매 개수만 누적해 여행/상태에서 참고 가능.
   if(S.autoApple && S.hp <= S.mhp*0.3){
     if(S.ap > 0){ S.ap--; S.hp=Math.min(S.mhp, S.hp+30); }
-    else if(S.money >= 3000){ S.money -= 3000; S.hp=Math.min(S.mhp, S.hp+30); S._autoAppleBought=(S._autoAppleBought||0)+1; }
+    else if(S.autoBuyApple!==false && S.money >= 3000){ S.money -= 3000; S.hp=Math.min(S.mhp, S.hp+30); S._autoAppleBought=(S._autoAppleBought||0)+1; }
   }
   const xpMult = 1 + (eqBonus.xpBonus||0);
   S.xp += km*2.5 * xpMult;
@@ -548,7 +548,7 @@ function applyOfflineReward(lastTime, wasRiding){
   for(t=0;t<sec;t++){
     if(hp - drainPerSec <= 0){
       if(S.ap>0){ S.ap--; applesUsed++; hp=Math.min(S.mhp, hp+30); }
-      else if(S.money>=APPLE_PRICE){ S.money-=APPLE_PRICE; moneyGain-=APPLE_PRICE; applesBought++; applesUsed++; hp=Math.min(S.mhp, hp+30); }
+      else if(S.autoBuyApple!==false && S.money>=APPLE_PRICE){ S.money-=APPLE_PRICE; moneyGain-=APPLE_PRICE; applesBought++; applesUsed++; hp=Math.min(S.mhp, hp+30); }
       else { stoppedNoApple=true; break; }
     }
     hp-=drainPerSec;
@@ -3324,7 +3324,7 @@ function doLoad(parsedD){
         }
         // 후속 추가된 VEHS id(업적 자전거 등)를 기존 세이브에 병합 — 없으면 미보유로 추가해 syncAchBikes 정상화
         VEHS.forEach(v=>{ if(!S.vehs.some(sv=>sv.id===v.id)) S.vehs.push({id:v.id, owned:false}); });
-        if(!S.achievements)S.achievements=[];if(!S.boostCount)S.boostCount=0;if(!S.offlineCount)S.offlineCount=0;if(typeof S.autoApple!=='boolean')S.autoApple=true;if(typeof S.idleMode!=='boolean')S.idleMode=true;if(typeof S.prestige!=='number')S.prestige=0;
+        if(!S.achievements)S.achievements=[];if(!S.boostCount)S.boostCount=0;if(!S.offlineCount)S.offlineCount=0;if(typeof S.autoApple!=='boolean')S.autoApple=true;if(typeof S.autoBuyApple!=='boolean')S.autoBuyApple=true;if(typeof S.idleMode!=='boolean')S.idleMode=true;if(typeof S.prestige!=='number')S.prestige=0;
         if(!S.regionVisits)S.regionVisits={}; // #3 지역별 도착 회수
         if(!S.dokdo || typeof S.dokdo!=='object') S.dokdo={visits:0,donated:0,mythicClaimed:false}; // 🇰🇷 독도 누적
         // #6 엽서 마이그레이션: 없으면 이미 방문한 도시들로 소급 생성
@@ -3478,7 +3478,7 @@ function closeModalAndLaunch(wr){
 }
 // 새 게임 초기 상태(공통). resetGame·doPrestige가 공유한다.
 function freshState(){
-  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,spdBonus:0,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:true,idleMode:true,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,gachaEpicCount:0,prestigeSpdTotal:0,loginStreak:{last:'',count:0},testerGiftClaimed:false,testerGiftPending:false,mascots:[],dokdo:{visits:0,donated:0,mythicClaimed:false},foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[],lastTry:{}},playerId:'',nickname:'',postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
+  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,spdBonus:0,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:true,autoBuyApple:true,idleMode:true,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,gachaEpicCount:0,prestigeSpdTotal:0,loginStreak:{last:'',count:0},testerGiftClaimed:false,testerGiftPending:false,mascots:[],dokdo:{visits:0,donated:0,mythicClaimed:false},foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[],lastTry:{}},playerId:'',nickname:'',postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
 }
 // 초기화 후 공통 뒷정리(뱃지·애니메이션·루프)
 function afterReset(){
@@ -3659,7 +3659,7 @@ function doPrestige(){
     message:`지금까지의 진행(레벨·돈·자전거·방문)이 초기화됩니다.\n대신 영구 보너스 "여행 노하우"를 얻어요:\n\n🚀 속도·수입 +${Math.round((nextMult-1)*100)}% (영구)\n🗡️ 영구 속도 노하우 +${(S.prestigeSpdTotal||0)+1}\n🎒 장비·강화 수준은 그대로 유지!\n🎟️ 가챠권 3장 지급\n🏆 업적·프레스티지 횟수는 유지\n👥 NPC를 다시 만나 보상을 또 받습니다`,
     okText:((S.prestige||0)+1)+'회차 출발! 🌏', cancelText:'아직...', color:'#8B5CF6',
     onOk:()=>{
-      const keep={ prestige:(S.prestige||0)+1, achievements:S.achievements||[], paints:S.paints||['gray'], activePaint:S.activePaint||'gray', autoApple:!!S.autoApple,
+      const keep={ prestige:(S.prestige||0)+1, achievements:S.achievements||[], paints:S.paints||['gray'], activePaint:S.activePaint||'gray', autoApple:!!S.autoApple, autoBuyApple:(S.autoBuyApple!==false),
         // 전국 레이드 정체성·주간 기여도 — 환생(게임 내 리셋)과 무관하게 플레이어 단위로 유지
         playerId:S.playerId, nickname:S.nickname, course:S.course, sinRush:S.sinRush,
         raidRewardClaimed:S.raidRewardClaimed, raidRankClaimedWeek:S.raidRankClaimedWeek,
@@ -3676,7 +3676,7 @@ function doPrestige(){
         // 프레스티지 강화: 영구 속도 노하우(회차마다 +1 누적) — 다음 회차로 이월
         prestigeSpdTotal:(S.prestigeSpdTotal||0)+1 };
       S=freshState();
-      S.prestige=keep.prestige; S.achievements=keep.achievements; S.paints=keep.paints; S.activePaint=keep.activePaint; S.autoApple=keep.autoApple;
+      S.prestige=keep.prestige; S.achievements=keep.achievements; S.paints=keep.paints; S.activePaint=keep.activePaint; S.autoApple=keep.autoApple; S.autoBuyApple=keep.autoBuyApple;
       // 프레스티지 강화(Fable): 영구 속도 노하우 이월 + 새 회차 시작 시 가챠권 3장 지급
       S.prestigeSpdTotal=keep.prestigeSpdTotal; S.spdBonus=(S.spdBonus||0)+S.prestigeSpdTotal;
       S.gachaTicket=(S.gachaTicket||0)+3;
@@ -3696,7 +3696,7 @@ function doPrestige(){
       S.dokdo=keep.dokdo||{visits:0,donated:0,mythicClaimed:false};
       refreshMhpFromHelmet();
       afterReset();
-      addLog('good','🌏✨ '+S.prestige+'회차 세계일주 시작! 여행 노하우: 속도·수입 +'+Math.round((prestigeMult()-1)*100)+'% · 🗡️속도 노하우 +'+S.prestigeSpdTotal+' · 🎟️가챠권 +3');
+      addLog('good','🌏✨ '+S.prestige+'회차 세계일주 시작! 여행 노하우: 속도·수입 +'+Math.round((prestigeMult()-1)*100)+'% · 🗡️속도 노하우 +'+S.prestigeSpdTotal+' · 🎟️가챠권 +3 · 🗺️도시 간 거리 ×'+prestigeDistMult().toFixed(1)+'(세계가 넓어짐!)');
       track('prestige',{n:S.prestige});
       const _unlk=WORLD_MAP.find(r=>r.unlock===S.prestige);
       if(_unlk){ addLog('good','🌏 새 지역 해금! '+_unlk.flag+' '+_unlk.name+(_unlk.soon?' — 곧 공개!':'')); showSt('🌏 '+_unlk.flag+' '+_unlk.name+' 해금!'); }
@@ -3762,7 +3762,13 @@ function playSfx(name){
 // #2 자동 사과 토글 — 체력 30% 이하면 자동으로 사과 섭취(방치 지원)
 function toggleAutoApple(){
   S.autoApple = !S.autoApple;
-  addLog(S.autoApple?'good':'neutral', S.autoApple?'🍎 자동 사과 ON — 체력 30% 이하면 자동 섭취(재고 없으면 ₩3,000 자동구매)':'🍎 자동 사과 OFF');
+  addLog(S.autoApple?'good':'neutral', S.autoApple?'🍎 자동 사과 ON — 체력 30% 이하면 자동 섭취':'🍎 자동 사과 OFF');
+  update();
+}
+// 💳 연료 자동구매 토글 — 자동사과 중 재고가 0이면 소지금으로 사과 자동구매(₩3,000). OFF면 재고만 사용(고갈 시 정지).
+function toggleAutoBuyApple(){
+  S.autoBuyApple = (S.autoBuyApple===false);   // 기본 ON(undefined/true=on). 토글.
+  addLog(S.autoBuyApple?'good':'neutral', S.autoBuyApple?'💳 연료 자동구매 ON — 사과 없으면 ₩3,000 자동구매(방치 지속)':'💳 연료 자동구매 OFF — 재고 사과만 사용');
   update();
 }
 // 방치모드 on/off — ON(기본): NPC·OX 자동진행(핸즈프리). OFF: 멈춰서 전설 NPC·맛집·퀴즈를 직접 챙김.
@@ -4361,6 +4367,14 @@ function update(){
     aaBtn.innerHTML = S.autoApple ? '🍎 자동 ON' : '🍎 자동 OFF';
     aaBtn.classList.toggle('px-btn-green', !!S.autoApple);
     aaBtn.classList.toggle('px-btn-gray', !S.autoApple);
+  }
+  // 💳 연료 자동구매 버튼 상태
+  const abBtn = document.getElementById('autobuy-btn');
+  if(abBtn){
+    const buyOn = S.autoBuyApple!==false;
+    abBtn.innerHTML = buyOn ? '💳 연료 ON' : '💳 연료 OFF';
+    abBtn.classList.toggle('px-btn-green', buyOn);
+    abBtn.classList.toggle('px-btn-gray', !buyOn);
   }
   const imBtn = document.getElementById('idlemode-btn');
   if(imBtn){

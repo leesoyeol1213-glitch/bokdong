@@ -884,6 +884,7 @@ let S={
   end:5,speed:6,sp:3,vId:'v1',
   ap:3,jc:2,dopT:0,dopSp:5,
   autoApple:true,   // P0: 신규 기본 ON — 첫 세션 "수동 사과 먹이기" 부담 제거(방치형 온보딩)
+  autoBuyApple:true, // 연료 자동구매 기본 ON — 재고 소진 시 소지금으로 사과 자동구매(고속 방치 지속)
   riding:false,restT:0,ecool:0,
   prevBaseMhp:100,
   mhpSpBonus:0,
@@ -984,15 +985,25 @@ const CITY_DIST={
   '서울-대전':160,'충주-대전':100,'대구-대전':150,'부산-대전':260,
   '부산-제주':300,'목포-제주':160,'여수-제주':210,'서울-제주':450,'대구-제주':330,'제주-전주':270,
 };
+// 🌏 프레스티지 거리 배율 — 회차마다 세계가 넓어진다(속도 노하우 상승과 균형).
+//   1회차 ×1.3, 2회차 ×1.5, 3회차 ×1.7 … = 1.1 + 0.2×prestige (prestige 0은 ×1.0).
+function prestigeDistMult(){
+  const p = (typeof S!=='undefined' ? (S.prestige||0) : 0);
+  return p<=0 ? 1 : (1.1 + 0.2*p);
+}
 function getCityDist(a,b){
   const explicit = CITY_DIST[a+'-'+b]||CITY_DIST[b+'-'+a];
-  if(explicit) return explicit;
-  // 페리 대륙: 바다 건너 crossing(관문↔대륙)은 먼 여정(300~600), 같은 대륙 내 이동은 중거리(150~350).
-  const regOf = c => (CITIES.find(x=>x.n===c)||{}).region;
-  const ra=regOf(a), rb=regOf(b), fa=isFerryRegion(ra), fb=isFerryRegion(rb);
-  if(fa && fb && ra===rb) return Math.floor(150+Math.random()*200);
-  if(fa || fb) return Math.floor(300+Math.random()*300);
-  return Math.floor(80+Math.random()*180);
+  let base;
+  if(explicit){ base = explicit; }
+  else {
+    // 페리 대륙: 바다 건너 crossing(관문↔대륙)은 먼 여정(300~600), 같은 대륙 내 이동은 중거리(150~350).
+    const regOf = c => (CITIES.find(x=>x.n===c)||{}).region;
+    const ra=regOf(a), rb=regOf(b), fa=isFerryRegion(ra), fb=isFerryRegion(rb);
+    if(fa && fb && ra===rb) base = Math.floor(150+Math.random()*200);
+    else if(fa || fb) base = Math.floor(300+Math.random()*300);
+    else base = Math.floor(80+Math.random()*180);
+  }
+  return Math.round(base * prestigeDistMult());
 }
 
 // 3번: 로켓 발사 함수

@@ -6,7 +6,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>임복동 세계일주 v11.6</title>
+<title>임복동 세계일주 v11.7</title>
 <!-- 갈무리(Galmuri) 픽셀폰트를 최우선·병렬 로드 — @import 직렬 로딩으로 인한 폰트 폴백(상단/하단 글씨체 불일치) 방지 -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/quiple/galmuri/dist/galmuri.css">
@@ -96,8 +96,9 @@ posthog.init('phc_yh8nk7vukT9U4p8jGU4rHTbbHFzNgSTYFCQDqLyB3woL',{api_host:'https
     <button class="px-btn px-btn-sm px-btn-orange" onclick="useJuice()">⚡<br>부스터</button>
     <button class="px-btn px-btn-sm" onclick="openFood()">🍜<br>맛집</button>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:calc(4px * var(--u));padding:0 6px;margin-bottom:calc(4px * var(--u));">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:calc(4px * var(--u));padding:0 6px;margin-bottom:calc(4px * var(--u));">
     <button class="px-btn px-btn-sm px-btn-gray" id="autoapple-btn" onclick="toggleAutoApple()">🍎 자동 OFF</button>
+    <button class="px-btn px-btn-sm px-btn-gray" id="autobuy-btn" onclick="toggleAutoBuyApple()">💳 연료 ON</button>
     <button class="px-btn px-btn-sm px-btn-gray" id="idlemode-btn" onclick="toggleIdleMode()">🎮 방치 ON</button>
   </div>
   <div style="padding:0 6px;margin-bottom:calc(4px * var(--u));">
