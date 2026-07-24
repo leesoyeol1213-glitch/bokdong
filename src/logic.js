@@ -179,7 +179,7 @@ function tick(){
     playSfx('levelup');
     setTimeout(()=>dropGear('quiz'), 300);
   }
-  const speedHpDrain = 0.175 * v.sp; // 신 sp 스케일(km/h) 대응 — 과거 0.05*구sp와 동일 소모(HP/km ≈ 1.54 보존)
+  const speedHpDrain = bikeSpeedDrain(v.sp); // 속도 40 초과분은 완만(0.12)하게 — 후반부(v13~15) 체력 소모 소폭 완화
   const boostDrain = S.dopT > 0 ? 0.4 : 0;
   // 분노 시 체력 소모 ↑ (속도 +50%만큼 추가 소모)
   const wrathDrain = (S.wrathUntil && Date.now() < S.wrathUntil) ? 0.5 : 0;
@@ -477,7 +477,7 @@ function useApple(){
 function useJuice(){
   if(S.slothUntil && Date.now() < S.slothUntil){addLog('bad','😴 나태 효과: 부스터 사용 불가!');return;}
   if(S.envyUntil && Date.now() < S.envyUntil){addLog('bad','😒 시기 효과: 회복 아이템(부스터) 사용 불가!');return;}
-  if(S.jc<=0){addLog('bad','사과즙 없음!');return;}
+  if(S.jc<=0){ showJuiceBuyModal(); return; }   // 부스터 없으면 구매 편의 모달(사과박스처럼)
   // 1번 fix: 체력 0이면 부스터 사용 시 약간 회복도 (응급)
   if(S.hp <= 0){
     S.hp = 20;
@@ -491,6 +491,37 @@ function useJuice(){
   submitRaid();             // 전국 레이드 내 진행 제출(스로틀)
   addLog('good','⚡ 부스터 ON! '+dur+'초 (기본 40 + 지구력 보너스)');
   playSfx('boost');
+  update();
+}
+// 🧃 부스터(사과즙) 없을 때 구매 편의 모달 — ⚡ 버튼을 눌렀는데 재고 0이면 표시.
+var JUICE_PRICE = 8000;   // 사과즙 1개 가격(buyJc와 동일)
+function showJuiceBuyModal(){
+  const u='var(--u)'; const fs=px=>`font-size:calc(${px}px * ${u})`;
+  const canBuy = S.money >= JUICE_PRICE;
+  const can5 = S.money >= JUICE_PRICE*5;
+  document.getElementById('modal-area').innerHTML = `
+  <div class="px-panel" style="border-color:#FB8C00;background:linear-gradient(135deg,#FFF3E0,#FFE0B2);margin-bottom:5px;box-shadow:0 0 calc(10px * ${u}) #FFB74D;">
+    <div style="${fs(10)};color:#E65100;text-align:center;margin-bottom:calc(5px * ${u});">🧃 부스터(사과즙)가 없어요!</div>
+    <div style="${fs(7)};color:#5C3D1E;text-align:center;margin-bottom:calc(8px * ${u});line-height:1.9;">사과즙을 사서 바로 부스터를 켤까요?<br>보유 ₩${S.money.toLocaleString()} · 1개 ₩${JUICE_PRICE.toLocaleString()}</div>
+    ${canBuy
+      ? `<button class="px-btn" style="width:100%;${fs(8)};padding:calc(9px * ${u});background:#FB8C00;border-color:#E65100;color:#FFF;margin-bottom:calc(4px * ${u});box-shadow:calc(3px * ${u}) calc(3px * ${u}) 0 #B23C00;" onclick="buyAndUseJuice()">🧃 ₩${JUICE_PRICE.toLocaleString()} 구매 후 ⚡부스터 ON</button>`
+      : `<div style="${fs(7)};color:#B71C1C;background:#FFE0E0;border:2px solid #E53935;border-radius:6px;padding:calc(7px * ${u});text-align:center;margin-bottom:calc(4px * ${u});">자금 부족 (₩${JUICE_PRICE.toLocaleString()} 필요)</div>`}
+    ${can5 ? `<button class="px-btn px-btn-gray" style="width:100%;${fs(7)};margin-bottom:calc(4px * ${u});" onclick="buyJuiceBulk(5)">🧃×5 사두기 (₩${(JUICE_PRICE*5).toLocaleString()})</button>` : ''}
+    <button class="px-btn px-btn-gray" style="width:100%;${fs(7)};" onclick="document.getElementById('modal-area').innerHTML='';">닫기</button>
+  </div>`;
+}
+function buyAndUseJuice(){
+  if(S.money < JUICE_PRICE){ showSt('자금이 부족해요'); return; }
+  S.money -= JUICE_PRICE; S.jc = (S.jc||0) + 1;
+  document.getElementById('modal-area').innerHTML='';
+  useJuice();   // 재고 1 → 즉시 부스터 발동
+}
+function buyJuiceBulk(n){
+  const cost = JUICE_PRICE*n;
+  if(S.money < cost){ showSt('자금이 부족해요'); return; }
+  S.money -= cost; S.jc = Math.min(99, (S.jc||0) + n);
+  addLog('good','🧃 사과즙 +'+n+' 구매!'); showSt('🧃 사과즙 +'+n);
+  document.getElementById('modal-area').innerHTML='';
   update();
 }
 function checkAchievements(){
@@ -537,7 +568,7 @@ function applyOfflineReward(lastTime, wasRiding){
   // 온라인과 동일: (기본+장비속도)×날씨×프레스티지 × 0.05 × SPEED_SCALE
   const kmPerSec=((v.sp+(eqB.speedBonus||0)+(S.spdBonus||0))*wSpeed)*0.05*prestigeMult()*SPEED_SCALE;
   // 온라인과 동일: 0.175*sp − 장비 회복(×0.25), 하한 0.05
-  const drainPerSec=Math.max(0.05, 0.175*v.sp - (eqB.hpRegen||0)*0.25);
+  const drainPerSec=Math.max(0.05, bikeSpeedDrain(v.sp) - (eqB.hpRegen||0)*0.25);
   const xpMult=1+(eqB.xpBonus||0);
   const _viIdx=VEHS.filter(x=>x.cat==='bike').findIndex(x=>x.id===S.vId);
   const _tierMult=cv2().tierMult || (1+Math.max(0,_viIdx)*0.1);

@@ -1077,4 +1077,7 @@ var WORLD_MAP = [
 var SPEED_SCALE = 2.275;
 // 애니메이션 속도는 이동 SPEED_SCALE와 분리(자체 상수). 신 sp 스케일에 맞춰 divisor 26→7.4, 상수 0.65 고정 → 과거 시각 속도 정확히 보존.
 function animSpeedMult(){return Math.max(0.5,cv2().sp/7.4) * 0.65;}
+// 자전거 속도→초당 HP 소모. 속도 40까지는 0.175/속도, 초과분은 완만(0.12) — 후반부(v13~15) 체력 소모 소폭 완화.
+//   v15(sp100): 과거 17.5 → 14.2 (-19%) · v13(sp53): 9.28→8.56 · v10(sp29): 5.08(불변). 중저티어 영향 미미.
+function bikeSpeedDrain(sp){ sp=sp||0; return 0.175*Math.min(sp,40) + 0.12*Math.max(0,sp-40); }
 
