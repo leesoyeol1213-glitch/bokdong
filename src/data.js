@@ -33,6 +33,9 @@ const CITIES=[
   {n:'전주',   region:'전라',bg:'city',      hist:'전주 한옥마을 — 조선을 세운 태조 이성계의 본향'},
   {n:'대전',   region:'충청',bg:'city',      hist:'대전 — 경부·호남선이 갈리는 철도 교통의 중심'},
   {n:'제주',   region:'제주',bg:'coast',     hist:'성산일출봉·한라산 — 유네스코 세계자연유산, 화산섬'},
+  // 🇰🇷 독도 코스 — 포항에서 페리로만 진입(일본/중국/동남아 페리의 국내판, 프레스티지 무관). 포항→울릉도→독도.
+  {n:'울릉도', region:'독도',bg:'coast',      hist:'🇰🇷 울릉도! 동해의 화산섬. 성인봉과 송곳봉, 오징어잡이 배와 절벽 해안이 절경이다.'},
+  {n:'독도',   region:'독도',bg:'coast',      hist:'🇰🇷 독도! 대한민국 최동단. 동도와 서도, 등대와 태극기, 괭이갈매기와 강치가 지키는 우리 땅.', special:'dokdo'},
   // 2번: 일본 신규 지역 (부산에서 페리로만 진입 가능, region:'일본'으로 구분)
   {n:'후쿠오카',region:'일본',bg:'coast',    hist:'🇯🇵 후쿠오카! 페리 항구에 도착했다. 돈코츠 라멘 향이 진동한다.'},
   {n:'오사카',  region:'일본',bg:'industrial',hist:'🇯🇵 오사카! 도톤보리 글리코 간판이 눈에 들어온다. 타코야키 굽는 냄새가 난다.'},
@@ -690,6 +693,17 @@ const OX_BY_CITY={
     {q:'네덜란드는 풍차와 튤립으로 유명하다.',a:true,ex:'간척지의 나라'},
     {q:'암스테르담은 자전거보다 자동차가 훨씬 많다.',a:false,ex:'세계적 자전거 도시'},
   ],
+  // 🇰🇷 독도 코스 OX
+  '울릉도':[
+    {q:'울릉도는 동해에 있는 화산섬이다.',a:true,ex:'성인봉이 최고봉'},
+    {q:'울릉도는 오징어잡이로 유명하다.',a:true,ex:'오징어·호박엿의 섬'},
+    {q:'울릉도에서는 독도가 맑은 날 보이기도 한다.',a:true,ex:'약 87km 거리'},
+  ],
+  '독도':[
+    {q:'독도는 대한민국 최동단의 섬이다.',a:true,ex:'동도·서도와 부속도서'},
+    {q:'독도는 천연기념물로 지정되어 있다.',a:true,ex:'천연기념물 제336호'},
+    {q:'독도는 사람이 살 수 없는 무인 통제구역이다.',a:false,ex:'주민·경비대가 상주'},
+  ],
 };
 // 호환용 fallback
 const OX_QS=[
@@ -754,6 +768,8 @@ const FOODS=[
   {c:'인터라켄',n:'스위스 퐁뒤',     e:'🫕',type:'timing'},
   {c:'산토리니',n:'그리스 기로스',   e:'🥙',type:'tap'},
   {c:'암스테르담',n:'스트룹와플',    e:'🧇',type:'tap'},
+  // 🇰🇷 독도 코스 맛집 (울릉도)
+  {c:'울릉도',  n:'울릉도 따개비칼국수',e:'🦑',type:'tap'},
 ];
 const FOOD_QUIZ={
   '제천':{q:'의림지는 어느 시대 저수지?',opts:['삼한시대','고려시대','조선시대','일제시대'],ans:0},
@@ -876,6 +892,7 @@ let S={
   raidRewardClaimed:'',                       // 전국 레이드 공동목표 보상 — 마지막 수령 주차(중복 방지)
   raidRankClaimedWeek:'',                     // 상위 랭커 박스 — 정산 완료한(지난) 주차
   mascots:[],                                 // 🐾 포획한 지역 마스코트 id (영구·프레스티지 이월)
+  dokdo:{visits:0,donated:0,mythicClaimed:false}, // 🇰🇷 독도 누적 방문·기부(영구·프레스티지 이월) → 신화템 조건
   foodStreak:0,
   seenTabs:{npc:0,veh:0,ach:0,gear:0},
   inventory:[],
@@ -901,6 +918,8 @@ let tyTalkTimer=1800+Math.floor(Math.random()*1200);
 
 // 4번: 도시 간 실거리 (km) — 충주 기준 실측값 반영
 const CITY_DIST={
+  // 🇰🇷 독도 코스 실거리(여객선 기준) — 포항→울릉도 217km, 울릉도→독도 87km
+  '포항-울릉도':217,'울릉도-독도':87,'독도-울릉도':87,
   '충주-제천':35,'충주-강릉':155,'충주-속초':190,
   '충주-고성':220,'충주-포항':230,'충주-부산':260,
   '충주-여수':290,'충주-목포':310,'충주-군산':170,
@@ -1010,6 +1029,8 @@ var FERRY_REGIONS = {
   '중국':   { gateway:'인천', port:'상하이',   price:300000, flag:'🇨🇳', name:'중국',     accent:'#C62828', soft:'#FFEBEE', softer:'#FFCDD2', glow:'#EF5350', shadow:'#5E0000', spot:'🏮' },
   '동남아': { gateway:'제주', port:'싱가포르', price:400000, flag:'🌴',  name:'동남아', accent:'#00897B', soft:'#E0F2F1', softer:'#B2DFDB', glow:'#26A69A', shadow:'#004D40', spot:'🌴' },
   '유럽':   { gateway:'목포', port:'런던',     price:600000, flag:'🇪🇺', name:'유럽',   accent:'#3949AB', soft:'#E8EAF6', softer:'#C5CAE9', glow:'#5C6BC0', shadow:'#1A237E', spot:'🏰' },
+  // 🇰🇷 독도 코스 — 국내(포항 관문). REGION_UNLOCK 미등록 → 프레스티지 무관 상시 진입. 무료(₩0, 애국 테마).
+  '독도':   { gateway:'포항', port:'울릉도',   price:0,      flag:'🇰🇷', name:'독도',   accent:'#1565C0', soft:'#E3F2FD', softer:'#BBDEFB', glow:'#42A5F5', shadow:'#0D47A1', spot:'🦭' },
 };
 function ferryRegionByGateway(cityName){ for(var r in FERRY_REGIONS){ if(FERRY_REGIONS[r].gateway===cityName) return r; } return null; }
 function isFerryRegion(region){ return !!FERRY_REGIONS[region]; }

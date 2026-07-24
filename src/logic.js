@@ -762,6 +762,7 @@ function showHistModal(ci){
     <div class="px-panel" style="border-color:#FF8F00;background:linear-gradient(135deg,#FFF8E1,#FFECB3);margin-bottom:5px;">
       <div style="font-size:calc(10px * var(--u));color:#E65100;text-align:center;margin-bottom:6px;">☀️ 진천 도착!</div>
       <div style="font-size:calc(8px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid #FF8F00;border-radius:5px;padding:6px;margin-bottom:8px;line-height:2;">📜 ${ci.hist}</div>
+      ${hasAsset('npc_droh')?`<div style="text-align:center;margin-bottom:6px;"><img src="${ASSETS_SOURCES.npc_droh}" style="width:calc(88px * var(--u));height:calc(88px * var(--u));image-rendering:pixelated;border:3px solid #FF8F00;border-radius:10px;background:#FFF8E1;box-shadow:calc(3px * var(--u)) calc(3px * var(--u)) 0 #E65100;" class="droh-pop"></div>`:''}
       <div style="font-size:calc(8px * var(--u));color:#3D2510;background:#FFF;border:2px solid #FFD54F;border-radius:6px;padding:8px;margin-bottom:8px;line-height:2;text-align:center;">
         👩‍🔬 <b>닥터 오</b>: "어서 오세요!<br>퀴즈 3문제를 맞추면 사과즙을<br><b style="color:#E65100;">태양열 부스터</b>로 업그레이드해드릴게요!"
         ${S.solarBoost?'<br><br><span style="color:#1B5E20;">✅ 이미 업그레이드 완료!</span>':''}
@@ -771,6 +772,16 @@ function showHistModal(ci){
         : `<button class="px-btn px-btn-orange" style="width:100%;font-size:calc(9px * var(--u));margin-bottom:5px;" onclick="startDrOQuiz(${wr})">퀴즈 도전!</button>
            <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(9px * var(--u));" onclick="closeModal(${wr})">나중에</button>`}
     </div>`;
+    return;
+  }
+
+  // 🇰🇷 독도 도착 — 기부 이벤트(누적 방문·기부 → 신화템 1회)
+  if(ci.special==='dokdo'){
+    S.dokdo = S.dokdo || {visits:0,donated:0,mythicClaimed:false};
+    S.dokdo.visits = (S.dokdo.visits||0) + 1;
+    if(typeof track==='function') track('dokdo_visit',{visits:S.dokdo.visits, donated:S.dokdo.donated});
+    maybeGrantDokdoMythic(wr);   // 도착만으로 조건 충족 시(기존 기부 누적) 지급
+    renderDokdoModal(wr);
     return;
   }
 
@@ -794,6 +805,75 @@ function showHistModal(ci){
     ${wr&&S.idleMode!==false?`<div id="ox-auto" style="text-align:center;margin-top:calc(6px * var(--u));font-size:calc(7px * var(--u));color:#8B6340;">⏱️ 6초 후 넘어감(무응답)</div>`:''}
   </div>`;
   if(wr && S.idleMode!==false) startOXAuto(6);  // 방치모드에서만 자동 스킵(끄면 멈춰서 퀴즈·맛집 챙김)
+}
+
+// ── 🇰🇷 독도 수호 기부 시스템 — 누적 방문·기부 달성 시 신화 장비 1회 지급 ─────
+var DOKDO_REQ_VISITS = 5;          // 신화템 조건: 누적 방문 횟수
+var DOKDO_REQ_DONATED = 3000000;   // 신화템 조건: 누적 기부액(₩3,000,000)
+var DOKDO_DONATE_OPTS = [100000, 500000, 1000000];
+function renderDokdoModal(wr){
+  const d = S.dokdo || {visits:0,donated:0,mythicClaimed:false};
+  const vOk = d.visits >= DOKDO_REQ_VISITS, dOk = d.donated >= DOKDO_REQ_DONATED;
+  const opts = DOKDO_DONATE_OPTS.map(amt=>{
+    const can = S.money >= amt;
+    return `<button class="px-btn" style="width:100%;font-size:calc(9px * var(--u));margin-bottom:5px;${can?'background:#1565C0;border-color:#0D47A1;color:#FFF;box-shadow:calc(3px * var(--u)) calc(3px * var(--u)) 0 #0D47A1;':'opacity:.5;'}" ${can?`onclick="donateDokdo(${amt},${wr})"`:'disabled'}>💙 ₩${amt.toLocaleString()} 기부</button>`;
+  }).join('');
+  const rewardBox = d.mythicClaimed
+    ? `<div style="font-size:calc(8px * var(--u));color:#0D47A1;background:#E3F2FD;border:2px solid #1565C0;border-radius:6px;padding:7px;margin-bottom:8px;text-align:center;line-height:1.9;">🌟 <b>독도 수호자 훈장</b> 수령 완료!<br>계속 기부해 주셔도 좋아요 🙏</div>`
+    : `<div style="font-size:calc(8px * var(--u));color:#0D47A1;background:#E3F2FD;border:2px dashed #1565C0;border-radius:6px;padding:7px;margin-bottom:8px;text-align:center;line-height:1.9;">🌟 <b>신화 장비</b> 달성 조건<br>방문 ${vOk?'✅':`${d.visits}/${DOKDO_REQ_VISITS}`}회 · 기부 ${dOk?'✅':`₩${(d.donated).toLocaleString()}/₩${DOKDO_REQ_DONATED.toLocaleString()}`}</div>`;
+  document.getElementById('modal-area').innerHTML = `
+  <div class="px-panel" style="border-color:#1565C0;background:linear-gradient(135deg,#E3F2FD,#FFF8E1);margin-bottom:5px;box-shadow:0 0 calc(12px * var(--u)) #42A5F5;">
+    <div style="font-size:calc(11px * var(--u));color:#0D47A1;text-align:center;margin-bottom:6px;">🇰🇷 독도 도착!</div>
+    <div style="font-size:calc(8px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid #1565C0;border-radius:5px;padding:6px;margin-bottom:8px;line-height:2;">📜 ${(CITIES.find(c=>c.n==='독도')||{}).hist||''}</div>
+    <div style="font-size:calc(8px * var(--u));color:#0D47A1;text-align:center;margin-bottom:6px;line-height:1.8;">🦭 누적 방문 <b>${d.visits}</b>회 · 누적 기부 <b>₩${(d.donated).toLocaleString()}</b></div>
+    ${rewardBox}
+    <div style="font-size:calc(8px * var(--u));color:#3D2510;text-align:center;margin-bottom:6px;">"우리 땅 독도를 지키는 마음, 함께해요!"</div>
+    ${opts}
+    <button class="px-btn px-btn-gray" style="width:100%;font-size:calc(9px * var(--u));" onclick="closeModal(${wr})">계속 달리자 ▶</button>
+  </div>`;
+}
+function donateDokdo(amount, wr){
+  S.dokdo = S.dokdo || {visits:0,donated:0,mythicClaimed:false};
+  if(S.money < amount){ showSt('자금이 부족해요'); return; }
+  S.money -= amount;
+  S.dokdo.donated = (S.dokdo.donated||0) + amount;
+  addLog('good','🇰🇷 독도 수호 성금 ₩'+amount.toLocaleString()+' 기부! 고맙습니다 🙏');
+  showSt('💙 독도 기부 ₩'+amount.toLocaleString());
+  playSfx('arrive');
+  if(typeof track==='function') track('dokdo_donate',{amount:amount, total:S.dokdo.donated, visits:S.dokdo.visits});
+  maybeGrantDokdoMythic(wr);     // 조건 충족 시 신화템 지급(재렌더 전)
+  renderDokdoModal(wr);
+  if(typeof save==='function') save();
+  update();
+}
+function maybeGrantDokdoMythic(wr){
+  const d = S.dokdo; if(!d || d.mythicClaimed) return;
+  if((d.visits||0) < DOKDO_REQ_VISITS || (d.donated||0) < DOKDO_REQ_DONATED) return;
+  // 신화 장비 1개 지급 — 테스터 선물과 동일한 가방-가득 안전 정책
+  const item = generateGear('mythic');
+  const r = GEAR_RARITY.find(x=>x.key==='mythic');
+  S.inventory = S.inventory || [];
+  if(S.inventory.length < BAG_CAPACITY){
+    S.inventory.push(item);
+  } else {
+    const order = {common:0,rare:1,unique:2,legend:3,epic:4,mythic:5};
+    let lo=0; for(let i=1;i<S.inventory.length;i++){ if(order[S.inventory[i].rarity] < order[S.inventory[lo].rarity]) lo=i; }
+    if(order.mythic > order[S.inventory[lo].rarity]){
+      const dumped=S.inventory[lo]; S.gearDust=(S.gearDust||0)+RARITY_DUST[dumped.rarity];
+      if(S.equipped && S.equipped[dumped.slot]===dumped.id) S.equipped[dumped.slot]=null;
+      S.inventory[lo]=item; addLog('neutral','가방 가득 → 최저 등급 '+dumped.name+' 분해하고 훈장 보관');
+    } else {
+      S.gearDust=(S.gearDust||0)+RARITY_DUST.mythic; addLog('neutral','가방 가득 → 훈장 강화석 전환');
+    }
+  }
+  d.mythicClaimed = true;
+  addLog('good','🌟🇰🇷 독도 수호자 훈장! ['+(r?r.label:'신화')+'] '+getSlotIcon(item.slot)+' '+item.name+' 획득!! 독도를 지켜줘서 고마워요 🙏');
+  showSt('🌟 독도 수호자 훈장 — '+item.name+' 획득!');
+  playSfx('mythic');
+  if(typeof showGearDropAnim==='function') setTimeout(()=>showGearDropAnim(item), 400);
+  trackMission('mythic');
+  if(typeof track==='function') track('dokdo_mythic',{visits:d.visits, donated:d.donated, slot:item.slot});
+  if(curTab==='gear' && typeof renderGear==='function') renderGear();
 }
 
 // ── 3번(재설계): 함정 도시 — 시간 기반 탈출 주사위 + 천장(실패할수록 쉬워짐) ─────
@@ -3230,6 +3310,7 @@ function doLoad(parsedD){
         VEHS.forEach(v=>{ if(!S.vehs.some(sv=>sv.id===v.id)) S.vehs.push({id:v.id, owned:false}); });
         if(!S.achievements)S.achievements=[];if(!S.boostCount)S.boostCount=0;if(!S.offlineCount)S.offlineCount=0;if(typeof S.autoApple!=='boolean')S.autoApple=true;if(typeof S.idleMode!=='boolean')S.idleMode=true;if(typeof S.prestige!=='number')S.prestige=0;
         if(!S.regionVisits)S.regionVisits={}; // #3 지역별 도착 회수
+        if(!S.dokdo || typeof S.dokdo!=='object') S.dokdo={visits:0,donated:0,mythicClaimed:false}; // 🇰🇷 독도 누적
         // #6 엽서 마이그레이션: 없으면 이미 방문한 도시들로 소급 생성
         if(!Array.isArray(S.postcards)){ S.postcards=[]; (S.visited||[]).forEach(c=>collectPostcard(c)); }
         if(!S.equipped)S.equipped={head:null,eyes:null,hands:null,feet:null,body:null};
@@ -3381,7 +3462,7 @@ function closeModalAndLaunch(wr){
 }
 // 새 게임 초기 상태(공통). resetGame·doPrestige가 공유한다.
 function freshState(){
-  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,spdBonus:0,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:true,idleMode:true,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,gachaEpicCount:0,prestigeSpdTotal:0,loginStreak:{last:'',count:0},testerGiftClaimed:false,testerGiftPending:false,mascots:[],foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[],lastTry:{}},playerId:'',nickname:'',postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
+  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,spdBonus:0,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:true,idleMode:true,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,gachaEpicCount:0,prestigeSpdTotal:0,loginStreak:{last:'',count:0},testerGiftClaimed:false,testerGiftPending:false,mascots:[],dokdo:{visits:0,donated:0,mythicClaimed:false},foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[],lastTry:{}},playerId:'',nickname:'',postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
 }
 // 초기화 후 공통 뒷정리(뱃지·애니메이션·루프)
 function afterReset(){
@@ -3572,6 +3653,8 @@ function doPrestige(){
         testerGiftClaimed:S.testerGiftClaimed, testerGiftPending:S.testerGiftPending,
         // 🐾 포획한 마스코트 — 영구 컬렉션(환생 이월). 업적 자전거 해금 상태도 이걸로 복원
         mascots:S.mascots||[],
+        // 🇰🇷 독도 누적 방문·기부 — 애국 메타 진행(환생 이월). 신화템 1회 지급 여부 포함
+        dokdo:S.dokdo||{visits:0,donated:0,mythicClaimed:false},
         // 장비·강화 수준·강화석 유지(사용자 요청) — 인벤(각 아이템 .plus 포함)·장착·강화석 이월
         inventory:S.inventory||[], equipped:S.equipped||{head:null,eyes:null,hands:null,feet:null,body:null}, gearDust:S.gearDust||0,
         // 프레스티지 강화: 영구 속도 노하우(회차마다 +1 누적) — 다음 회차로 이월
@@ -3593,6 +3676,8 @@ function doPrestige(){
       S.inventory=keep.inventory; S.equipped=keep.equipped; S.gearDust=keep.gearDust;
       // 🐾 마스코트 컬렉션 이월 → 업적 자전거 해금 복원
       S.mascots=keep.mascots||[]; syncAchBikes();
+      // 🇰🇷 독도 누적 이월(영구 애국 진행)
+      S.dokdo=keep.dokdo||{visits:0,donated:0,mythicClaimed:false};
       refreshMhpFromHelmet();
       afterReset();
       addLog('good','🌏✨ '+S.prestige+'회차 세계일주 시작! 여행 노하우: 속도·수입 +'+Math.round((prestigeMult()-1)*100)+'% · 🗡️속도 노하우 +'+S.prestigeSpdTotal+' · 🎟️가챠권 +3');

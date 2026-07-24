@@ -221,3 +221,11 @@ button, input, select {
 @media (min-width: 421px) {
   #app { box-shadow: 0 0 40px rgba(0,0,0,.5); }
 }
+
+/* 👩‍🔬 오박사 진천 등장 팝인 (v11.4) */
+@keyframes droh-pop {
+  0%   { transform: scale(0.5) translateY(14px); opacity: 0; }
+  60%  { transform: scale(1.08) translateY(0);   opacity: 1; }
+  100% { transform: scale(1)    translateY(0);   opacity: 1; }
+}
+.droh-pop { animation: droh-pop 0.5s cubic-bezier(.34,1.56,.64,1) both; }
