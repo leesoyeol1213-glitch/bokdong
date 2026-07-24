@@ -1332,7 +1332,7 @@ var ASSETS_SOURCES = {
   // 🇰🇷 독도 코스 배경
   bg_ulleungdo: "./assets/bg_ulleungdo.webp", bg_dokdo: "./assets/bg_dokdo.webp",
   // 🆕 오박사·베이비 도현(진천 애니) + 응원단(라이딩 도로변) — 소열님 생성 → 크로마키 → 300px
-  npc_droh: "./assets/npc_droh.png", npc_dohyun: "./assets/npc_dohyun.png",
+  npc_droh: "./assets/npc_droh.png",   // 오박사+베이비 도현 한 장(듀오). npc_dohyun 개별 파일은 통합돼 미사용
   sprite_dog_chase: "./assets/sprite_dog_chase.png", sprite_youtuber: "./assets/sprite_youtuber.png", sprite_cheer_locals: "./assets/sprite_cheer_locals.png",
   rocket: "./assets/rocket.png",  // 나로호(임복동1호) 발사 스프라이트 (태극기 로켓)
 
