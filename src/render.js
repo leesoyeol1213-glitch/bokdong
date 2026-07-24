@@ -1292,8 +1292,9 @@ var ASSETS_SOURCES = {
   bg_interlaken: null, bg_santorini: null, bg_amsterdam: null,
   // 🇰🇷 독도 코스 배경
   bg_ulleungdo: "./assets/bg_ulleungdo.webp", bg_dokdo: "./assets/bg_dokdo.webp",
-  // 🆕 v11.4 신규 스프라이트 예약 — 오박사·베이비 도현(진천 애니) + 응원단(라이딩 도로변). 도착 시 경로 교체하면 자동 적용
-  npc_droh: null, npc_dohyun: null, sprite_dog_chase: null, sprite_youtuber: null, sprite_cheer_locals: null,
+  // 🆕 오박사·베이비 도현(진천 애니) + 응원단(라이딩 도로변) — 소열님 생성 → 크로마키 → 300px
+  npc_droh: "./assets/npc_droh.png", npc_dohyun: "./assets/npc_dohyun.png",
+  sprite_dog_chase: "./assets/sprite_dog_chase.png", sprite_youtuber: "./assets/sprite_youtuber.png", sprite_cheer_locals: "./assets/sprite_cheer_locals.png",
   rocket: "./assets/rocket.png",  // 나로호(임복동1호) 발사 스프라이트 (태극기 로켓)
 
   // NPC 픽셀 초상화 (배경 투명) — 모달 + 카드용
@@ -1350,12 +1351,12 @@ var ASSETS_SOURCES = {
   veh_scooter:  null,
   veh_motor:    null,
   veh_car:      null,
-  // 🏅 업적 자전거 도감 이미지 예약 — 이미지 도착 시 null→"./assets/veh_ach_*.png" 교체로 자동 적용(없으면 픽셀 폴백)
-  veh_ach_kr:   null,   // 🇰🇷 태극 자전거
-  veh_ach_jp:   null,   // 🗾 후지 자전거
-  veh_ach_cn:   null,   // 🐉 용 자전거
-  veh_ach_sea:  null,   // 🌴 트로피컬 자전거
-  veh_ach_eu:   null,   // 🏰 캐슬 자전거
+  // 🏅 업적 자전거 도감 이미지 (소열님 생성 → 크로마키 → 300px)
+  veh_ach_kr:   "./assets/veh_ach_kr.png",   // 🇰🇷 태극 자전거
+  veh_ach_jp:   "./assets/veh_ach_jp.png",   // 🗾 후지 자전거
+  veh_ach_cn:   "./assets/veh_ach_cn.png",   // 🐉 용 자전거
+  veh_ach_sea:  "./assets/veh_ach_sea.png",  // 🌴 트로피컬 자전거
+  veh_ach_eu:   "./assets/veh_ach_eu.png",   // 🏰 캐슬 자전거
 
   // 🐾 지역 마스코트(추격 미니게임 목표) — 이미지 도착 시 null을 "./assets/mascot_xxx.png"로 교체만 하면 자동 적용.
   //    (7대죄·MR.블랙은 기존 npc_* 초상을 그대로 재사용하므로 별도 자산 불필요)
