@@ -97,7 +97,7 @@ function drawScene(){
     //   배경 프롬프트가 '좌우 끝이 이어지게(seamless), 양끝을 건물로 막지 않게' 설계됨(배경_생성_프롬프트.md).
     //   → 반전 없는 '직선 타일링'으로 이어붙여 연속 스크롤. (과거 미러 타일링은 홀수 구간을 좌우반전해
     //     간판 글자가 뒤집히고 장면이 되꺾여 "잘린" 느낌을 줬음 — 폐기.)
-    const _boostMul = (S.dopT>0) ? 1.8 : 1;   // 부스트 시 배경 스크롤 가속 → 속도감(복동이 모션은 cyc 유지)
+    const _boostMul = ((S.dopT>0) ? 1.8 : 1) * ((typeof adBoostActive==='function' && adBoostActive()) ? 1.7 : 1);   // 부스트/광고30분부스터 시 배경 스크롤 가속 → 속도감
     if(S.riding && !isResting) bgScrollX = (bgScrollX + (0.7 + asp*0.9)*_boostMul) % 420;
     const img = ASSETS_IMG[bgKey];
     const sx = ((bgScrollX % 420) + 420) % 420;

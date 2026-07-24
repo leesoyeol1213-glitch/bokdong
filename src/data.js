@@ -885,6 +885,8 @@ let S={
   ap:3,jc:2,dopT:0,dopSp:5,
   autoApple:true,   // P0: 신규 기본 ON — 첫 세션 "수동 사과 먹이기" 부담 제거(방치형 온보딩)
   autoBuyApple:true, // 연료 자동구매 기본 ON — 재고 소진 시 소지금으로 사과 자동구매(고속 방치 지속)
+  adBoostUntil:0,    // 📺 광고 30분 부스터 만료 시각(ms). 활성 중 속도 ×2
+  adGachaDay:'',     // 📺 광고 가챠권 10장 — 마지막 수령 날짜(YYYY-MM-DD, 하루 1회 제한)
   riding:false,restT:0,ecool:0,
   prevBaseMhp:100,
   mhpSpBonus:0,
@@ -1082,4 +1084,7 @@ function animSpeedMult(){return Math.max(0.5,cv2().sp/7.4) * 0.65;}
 // 자전거 속도→초당 HP 소모. 속도 40까지는 0.175/속도, 초과분은 완만(0.12) — 후반부(v13~15) 체력 소모 소폭 완화.
 //   v15(sp100): 과거 17.5 → 14.2 (-19%) · v13(sp53): 9.28→8.56 · v10(sp29): 5.08(불변). 중저티어 영향 미미.
 function bikeSpeedDrain(sp){ sp=sp||0; return 0.175*Math.min(sp,40) + 0.12*Math.max(0,sp-40); }
+// 📺 광고 보상 '30분 부스터' — 활성 중 속도 ×2 배율(HP 소모 없음). ads.js가 S.adBoostUntil 설정.
+function adBoostMult(){ return (typeof S!=='undefined' && S.adBoostUntil && Date.now() < S.adBoostUntil) ? 2 : 1; }
+function adBoostActive(){ return (typeof S!=='undefined' && S.adBoostUntil && Date.now() < S.adBoostUntil); }
 

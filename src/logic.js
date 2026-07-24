@@ -155,7 +155,7 @@ function tick(){
   S._wrathPrev = !!S.wrathUntil;
   S._lustPrev = !!S.lustUntil;
 
-  const baseSp = (v.sp + (S.dopT>0?S.dopSp:0) + (eqBonus.speedBonus||0) + (S.spdBonus||0)) * sinSpeedMult * prestigeMult();
+  const baseSp = (v.sp + (S.dopT>0?S.dopSp:0) + (eqBonus.speedBonus||0) + (S.spdBonus||0)) * sinSpeedMult * prestigeMult() * adBoostMult();
   const wMod = weather.mod.speedMult || 1.0;
   const km=(baseSp * wMod)*.05*SPEED_SCALE;
   const prevTotKm=S.totKm;
@@ -567,7 +567,7 @@ function applyOfflineReward(lastTime, wasRiding){
   const w=WEATHER_TYPES.find(x=>x.key===(S.weather&&S.weather.key))||WEATHER_TYPES[0];
   const wSpeed=(w.mod&&w.mod.speedMult)||1.0, wMoney=(w.mod&&w.mod.moneyMult)||1.0;
   // 온라인과 동일: (기본+장비속도)×날씨×프레스티지 × 0.05 × SPEED_SCALE
-  const kmPerSec=((v.sp+(eqB.speedBonus||0)+(S.spdBonus||0))*wSpeed)*0.05*prestigeMult()*SPEED_SCALE;
+  const kmPerSec=((v.sp+(eqB.speedBonus||0)+(S.spdBonus||0))*wSpeed)*0.05*prestigeMult()*SPEED_SCALE*adBoostMult();
   // 온라인과 동일: 0.175*sp − 장비 회복(×0.25), 하한 0.05
   const drainPerSec=Math.max(0.05, bikeSpeedDrain(v.sp) - (eqB.hpRegen||0)*0.25);
   const xpMult=1+(eqB.xpBonus||0);
@@ -617,8 +617,10 @@ function applyOfflineReward(lastTime, wasRiding){
   // P1: 오프라인 주행도 일일/주간/월간 미션·특별코스에 반영(방치 유저가 리텐션 장치 수혜). 레이드 제출은 서버검증 전까지 온라인만.
   if(dist>0) trackMission('km', Math.floor(dist));
   for(let _ai=0; _ai<arrivedCount; _ai++) trackMission('arrive');
+  // 📺 광고 '오프라인 2배'용 — 이번 오프라인 순수 획득분 저장(여행일지 모달에서 1회 2배 지급)
+  window._lastOfflineGain = { money: Math.max(0, Math.floor(moneyGain)), xp: Math.max(0, Math.floor(xpGain)) };
   showTravelLog({resting:false, timeStr:hm(sec), dist:Math.floor(dist), arrived, arrivedCount,
-    moneyGain, xpGain:Math.floor(xpGain), applesUsed, applesBought, levelsUp, stoppedNoApple, capped});
+    moneyGain, xpGain:Math.floor(xpGain), applesUsed, applesBought, levelsUp, stoppedNoApple, capped, canDouble:true});
 }
 
 // #1 "여행 일지" 복귀 리포트 모달
@@ -652,6 +654,8 @@ function showTravelLog(info){
   <div class="px-panel" style="border-color:#1976D2;margin-bottom:5px;box-shadow:0 0 calc(10px * var(--u)) #64B5F6;">
     <div style="font-size:${T};color:#1976D2;text-align:center;margin-bottom:calc(8px * var(--u));">📖 여행 일지</div>
     <div style="background:#FFF8DC;border:2px solid #D4B483;border-radius:6px;padding:calc(8px * var(--u));margin-bottom:calc(8px * var(--u));">${body}</div>
+    ${(info.canDouble && (info.moneyGain>0||info.xpGain>0) && typeof adRewardAvailable==='function' && adRewardAvailable())
+      ? `<button class="px-btn" style="width:100%;font-size:calc(9px * var(--u));padding:calc(10px * var(--u));background:#7C3AED;border-color:#4C1D95;color:#fff;box-shadow:calc(3px * var(--u)) calc(3px * var(--u)) 0 #2E1065;margin-bottom:calc(5px * var(--u));" onclick="adRewardOfflineDouble()">📺 광고 보고 보상 2배로 받기!</button>` : ''}
     <button class="px-btn px-btn-green" style="width:100%;font-size:calc(9px * var(--u));padding:calc(10px * var(--u));" onclick="closeTravelLog()">확인 ▶</button>
   </div>`;
 }
@@ -3371,7 +3375,7 @@ function doLoad(parsedD){
         }
         // 후속 추가된 VEHS id(업적 자전거 등)를 기존 세이브에 병합 — 없으면 미보유로 추가해 syncAchBikes 정상화
         VEHS.forEach(v=>{ if(!S.vehs.some(sv=>sv.id===v.id)) S.vehs.push({id:v.id, owned:false}); });
-        if(!S.achievements)S.achievements=[];if(!S.boostCount)S.boostCount=0;if(!S.offlineCount)S.offlineCount=0;if(typeof S.autoApple!=='boolean')S.autoApple=true;if(typeof S.autoBuyApple!=='boolean')S.autoBuyApple=true;if(typeof S.idleMode!=='boolean')S.idleMode=true;if(typeof S.prestige!=='number')S.prestige=0;
+        if(!S.achievements)S.achievements=[];if(!S.boostCount)S.boostCount=0;if(!S.offlineCount)S.offlineCount=0;if(typeof S.autoApple!=='boolean')S.autoApple=true;if(typeof S.autoBuyApple!=='boolean')S.autoBuyApple=true;if(typeof S.adBoostUntil!=='number')S.adBoostUntil=0;if(typeof S.adGachaDay!=='string')S.adGachaDay='';if(typeof S.idleMode!=='boolean')S.idleMode=true;if(typeof S.prestige!=='number')S.prestige=0;
         if(!S.regionVisits)S.regionVisits={}; // #3 지역별 도착 회수
         if(!S.dokdo || typeof S.dokdo!=='object') S.dokdo={visits:0,donated:0,mythicClaimed:false}; // 🇰🇷 독도 누적
         // #6 엽서 마이그레이션: 없으면 이미 방문한 도시들로 소급 생성
@@ -3525,7 +3529,7 @@ function closeModalAndLaunch(wr){
 }
 // 새 게임 초기 상태(공통). resetGame·doPrestige가 공유한다.
 function freshState(){
-  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,spdBonus:0,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:true,autoBuyApple:true,idleMode:true,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,gachaEpicCount:0,prestigeSpdTotal:0,loginStreak:{last:'',count:0},testerGiftClaimed:false,testerGiftPending:false,mascots:[],dokdo:{visits:0,donated:0,mythicClaimed:false},foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[],lastTry:{}},playerId:'',nickname:'',postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
+  return {city:'충주',dest:null,sgKm:0,sgTot:100,totKm:0,xp:0,xpMax:100,lv:1,money:800,hp:100,mhp:100,end:5,speed:6,spdBonus:0,sp:3,vId:'v1',ap:3,jc:2,dopT:0,dopSp:5,autoApple:true,autoBuyApple:true,adBoostUntil:0,adGachaDay:'',idleMode:true,riding:false,restT:0,ecool:0,prevBaseMhp:100,mhpSpBonus:0,moonKm:0,paints:['gray'],activePaint:'gray',gachaCount:0,gachaEpicCount:0,prestigeSpdTotal:0,loginStreak:{last:'',count:0},testerGiftClaimed:false,testerGiftPending:false,mascots:[],dokdo:{visits:0,donated:0,mythicClaimed:false},foodStreak:0,seenTabs:{npc:0,veh:0,ach:0,gear:0},inventory:[],equipped:{head:null,eyes:null,hands:null,feet:null,body:null},npcs:NPCS.map(n=>({...n})),visited:[],foodDone:[],foodToday:[],regionVisits:{},course:{dayKey:'',weekKey:'',day:{},week:{},dayClaimed:false,weekClaimed:false},sinRush:{weekKey:'',defeated:[],lastTry:{}},playerId:'',nickname:'',postcards:[],achievements:[],boostCount:0,offlineCount:0,prestige:0,vehs:VEHS.map(v=>({id:v.id,owned:v.owned}))};
 }
 // 초기화 후 공통 뒷정리(뱃지·애니메이션·루프)
 function afterReset(){
@@ -4162,6 +4166,7 @@ function renderItems(){
   </div>` : ''}
 
   ${S.dopT>0?`<div class="px-panel" style="margin-bottom:5px;border-color:#FF6D00;background:#FFF3E0;${fs(7)};color:#E65100;text-align:center;">⚡ 부스터 ON! 남은 ${S.dopT}초${S.solarBoost?' ☀️':''}</div>`:''}
+  ${(typeof adBoostActive==='function'&&adBoostActive())?`<div class="px-panel" style="margin-bottom:5px;border-color:#FB8C00;background:#FFF8E1;${fs(7)};color:#E65100;text-align:center;">📺 30분 부스터 ON! 속도 ×2 · 남은 ${Math.ceil((S.adBoostUntil-Date.now())/60000)}분</div>`:''}
 
   ${S.poisonUntil && Date.now()<S.poisonUntil ? `<div class="px-panel" style="margin-bottom:5px;border-color:#5D0303;background:#3D0000;${fs(7)};color:#FFCDD2;text-align:center;">☠️ 독 효과 진행 중... 체력이 계속 감소!</div>`:''}
 
@@ -4390,6 +4395,9 @@ function update(){
     if(_am){ _mhBtn.style.display='block'; const _h='🐾 '+_am.emoji+' '+_am.name+' 추격!'; if(_mhBtn.innerHTML!==_h)_mhBtn.innerHTML=_h; }
     else if(_mhBtn.style.display!=='none') _mhBtn.style.display='none';
   }
+  // 🎁 광고 보상 버튼 — 실제 광고 가능(앱+AdMob) 또는 테스트 모드일 때만 노출(프로덕션 웹은 숨김)
+  const _adBtn=document.getElementById('ad-rewards-btn');
+  if(_adBtn){ const _s=(typeof adRewardAvailable==='function' && adRewardAvailable())?'block':'none'; if(_adBtn.style.display!==_s)_adBtn.style.display=_s; }
   renderCourseWidget();   // 메인 화면 특별코스 위젯 갱신
   document.getElementById('hp-v').textContent=Math.round(S.hp)+'/'+S.mhp;document.getElementById('hp-b').style.width=Math.round(S.hp/S.mhp*100)+'%';
   document.getElementById('xp-v').textContent=Math.round(S.xp)+'/'+S.xpMax;document.getElementById('xp-b').style.width=Math.round(S.xp/S.xpMax*100)+'%';
