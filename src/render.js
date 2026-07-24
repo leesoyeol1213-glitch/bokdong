@@ -136,6 +136,7 @@ function drawScene(){
   // 3번: 모든 이벤트 애니메이션
   if(evAnim==='dog')              drawDogAnim();
   else if(evAnim==='youtuber')    drawYoutuberAnim();
+  else if(evAnim==='cheer')       drawCheerAnim();
   else if(evAnim==='food')        drawFoodAnim();
   else if(evAnim==='flat')        drawFlatAnim();
   else if(evAnim==='rain')        drawRainAnim();
@@ -903,7 +904,35 @@ function drawDiceAnim(){
 
 // ── 이벤트 애니메이션 전체 (3번 완전 교체) ─────────────
 // 1번: 강아지 — bikeX 뒤(왼쪽)에서 쫓아옴
+// 도로변 스프라이트 이미지 그리기(발끝 footY 기준, 목표 높이 targetH로 비율 유지). 이미지 없으면 false.
+function drawRoadsideSprite(key, cx, footY, targetH, clipBottom){
+  const img = (typeof ASSETS_IMG!=='undefined') && ASSETS_IMG[key];
+  if(!img || !img.complete || !img.naturalWidth) return false;
+  clipBottom = clipBottom||0;                              // 소스 하단 잘라내기 비율(예: 주민 응원의 바닥 돌벽)
+  const srcH = Math.round(img.naturalHeight*(1-clipBottom));
+  const sc = targetH/srcH, w = img.naturalWidth*sc;
+  const pv = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(img, 0, 0, img.naturalWidth, srcH, Math.round(cx - w/2), Math.round(footY - targetH), Math.round(w), Math.round(targetH));
+  ctx.imageSmoothingEnabled=pv;
+  return true;
+}
+// evTimer(initTimer→0) 동안 오른쪽→왼쪽으로 스쳐 지나가는 도로변 구경꾼
+function drawScrollingPasser(key, initTimer, footY, targetH, clipBottom){
+  const prog = 1 - Math.max(0, Math.min(1, evTimer/initTimer));   // 0(우측)→1(좌측)
+  const cx = 470 - prog*(470+150);
+  return drawRoadsideSprite(key, cx, footY, targetH, clipBottom);
+}
+function drawDogBanner(){
+  p(40,88,340,26,'rgba(200,60,50,.9)');
+  ctx.fillStyle='#FFF';ctx.font='bold 7px Galmuri11, monospace';ctx.textAlign='center';
+  ctx.fillText('🐕 강아지 추격! 체력 -8',210,106);ctx.textAlign='left';
+}
 function drawDogAnim(){
+  // 🐕 쫓아오는 강아지 — 스프라이트(복동이 뒤·왼쪽에서 따라옴). 이미지 없으면 기존 픽셀 폴백.
+  const bob=Math.abs(Math.sin(frame*.35))*4;
+  if(drawRoadsideSprite('sprite_dog_chase', bikeX-58, 196-bob, 48)){
+    drawDogBanner(); return;
+  }
   const off=40+Math.abs(Math.sin(frame*.05))*20;
   const dx=bikeX-off,dy=157;
   const lg=Math.sin(frame*.6)*4;
@@ -926,16 +955,26 @@ function drawDogAnim(){
   ctx.fillText('🐕 강아지 추격! 체력 -8',210,106);ctx.textAlign='left';
 }
 
-// 유튜버 — 중앙 쪽으로 배치
+// 📹 유튜버 — 스프라이트가 도로변을 스쳐 지나감(우→좌). 이미지 없으면 픽셀 폴백.
 function drawYoutuberAnim(){
-  if(frame%8<4){ctx.fillStyle='rgba(255,255,200,.3)';ctx.fillRect(0,0,420,210);}
-  const camX=bikeX+70;
-  p(camX,128,14,30,'#3949AB');p(camX+2,118,10,12,'#D4956A');p(camX,116,10,5,'#2C1810');
-  p(camX-10,132,10,5,'#D4956A');p(camX-24,128,16,13,'#222');p(camX-28,130,5,9,'#333');p(camX-9,126,6,4,'#FF0000');
-  if(frame%8<4){ctx.fillStyle='rgba(255,255,200,.5)';ctx.beginPath();ctx.ellipse(bikeX,130,52,34,0,0,Math.PI*2);ctx.fill();}
+  if(frame%8<4){ctx.fillStyle='rgba(255,255,200,.25)';ctx.fillRect(0,0,420,210);}
+  if(!drawScrollingPasser('sprite_youtuber', 120, 188, 70)){
+    const camX=bikeX+70;
+    p(camX,128,14,30,'#3949AB');p(camX+2,118,10,12,'#D4956A');p(camX,116,10,5,'#2C1810');
+    p(camX-10,132,10,5,'#D4956A');p(camX-24,128,16,13,'#222');p(camX-28,130,5,9,'#333');p(camX-9,126,6,4,'#FF0000');
+    if(frame%8<4){ctx.fillStyle='rgba(255,255,200,.5)';ctx.beginPath();ctx.ellipse(bikeX,130,52,34,0,0,Math.PI*2);ctx.fill();}
+  }
   p(40,88,340,26,'rgba(30,60,200,.9)');
   ctx.fillStyle='#FFF';ctx.font='bold 7px Galmuri11, monospace';ctx.textAlign='center';
   ctx.fillText('🔴 유튜버 촬영! ₩15,000 획득',210,106);ctx.textAlign='left';
+}
+// 📣 주민 응원 — 스프라이트가 도로변을 스쳐 지나감(우→좌). 이미지 없으면 배너만.
+function drawCheerAnim(){
+  // 바닥 돌벽(소스 하단 ~12%)을 잘라 도로 위 장애물처럼 안 보이게 — 발끝만 도로변에 닿게.
+  drawScrollingPasser('sprite_cheer_locals', 130, 190, 58, 0.12);
+  p(40,88,340,26,'rgba(30,140,80,.9)');
+  ctx.fillStyle='#FFF';ctx.font='bold 7px Galmuri11, monospace';ctx.textAlign='center';
+  ctx.fillText('📣 주민들 응원! 힘이 난다 (경험치 +)',210,106);ctx.textAlign='left';
 }
 
 // 3번: 주민 음식 제공 (신규)

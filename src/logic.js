@@ -360,6 +360,7 @@ function fireRandEvent(){
     {t:'good',m:'주민 음식! 체력+20',   w:4, f:s=>{s.hp=Math.min(s.mhp,s.hp+20);evAnim='food';evTimer=120;}},
     {t:'bad', m:'타이어 펑크! -12km',   w:4, f:s=>{s.sgKm=Math.max(0,s.sgKm-12);evAnim='flat';evTimer=75;}},
     {t:'good',m:'유튜버 촬영! ₩15,000',w:4, f:s=>{s.money+=15000;evAnim='youtuber';evTimer=120;}},
+    {t:'good',m:'📣 주민들 응원! 경험치 +200',w:4, f:s=>{s.xp+=200;evAnim='cheer';evTimer=130;}},
     {t:'bad', m:'강아지 추격! 체력-8',  w:4, f:s=>{s.hp=Math.max(0,s.hp-8);evAnim='dog';evTimer=110;}},
     // 1번: 킥라니 — 너무 자주 안 나오게 가중치 낮음
     {t:'bad', m:'🛴 킥라니 출현! 깜짝 놀랐다! 체력-8', w:1.5,
