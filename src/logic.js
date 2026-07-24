@@ -803,10 +803,7 @@ function showHistModal(ci){
     <div class="px-panel" style="border-color:#FF8F00;background:linear-gradient(135deg,#FFF8E1,#FFECB3);margin-bottom:5px;">
       <div style="font-size:calc(10px * var(--u));color:#E65100;text-align:center;margin-bottom:6px;">☀️ 진천 도착!</div>
       <div style="font-size:calc(8px * var(--u));color:#5C3D1E;background:#FFF8DC;border:2px solid #FF8F00;border-radius:5px;padding:6px;margin-bottom:8px;line-height:2;">📜 ${ci.hist}</div>
-      ${(hasAsset('npc_droh')||hasAsset('npc_dohyun'))?`<div style="display:flex;justify-content:center;align-items:flex-end;gap:calc(8px * var(--u));margin-bottom:6px;">
-        ${hasAsset('npc_droh')?`<img src="${ASSETS_SOURCES.npc_droh}" style="width:calc(88px * var(--u));height:calc(88px * var(--u));image-rendering:pixelated;border:3px solid #FF8F00;border-radius:10px;background:#FFF8E1;box-shadow:calc(3px * var(--u)) calc(3px * var(--u)) 0 #E65100;" class="droh-pop">`:''}
-        ${hasAsset('npc_dohyun')?`<img src="${ASSETS_SOURCES.npc_dohyun}" style="width:calc(66px * var(--u));height:calc(66px * var(--u));image-rendering:pixelated;border:3px solid #43A047;border-radius:10px;background:#E8F5E9;box-shadow:calc(3px * var(--u)) calc(3px * var(--u)) 0 #1B5E20;" class="droh-pop">`:''}
-      </div>`:''}
+      ${hasAsset('npc_droh')?`<div style="text-align:center;margin-bottom:6px;"><img src="${ASSETS_SOURCES.npc_droh}" style="width:min(94%,calc(210px * var(--u)));height:auto;image-rendering:pixelated;border:3px solid #FF8F00;border-radius:10px;background:#FFF8E1;box-shadow:calc(3px * var(--u)) calc(3px * var(--u)) 0 #E65100;" class="droh-pop"></div>`:''}
       <div style="font-size:calc(8px * var(--u));color:#3D2510;background:#FFF;border:2px solid #FFD54F;border-radius:6px;padding:8px;margin-bottom:8px;line-height:2;text-align:center;">
         👩‍🔬 <b>닥터 오</b> & 👶 <b>베이비 도현</b>: "어서 오세요!<br>퀴즈 3문제를 맞추면 사과즙을<br><b style="color:#E65100;">태양열 부스터</b>로 업그레이드해드릴게요!"
         ${S.solarBoost?'<br><br><span style="color:#1B5E20;">✅ 이미 업그레이드 완료!</span>':''}
