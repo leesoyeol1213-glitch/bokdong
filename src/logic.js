@@ -304,7 +304,9 @@ function tick(){
       tz.diceCharges = (tz.diceCharges||0) + gained;
       addLog('neutral','🎲 탈출 주사위 기회 +'+gained+' (메인 화면에서 굴리기!)');
     }
-    // 자동 탈출 없음 — 오직 주사위로만 탈출
+    // 방치모드: 기회가 있으면 자동으로 굴려 탈출(수동으로 안 굴려도 방치 진행). 애니 중엔 대기.
+    //   6번째는 무조건 성공(천장)이라 방치로도 반드시 빠져나옴. 방치 OFF면 수동(기존).
+    if(S.idleMode!==false && (tz.diceCharges||0) > 0 && !diceAnim){ rollEscapeDice(); }
   }
   S.ecool--;if(S.ecool<=0&&Math.random()<.06){fireRandEvent();S.ecool=18;}
   // #5 진천 갈림길 표지판 (태양열 부스터 미획득 + 라이딩 중 + 한국 + 도착 임박 아닐 때)
@@ -1001,7 +1003,13 @@ function showEscapeDestModal(){
     </div>
     ${btnsHtml}
     <button class="px-btn px-btn-gray" style="${fs(6)};width:100%;margin-top:calc(2px * ${u});" onclick="selectEscapeDest('충주',${wr})">🏠 그냥 충주로 귀환</button>
+    ${wr&&S.idleMode!==false?`<div style="text-align:center;margin-top:calc(4px * ${u});${fs(5)};color:#8B6340;">⏱️ 6초 후 자동 선택</div>`:''}
   </div>`;
+  // 방치모드: 6초 후 첫 후보로 자동 출발(함정 탈출도 핸즈프리)
+  if(wr && S.idleMode!==false && picked.length){
+    const auto = picked[0].n;
+    scheduleAuto(6, ()=>{ if(!S.dest && !S.trapZone) selectEscapeDest(auto, wr); });
+  }
 }
 
 function selectEscapeDest(destName, wr){
