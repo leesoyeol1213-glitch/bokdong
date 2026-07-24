@@ -1349,6 +1349,12 @@ var ASSETS_SOURCES = {
   veh_scooter:  null,
   veh_motor:    null,
   veh_car:      null,
+  // 🏅 업적 자전거 도감 이미지 예약 — 이미지 도착 시 null→"./assets/veh_ach_*.png" 교체로 자동 적용(없으면 픽셀 폴백)
+  veh_ach_kr:   null,   // 🇰🇷 태극 자전거
+  veh_ach_jp:   null,   // 🗾 후지 자전거
+  veh_ach_cn:   null,   // 🐉 용 자전거
+  veh_ach_sea:  null,   // 🌴 트로피컬 자전거
+  veh_ach_eu:   null,   // 🏰 캐슬 자전거
 
   // 🐾 지역 마스코트(추격 미니게임 목표) — 이미지 도착 시 null을 "./assets/mascot_xxx.png"로 교체만 하면 자동 적용.
   //    (7대죄·MR.블랙은 기존 npc_* 초상을 그대로 재사용하므로 별도 자산 불필요)
