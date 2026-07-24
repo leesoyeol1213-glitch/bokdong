@@ -79,3 +79,17 @@ if('serviceWorker' in navigator){
 })();
 
 update();
+
+// ── 🚴 로딩 스플래시 페이드아웃 — 부팅 완료 + 첫 게임 프레임 렌더 후, 최소 노출시간 보장 ──
+(function hideSplash(){
+  var el=document.getElementById('splash'); if(!el) return;
+  var MIN=850, t0=window.__t0||Date.now();
+  function done(){
+    setTimeout(function(){
+      el.classList.add('splash-hide');
+      setTimeout(function(){ if(el && el.parentNode) el.parentNode.removeChild(el); }, 650);
+    }, Math.max(0, MIN-(Date.now()-t0)));
+  }
+  // 캔버스가 첫 프레임을 그린 뒤 숨김 → 빈 화면 깜빡임 방지
+  requestAnimationFrame(function(){ requestAnimationFrame(done); });
+})();

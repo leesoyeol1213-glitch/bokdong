@@ -6,7 +6,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>임복동 세계일주 v11.15</title>
+<title>임복동 세계일주 v11.16</title>
 <!-- 갈무리(Galmuri) 픽셀폰트를 최우선·병렬 로드 — @import 직렬 로딩으로 인한 폰트 폴백(상단/하단 글씨체 불일치) 방지 -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/quiple/galmuri/dist/galmuri.css">
@@ -22,8 +22,40 @@
 !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}var p=t.createElement("script");p.type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug getPageViewId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
 posthog.init('phc_yh8nk7vukT9U4p8jGU4rHTbbHFzNgSTYFCQDqLyB3woL',{api_host:'https://us.i.posthog.com', person_profiles:'identified_only'});
 </script>
+<!-- 🚴 로딩 스플래시 — 즉시 표시(크리티컬 인라인 CSS). 부팅 완료 후 boot.js가 페이드아웃. -->
+<script>window.__t0=Date.now();</script>
+<style>
+#splash{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#8fd3f4 0%,#bfe6ff 52%,#ecdcb0 100%);
+  padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom);
+  transition:opacity .55s ease;font-family:'Galmuri11',system-ui,-apple-system,sans-serif;text-align:center;}
+#splash.splash-hide{opacity:0;pointer-events:none;}
+#splash .sp-hero{width:min(56vw,220px);height:auto;aspect-ratio:1;border-radius:22px;
+  image-rendering:pixelated;box-shadow:0 12px 30px rgba(2,60,110,.35),0 0 0 4px rgba(255,255,255,.65);
+  animation:sp-bob 2.2s ease-in-out infinite;}
+#splash .sp-title{margin-top:22px;font-size:clamp(22px,7vw,34px);color:#0a3d62;font-weight:bold;
+  text-shadow:2px 2px 0 #fff,0 3px 10px rgba(2,60,110,.25);letter-spacing:1px;}
+#splash .sp-sub{margin-top:8px;font-size:clamp(11px,3.4vw,15px);color:#12608a;opacity:.92;}
+#splash .sp-bar{margin-top:26px;width:min(62vw,240px);height:12px;border-radius:8px;
+  background:rgba(255,255,255,.55);overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,.15),0 0 0 2px rgba(255,255,255,.5);}
+#splash .sp-bar>i{display:block;height:100%;width:38%;border-radius:8px;
+  background:linear-gradient(90deg,#0284c7,#38bdf8);animation:sp-load 1.15s ease-in-out infinite;}
+#splash .sp-tip{margin-top:16px;font-size:12px;color:#0a3d62;opacity:.75;}
+#splash .sp-ver{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 12px);font-size:10px;color:#0a3d62;opacity:.55;}
+@keyframes sp-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes sp-load{0%{transform:translateX(-130%)}100%{transform:translateX(330%)}}
+@media (prefers-reduced-motion:reduce){#splash .sp-hero{animation:none}#splash .sp-bar>i{animation:none;width:100%}}
+</style>
 </head>
 <body>
+<div id="splash" aria-hidden="true">
+  <img class="sp-hero" src="./assets/icon-512.png" alt="임복동 세계일주">
+  <div class="sp-title">임복동 세계일주</div>
+  <div class="sp-sub">🚴 자전거로 떠나는 전국·세계 일주</div>
+  <div class="sp-bar"><i></i></div>
+  <div class="sp-tip">🍎 켜두면 복동이가 알아서 달려요</div>
+  <div class="sp-ver">로딩 중…</div>
+</div>
 <div id="app">
 <div class="app-head">
 <canvas id="cv" width="420" height="236"></canvas>
