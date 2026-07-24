@@ -96,7 +96,7 @@ const VEHS=[
   {id:'ach_jp',  n:'🗾 후지 자전거',     cat:'ach', sp:40, hb:52, setId:'set_jp',  tierMult:2.0, owned:false},
   {id:'ach_cn',  n:'🐉 용 자전거',       cat:'ach', sp:62, hb:60, setId:'set_cn',  tierMult:2.3, owned:false},
   {id:'ach_sea', n:'🌴 트로피컬 자전거', cat:'ach', sp:90, hb:70, setId:'set_sea', tierMult:2.6, owned:false},
-  {id:'ach_eu',  n:'🏰 캐슬 자전거',     cat:'ach', sp:120,hb:80, setId:'set_eu',  tierMult:2.9, owned:false},
+  {id:'ach_eu',  n:'🏰 캐슬 자전거',     cat:'ach', sp:96, hb:80, setId:'set_eu',  tierMult:2.9, owned:false},
 ];
 
 // ── 🐾 지역 마스코트 — 지역 전 도시 방문(정복) 시 '추격 미니게임'으로 포획. 각자 복동이 스탯 보조(장비처럼 합산). ──
